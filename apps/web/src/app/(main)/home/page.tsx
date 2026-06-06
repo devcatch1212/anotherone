@@ -428,37 +428,106 @@ export default function HomePage() {
       {/* 연장근로 BottomSheet */}
       <BottomSheet open={overtimeOpen} onClose={() => setOvertimeOpen(false)} title="연장근로 신청" snapHeight="auto">
         <form onSubmit={handleOvertimeSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <p style={{ fontSize: 13, color: '#6B7280' }}>오늘({format(now, 'M월 d일')}) 연장근로를 신청합니다</p>
+          <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', fontWeight: 500, margin: 0 }}>
+            오늘({format(now, 'M월 d일')}) 연장근로를 신청합니다
+          </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {(['start', 'end'] as const).map(field => (
               <div key={field}>
-                <p style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 6 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 6 }}>
                   {field === 'start' ? '시작 시각' : '종료 시각'}
                 </p>
                 <input type="time" value={overtime[field]}
                   onChange={e => setOvertime(p => ({ ...p, [field]: e.target.value }))}
                   required
                   style={{
-                    width: '100%', height: 48, borderRadius: 12,
-                    border: '1px solid #E5E7EB', padding: '0 12px',
-                    fontSize: 15, outline: 'none',
-                  }} />
+                    width: '100%', height: 46, borderRadius: 12,
+                    border: '1px solid rgba(255, 255, 255, 0.6)',
+                    background: 'rgba(255, 255, 255, 0.45)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    padding: '0 12px',
+                    fontSize: 14, fontWeight: 600,
+                    color: 'var(--color-text-primary)',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    transition: 'all 0.2s',
+                  }}
+                  onFocus={e => {
+                    e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                    e.target.style.border = '1px solid var(--color-primary)';
+                    e.target.style.boxShadow = '0 0 10px rgba(59, 130, 246, 0.2)';
+                  }}
+                  onBlur={e => {
+                    e.target.style.background = 'rgba(255, 255, 255, 0.45)';
+                    e.target.style.border = '1px solid rgba(255, 255, 255, 0.6)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
               </div>
             ))}
           </div>
           <div>
-            <p style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 6 }}>사유</p>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 6 }}>사유</p>
             <textarea value={overtime.reason}
               onChange={e => setOvertime(p => ({ ...p, reason: e.target.value }))}
               required rows={3} placeholder="연장근로 사유를 입력해주세요"
               style={{
-                width: '100%', borderRadius: 12, border: '1px solid #E5E7EB',
-                padding: '10px 12px', fontSize: 14, outline: 'none', resize: 'none',
+                width: '100%', borderRadius: 12,
+                border: '1px solid rgba(255, 255, 255, 0.6)',
+                background: 'rgba(255, 255, 255, 0.45)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                padding: '10px 12px',
+                fontSize: 14, fontWeight: 600,
+                color: 'var(--color-text-primary)',
+                outline: 'none',
+                resize: 'none',
                 fontFamily: 'inherit',
-              }} />
+                boxSizing: 'border-box',
+                transition: 'all 0.2s',
+              }}
+              onFocus={e => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                e.target.style.border = '1px solid var(--color-primary)';
+                e.target.style.boxShadow = '0 0 10px rgba(59, 130, 246, 0.2)';
+              }}
+              onBlur={e => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.45)';
+                e.target.style.border = '1px solid rgba(255, 255, 255, 0.6)';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
           </div>
-          <button type="submit" className="h-14 w-full text-white font-bold rounded-xl text-base shadow-sm"
-            style={{ backgroundColor: 'var(--color-primary)', boxShadow: '0 4px 12px rgba(47,95,253,0.2)' }}>신청하기</button>
+          <button
+            type="submit"
+            className="glass-btn-primary transition-all duration-100"
+            style={{
+              height: 52, width: '100%', borderRadius: 16, border: 'none',
+              color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginTop: 8,
+              boxShadow: '0 8px 20px rgba(99, 102, 241, 0.25)',
+            }}
+            onMouseDown={e => {
+              e.currentTarget.style.transform = 'scale(0.97)';
+              e.currentTarget.style.opacity = '0.95';
+            }}
+            onMouseUp={e => {
+              e.currentTarget.style.transform = 'none';
+              e.currentTarget.style.opacity = '1';
+            }}
+            onTouchStart={e => {
+              e.currentTarget.style.transform = 'scale(0.97)';
+              e.currentTarget.style.opacity = '0.95';
+            }}
+            onTouchEnd={e => {
+              e.currentTarget.style.transform = 'none';
+              e.currentTarget.style.opacity = '1';
+            }}
+          >
+            신청하기
+          </button>
         </form>
       </BottomSheet>
 

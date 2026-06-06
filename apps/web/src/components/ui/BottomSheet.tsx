@@ -49,12 +49,16 @@ export function BottomSheet({ open, onClose, title, children, snapHeight = '60vh
         ref={sheetRef}
         style={{
           position: 'relative', width: '100%',
-          background: '#fff',
+          background: 'rgba(255, 255, 255, 0.72)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.6)',
           borderRadius: '24px 24px 0 0',
           display: 'flex', flexDirection: 'column',
           maxHeight: snapMax[snapHeight],
           animation: 'bsUp 0.28s cubic-bezier(0.32,0.72,0,1)',
           overflow: 'hidden',
+          boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.08)',
         }}
       >
         {/* 드래그 핸들 */}
@@ -62,28 +66,31 @@ export function BottomSheet({ open, onClose, title, children, snapHeight = '60vh
           display: 'flex', justifyContent: 'center',
           paddingTop: 12, paddingBottom: 4, flexShrink: 0,
         }}>
-          <div style={{ width: 36, height: 4, borderRadius: 99, background: '#E5E7EB' }} />
+          <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(0, 0, 0, 0.12)' }} />
         </div>
 
         {/* 타이틀 헤더 */}
         {title && (
           <div style={{
             padding: '10px 20px 12px',
-            borderBottom: '1px solid #F3F4F6',
+            borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             flexShrink: 0,
           }}>
-            <h3 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: 0 }}>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
               {title}
             </h3>
             <button
               onClick={onClose}
               style={{
-                width: 32, height: 32, borderRadius: 99, border: 'none',
-                background: '#F3F4F6', cursor: 'pointer',
+                width: 30, height: 30, borderRadius: 99, border: 'none',
+                background: 'rgba(0, 0, 0, 0.05)', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#6B7280', fontSize: 16,
+                color: 'var(--color-text-secondary)', fontSize: 14,
+                transition: 'background 0.2s',
               }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.1)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)'}
             >
               ✕
             </button>
