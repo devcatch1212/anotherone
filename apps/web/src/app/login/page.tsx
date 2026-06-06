@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/auth.store';
 import Link from 'next/link';
 
 const schema = z.object({
-  email: z.string().min(1, '이메일 또는 사번을 입력해주세요'),
+  email: z.string().email('올바른 이메일 형식을 입력해주세요').min(1, '이메일을 입력해주세요'),
   password: z
     .string()
     .min(1, '비밀번호를 입력해주세요'),
@@ -39,7 +39,14 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: data.email, password: data.password }),
       });
-      const json = await res.json();
+      
+      let json: any = {};
+      try {
+        json = await res.json();
+      } catch (err) {
+        throw new Error('서버 응답을 처리하는 중 오류가 발생했습니다. (API Fallback 작동 확인)');
+      }
+
       if (!res.ok) throw new Error(json.message || '로그인에 실패했습니다');
       setAuth(json.token, json.user);
       if (!json.user.onboardingCompleted) {
@@ -103,9 +110,9 @@ export default function LoginPage() {
           
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             
-            {/* 이메일 / 사번 */}
+            {/* 이메일 */}
             <div className="flex flex-col gap-1.5">
-              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)' }}>이메일 / 사번</label>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)' }}>이메일</label>
               <input
                 {...register('email')}
                 type="text"
@@ -264,7 +271,7 @@ export default function LoginPage() {
               💡 테스트 계정 정보
             </p>
             <p style={{ fontSize: 11, color: 'var(--color-text-muted)', margin: '4px 0 0' }}>
-              이메일: 아무 이메일 입력 / 비밀번호: password123
+              이메일: 아무 이메일 형식 입력 / 비밀번호: password123
             </p>
           </div>
         </div>

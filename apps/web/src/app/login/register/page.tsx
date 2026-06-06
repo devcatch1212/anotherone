@@ -45,7 +45,14 @@ export default function RegisterPage() {
           name: data.name,
         }),
       });
-      const json = await res.json();
+      
+      let json: any = {};
+      try {
+        json = await res.json();
+      } catch (err) {
+        throw new Error('서버 응답을 처리하는 중 오류가 발생했습니다. (API Fallback 작동 확인)');
+      }
+
       if (!res.ok) throw new Error(json.message || '회원가입에 실패했습니다');
       
       // 회원가입 성공 시 즉시 자동 로그인(JWT 토큰 저장)
