@@ -36,13 +36,10 @@ export const authHandlers = [
     const foundUser = mockUsers.find(u => u.email === body.email);
     const targetUser = foundUser || currentMockUser;
     
-    if (body.password === 'password123') {
-      return HttpResponse.json({
-        token: `mock-jwt-token-${targetUser.id}-${Date.now()}`,
-        user: targetUser,
-      });
-    }
-    return HttpResponse.json({ message: '이메일 또는 비밀번호가 올바르지 않습니다. (비밀번호: password123)' }, { status: 401 });
+    return HttpResponse.json({
+      token: `mock-jwt-token-${targetUser.id}-${Date.now()}`,
+      user: targetUser,
+    });
   }),
 
   http.post('/api/auth/register', async ({ request }) => {
