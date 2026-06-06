@@ -1,0 +1,112 @@
+'use client';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { PayrollRecord } from '@/types';
+import { formatCurrency } from '@/lib/utils';
+import { mockPayroll } from '@/mocks/data/payroll';
+
+export default function PayrollPage() {
+  const [records, setRecords] = useState<PayrollRecord[]>(mockPayroll);
+
+  useEffect(() => {
+    fetch('/api/payroll')
+      .then(r => r.json())
+      .then(({ records: r }) => setRecords(r))
+      .catch(() => setRecords(mockPayroll));
+  }, []);
+
+  const annualTotal     = records.reduce((s, r) => s + r.netPay, 0);
+  const annualGross     = records.reduce((s, r) => s + r.totalGross, 0);
+  const annualDeduction = records.reduce((s, r) => s + r.totalDeduction, 0);
+  const year = records[0]?.year ?? new Date().getFullYear();
+
+  return (
+    <div style={{ minHeight: '100dvh', paddingBottom: 80 }}>
+
+      {/* 헤더 */}
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.65)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        padding: '48px 20px 16px',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.4)',
+        position: 'sticky', top: 0, zIndex: 30,
+      }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: '#111827', letterSpacing: '-0.3px' }}>
+          급여명세서
+        </h1>
+      </div>
+
+      <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+        {/* 연간 요약 카드 */}
+        <div className="glass-card-primary" style={{
+          borderRadius: 20, padding: '20px 20px 18px',
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{
+            position: 'absolute', right: -20, top: -20,
+            width: 100, height: 100, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.06)',
+          }} />
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 500, marginBottom: 4 }}>
+            {year}년 연간 실수령액
+          </p>
+          <p style={{ fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', marginBottom: 14 }}>
+            {formatCurrency(annualTotal)}
+          </p>
+          <div style={{ display: 'flex', gap: 20 }}>
+            <div>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 3 }}>총 지급액</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{formatCurrency(annualGross)}</p>
+            </div>
+            <div style={{ width: 1, background: 'rgba(255,255,255,0.15)' }} />
+            <div>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 3 }}>총 공제액</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{formatCurrency(annualDeduction)}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 월별 리스트 */}
+        <div className="glass-card" style={{
+          borderRadius: 20, overflow: 'hidden',
+        }}>
+          {records.map((r, idx) => (
+            <Link key={r.id} href={`/payroll/${r.id}`}
+              className="transition-all active:bg-white/40 duration-700"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '16px 20px', textDecoration: 'none',
+                borderBottom: idx < records.length - 1 ? '1px solid rgba(0, 0, 0, 0.05)' : 'none',
+              }}>
+              <div>
+                <p style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 500, marginBottom: 3 }}>
+                  {r.year}년 {r.month}월
+                </p>
+                <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.3px', marginBottom: 3 }}>
+                  {formatCurrency(r.netPay)}
+                </p>
+                <p style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>지급일 {r.paidAt.slice(0, 10)}</p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {r.confirmed && (
+                  <span style={{
+                    fontSize: 11, fontWeight: 700,
+                    background: 'rgba(16, 185, 129, 0.12)', color: 'var(--color-success)',
+                    padding: '4px 10px', borderRadius: 99,
+                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                  }}>확인완료</span>
+                )}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 18l6-6-6-6" stroke="var(--color-text-secondary)" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+      </div>
+    </div>
+  );
+}

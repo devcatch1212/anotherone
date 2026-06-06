@@ -1,0 +1,122 @@
+import { http, HttpResponse } from 'msw';
+import { currentMockUser, mockUsers } from '../data/users';
+import { User } from '@/types';
+
+// 토큰에서 사용자 식별을 위한 헬퍼 함수
+const getUserFromRequest = (request: Request): User | null => {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader) return null;
+  
+  const token = authHeader.replace('Bearer ', '').trim();
+  let userId = '';
+  
+  if (token.startsWith('mock-jwt-token-reg-')) {
+    const parts = token.replace('mock-jwt-token-reg-', '').split('-');
+    if (parts.length >= 2) {
+      userId = parts.slice(0, -1).join('-');
+    }
+  } else if (token.startsWith('mock-jwt-token-')) {
+    const parts = token.replace('mock-jwt-token-', '').split('-');
+    if (parts.length >= 2) {
+      userId = parts.slice(0, -1).join('-');
+    }
+  }
+  
+  if (userId) {
+    return mockUsers.find(u => u.id === userId) || null;
+  }
+  return null;
+};
+
+export const authHandlers = [
+  http.post('/api/auth/login', async ({ request }) => {
+    const body = await request.json() as { email: string; password: string };
+    
+    // 동적 가입 유저 또는 기존 mockUsers 리스트에서 이메일 검색
+    const foundUser = mockUsers.find(u => u.email === body.email);
+    const targetUser = foundUser || currentMockUser;
+    
+    if (body.password === 'password123') {
+      return HttpResponse.json({
+        token: `mock-jwt-token-${targetUser.id}-${Date.now()}`,
+        user: targetUser,
+      });
+    }
+    return HttpResponse.json({ message: '이메일 또는 비밀번호가 올바르지 않습니다. (비밀번호: password123)' }, { status: 401 });
+  }),
+
+  http.post('/api/auth/register', async ({ request }) => {
+    const body = await request.json() as {
+      email: string;
+      password?: string;
+      name: string;
+      employeeId?: string;
+      department?: string;
+      position?: string;
+    };
+
+    const exists = mockUsers.some(u => u.email === body.email);
+    if (exists) {
+      return HttpResponse.json({ message: '이미 가입된 이메일 주소입니다.' }, { status: 400 });
+    }
+
+    const newUser: User = {
+      id: 'user-' + Date.now(),
+      name: body.name,
+      email: body.email,
+      employeeId: body.employeeId || '',
+      department: body.department || '',
+      position: body.position || '',
+      wageType: 'hourly',
+      dailyWorkHours: 8,
+      weeklyWorkDays: 5,
+      company: {
+        name: '',
+        address: '',
+        latitude: 0,
+        longitude: 0,
+        radiusMeters: 100,
+      },
+      onboardingCompleted: false, // 최초 가입이므로 온보딩 미완료
+    };
+
+    mockUsers.push(newUser);
+
+    // 가입 완료 후 즉시 자동 로그인(토큰 발급) 처리
+    return HttpResponse.json({
+      token: `mock-jwt-token-reg-${newUser.id}-${Date.now()}`,
+      user: newUser,
+    });
+  }),
+
+  http.get('/api/auth/me', ({ request }) => {
+    const user = getUserFromRequest(request) || currentMockUser;
+    return HttpResponse.json({ user });
+  }),
+
+  http.post('/api/auth/logout', () => {
+    return HttpResponse.json({ success: true });
+  }),
+
+  http.post('/api/onboarding', async ({ request }) => {
+    const user = getUserFromRequest(request);
+    const body = await request.json() as Record<string, any>;
+    
+    if (user) {
+      const userIdx = mockUsers.findIndex(u => u.id === user.id);
+      if (userIdx !== -1) {
+        mockUsers[userIdx] = {
+          ...mockUsers[userIdx],
+          ...body,
+          onboardingCompleted: true,
+        };
+        return HttpResponse.json({ success: true, user: mockUsers[userIdx] });
+      }
+    }
+    
+    const updatedFallbackUser = { ...currentMockUser, ...body, onboardingCompleted: true };
+    // currentMockUser의 속성을 직접 업데이트하여 변경 내용 유지
+    Object.assign(currentMockUser, updatedFallbackUser);
+    return HttpResponse.json({ success: true, user: updatedFallbackUser });
+  }),
+];

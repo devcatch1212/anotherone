@@ -1,0 +1,313 @@
+'use client';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/auth.store';
+import { useToast } from '@/components/ui/Toast';
+
+export default function ProfilePage() {
+  const router = useRouter();
+  const { user, updateUser } = useAuthStore();
+  const { toast } = useToast();
+  const [tab, setTab] = useState<'profile' | 'password'>('profile');
+  const [saving, setSaving] = useState(false);
+
+  // 급여/회사 정보 수정
+  const [wageType, setWageType] = useState(user?.wageType ?? 'hourly');
+  const [hourlyWage, setHourlyWage] = useState(user?.hourlyWage ?? 12000);
+  const [dailyWage, setDailyWage] = useState(user?.dailyWage ?? 100000);
+  const [companyName, setCompanyName] = useState(user?.company?.name ?? '');
+  const [companyAddress, setCompanyAddress] = useState(user?.company?.address ?? '');
+
+  // 비밀번호 변경
+  const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
+  const [pwError, setPwError] = useState('');
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    await new Promise(r => setTimeout(r, 500)); // Mock delay
+    updateUser({
+      wageType,
+      hourlyWage: wageType === 'hourly' ? hourlyWage : undefined,
+      dailyWage: wageType === 'daily' ? dailyWage : undefined,
+      company: { ...user!.company, name: companyName, address: companyAddress },
+    });
+    toast('설정이 저장되었습니다', 'success');
+    setSaving(false);
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwError('');
+    if (pw.next !== pw.confirm) { setPwError('새 비밀번호가 일치하지 않습니다'); return; }
+    if (pw.next.length < 6) { setPwError('비밀번호는 6자 이상이어야 합니다'); return; }
+    setSaving(true);
+    await new Promise(r => setTimeout(r, 500));
+    toast('비밀번호가 변경되었습니다', 'success');
+    setPw({ current: '', next: '', confirm: '' });
+    setSaving(false);
+  };
+
+  return (
+    <div className="flex flex-col min-h-dvh" style={{ background: 'transparent' }}>
+      
+      {/* 헤더 */}
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 30,
+        background: 'rgba(255, 255, 255, 0.65)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.4)',
+        padding: '12px 16px',
+        display: 'flex', alignItems: 'center', gap: 12,
+      }}>
+        <button onClick={() => router.back()} 
+          className="transition-all active:bg-white/40"
+          style={{
+            width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            borderRadius: '50%', border: 'none', background: 'transparent', cursor: 'pointer'
+          }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M15 18l-6-6 6-6" stroke="var(--color-text-primary)" strokeWidth="2.2" strokeLinecap="round" />
+          </svg>
+        </button>
+        <h1 style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-text-primary)', letterSpacing: '-0.3px' }}>
+          프로필 & 설정 수정
+        </h1>
+      </div>
+
+      {/* 탭 컨트롤러 */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{
+          display: 'flex', background: 'rgba(0, 0, 0, 0.05)',
+          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+          borderRadius: 14, padding: 4, gap: 4,
+          border: '1px solid rgba(255, 255, 255, 0.2)'
+        }}>
+          {(['profile', 'password'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className="transition-all"
+              style={{
+                flex: 1, borderRadius: 10, border: 'none',
+                fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                background: tab === t ? 'rgba(255, 255, 255, 0.85)' : 'transparent',
+                color: tab === t ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                boxShadow: tab === t ? '0 4px 12px rgba(0, 0, 0, 0.03)' : 'none',
+                padding: '10px 0',
+              }}>
+              {t === 'profile' ? '급여 · 근무지' : '비밀번호 변경'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ padding: '16px 16px 80px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {tab === 'profile' ? (
+          <>
+            {/* 급여 유형 */}
+            <div className="glass-card" style={{
+              borderRadius: 24, padding: '20px', flexDirection: 'column', display: 'flex', gap: 16,
+              background: 'rgba(255, 255, 255, 0.45)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.6)',
+            }}>
+              <h2 style={{ fontSize: 14, fontWeight: 800, color: 'var(--color-text-primary)' }}>급여 유형</h2>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {(['hourly', 'daily'] as const).map(t => (
+                  <button key={t} type="button" onClick={() => setWageType(t)}
+                    className="transition-all duration-300"
+                    style={{
+                      flex: 1, borderRadius: 14, fontStyle: 'normal',
+                      fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                      padding: '12px 0',
+                      background: wageType === t 
+                        ? 'linear-gradient(135deg, var(--color-primary) 0%, #6366F1 100%)' 
+                        : 'rgba(255, 255, 255, 0.25)',
+                      color: wageType === t ? '#fff' : 'var(--color-text-secondary)',
+                      border: wageType === t 
+                        ? '1px solid rgba(255, 255, 255, 0.2)' 
+                        : '1px solid rgba(255, 255, 255, 0.4)',
+                      boxShadow: wageType === t ? '0 6px 16px rgba(59, 130, 246, 0.15)' : 'none',
+                    }}>
+                    {t === 'hourly' ? '시급제' : '일급제'}
+                  </button>
+                ))}
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)' }}>
+                  {wageType === 'hourly' ? '시급 설정 (원)' : '일급 설정 (원)'}
+                </label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <span style={{ position: 'absolute', left: 14, fontSize: 15, fontWeight: 700, color: 'var(--color-text-muted)' }}>₩</span>
+                  <input type="number" value={wageType === 'hourly' ? hourlyWage : dailyWage} 
+                    onChange={e => wageType === 'hourly' ? setHourlyWage(Number(e.target.value)) : setDailyWage(Number(e.target.value))}
+                    style={{
+                      width: '100%', height: 46, borderRadius: 14,
+                      border: '1px solid rgba(255, 255, 255, 0.5)',
+                      background: 'rgba(255, 255, 255, 0.3)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      padding: '0 14px 0 32px', fontSize: 15, fontWeight: 700,
+                      color: 'var(--color-text-primary)', outline: 'none',
+                      boxSizing: 'border-box',
+                      transition: 'all 0.2s',
+                    }}
+                    onFocus={e => {
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.border = '1px solid var(--color-primary)';
+                      e.target.style.boxShadow = '0 0 12px rgba(59, 130, 246, 0.25)';
+                    }}
+                    onBlur={e => {
+                      e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                      e.target.style.border = '1px solid rgba(255, 255, 255, 0.5)';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 회사 정보 */}
+            <div className="glass-card" style={{
+              borderRadius: 24, padding: '20px', flexDirection: 'column', display: 'flex', gap: 16,
+              background: 'rgba(255, 255, 255, 0.45)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.6)',
+            }}>
+              <h2 style={{ fontSize: 14, fontWeight: 800, color: 'var(--color-text-primary)' }}>회사 정보</h2>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)' }}>회사명</label>
+                <input value={companyName} onChange={e => setCompanyName(e.target.value)}
+                  placeholder="회사명을 입력하세요"
+                  style={{
+                    width: '100%', height: 46, borderRadius: 14,
+                    border: '1px solid rgba(255, 255, 255, 0.5)',
+                    background: 'rgba(255, 255, 255, 0.3)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    padding: '0 14px', fontSize: 14, fontWeight: 600,
+                    color: 'var(--color-text-primary)', outline: 'none',
+                    boxSizing: 'border-box',
+                    transition: 'all 0.2s',
+                  }}
+                  onFocus={e => {
+                    e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                    e.target.style.border = '1px solid var(--color-primary)';
+                    e.target.style.boxShadow = '0 0 12px rgba(59, 130, 246, 0.25)';
+                  }}
+                  onBlur={e => {
+                    e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                    e.target.style.border = '1px solid rgba(255, 255, 255, 0.5)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)' }}>근무지 주소</label>
+                <input value={companyAddress} onChange={e => setCompanyAddress(e.target.value)}
+                  placeholder="근무지 주소를 입력하세요"
+                  style={{
+                    width: '100%', height: 46, borderRadius: 14,
+                    border: '1px solid rgba(255, 255, 255, 0.5)',
+                    background: 'rgba(255, 255, 255, 0.3)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    padding: '0 14px', fontSize: 14, fontWeight: 600,
+                    color: 'var(--color-text-primary)', outline: 'none',
+                    boxSizing: 'border-box',
+                    transition: 'all 0.2s',
+                  }}
+                  onFocus={e => {
+                    e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                    e.target.style.border = '1px solid var(--color-primary)';
+                    e.target.style.boxShadow = '0 0 12px rgba(59, 130, 246, 0.25)';
+                  }}
+                  onBlur={e => {
+                    e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                    e.target.style.border = '1px solid rgba(255, 255, 255, 0.5)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
+              </div>
+            </div>
+
+            <button onClick={handleSaveProfile} disabled={saving}
+              className="glass-btn-primary"
+              style={{
+                height: 54, width: '100%', borderRadius: 16, border: 'none',
+                color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M17 21v-8H7v8M7 3v5h8" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {saving ? '저장 중...' : '변경사항 저장'}
+            </button>
+          </>
+        ) : (
+          <form onSubmit={handleChangePassword} className="glass-card" style={{
+            borderRadius: 24, padding: '20px', flexDirection: 'column', display: 'flex', gap: 16,
+            background: 'rgba(255, 255, 255, 0.45)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.6)',
+          }}>
+            {[
+              { label: '현재 비밀번호', key: 'current' as const },
+              { label: '새 비밀번호', key: 'next' as const },
+              { label: '새 비밀번호 확인', key: 'confirm' as const },
+            ].map(f => (
+              <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)' }}>{f.label}</label>
+                <input type="password" value={pw[f.key]} onChange={e => setPw(p => ({ ...p, [f.key]: e.target.value }))}
+                  placeholder="••••••••"
+                  style={{
+                    width: '100%', height: 46, borderRadius: 14,
+                    border: '1px solid rgba(255, 255, 255, 0.5)',
+                    background: 'rgba(255, 255, 255, 0.3)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    padding: '0 14px', fontSize: 14, fontWeight: 600,
+                    color: 'var(--color-text-primary)', outline: 'none',
+                    boxSizing: 'border-box',
+                    transition: 'all 0.2s',
+                  }}
+                  onFocus={e => {
+                    e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                    e.target.style.border = '1px solid var(--color-primary)';
+                    e.target.style.boxShadow = '0 0 12px rgba(59, 130, 246, 0.25)';
+                  }}
+                  onBlur={e => {
+                    e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                    e.target.style.border = '1px solid rgba(255, 255, 255, 0.5)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
+              </div>
+            ))}
+            {pwError && <p style={{ fontSize: 12, color: 'var(--color-danger)', fontWeight: 600 }}>⚠ {pwError}</p>}
+            <button type="submit" disabled={saving}
+              className="glass-btn-primary"
+              style={{
+                height: 48, width: '100%', borderRadius: 14, border: 'none',
+                color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                marginTop: 8,
+              }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {saving ? '변경 중...' : '비밀번호 변경'}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}

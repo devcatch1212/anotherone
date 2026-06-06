@@ -1,26 +1,143 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand - 영롱한 일렉트릭 블루 & 인디고 계열 */
+  --color-primary: #3B82F6;
+  --color-primary-dark: #1D4ED8;
+  --color-primary-light: #EFF6FF;
+
+  /* Accent - Gen Z 저격 사이버 네온 시안/민트 */
+  --color-accent: #00F0FF;
+  --color-accent-dark: #0891B2;
+  --color-accent-light: #ECFEFF;
+
+  /* Semantic */
+  --color-success: #10B981;
+  --color-success-light: #ECFDF5;
+  --color-danger: #F43F5E;
+  --color-danger-light: #FFF1F2;
+  --color-warning: #F59E0B;
+  --color-warning-light: #FFFBEB;
+  --color-info: #6366F1;
+  --color-info-light: #EEF2FF;
+  --color-vacation: #FF2E93; /* 네온 핫핑크 */
+  --color-vacation-light: #FFF1F2;
+
+  /* Neutral */
+  --color-bg: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94A3B8;
+
+  /* Layout */
+  --max-width: 390px;
+  --bottom-nav-height: 64px;
+  --top-bar-height: 56px;
+
+  /* Shadows */
+  --shadow-card: 0 4px 20px -2px rgba(59, 130, 246, 0.03), 0 2px 8px -1px rgba(0, 0, 0, 0.02);
+  --shadow-float: 0 12px 30px -4px rgba(31, 38, 135, 0.08);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background-color: #E2E8F0;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: none; /* 상하 바운스 스크롤 방지 */
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #F8FAFC;
+  /* 힙한 오로라/홀로그램 광원 그라데이션 탑재 - 투명도 강화하여 유리 뒤에서 더 선명하게 비침 */
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.12) 0px, transparent 55%),
+    radial-gradient(at 100% 0%, rgba(0, 240, 255, 0.12) 0px, transparent 55%),
+    radial-gradient(at 50% 100%, rgba(255, 46, 147, 0.09) 0px, transparent 60%);
+  color: var(--color-text-primary);
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 100dvh;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  position: relative;
+  overflow-x: hidden;
+  box-shadow: 0 12px 60px rgba(31, 38, 135, 0.05);
+  
+  /* 웹앱 네이티브 터치 및 복사 현상 제어 */
+  overscroll-behavior-y: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
+
+button, a, input, select, textarea {
+  touch-action: manipulation; /* 모바일 더블 탭 확대 딜레이 방지 */
+}
+
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.safe-top    { padding-top: env(safe-area-inset-top, 0px); }
+
+.page-container {
+  padding: 0 0 var(--bottom-nav-height);
+  min-height: 100dvh;
+}
+
+::-webkit-scrollbar { display: none; }
+* { scrollbar-width: none; }
+html { scroll-behavior: smooth; }
+
+.transition-base { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Glassmorphism & Aura Design Utilities */
+.glass-card {
+  background: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 8px 32px 0 rgba(59, 130, 246, 0.04) !important;
+}
+
+.glass-card-primary {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.82) 0%, rgba(139, 92, 246, 0.82) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 10px 32px 0 rgba(99, 102, 241, 0.15) !important;
+}
+
+.glass-btn {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.02) !important;
+  transition: transform 0.1s ease, opacity 0.1s ease !important;
+}
+.glass-btn:active {
+  transform: scale(0.97) !important;
+  opacity: 0.92 !important;
+}
+
+.glass-btn-primary {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #6366F1 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 20px 0 rgba(59, 130, 246, 0.2) !important;
+  transition: transform 0.1s ease, opacity 0.1s ease !important;
+}
+.glass-btn-primary:active {
+  transform: scale(0.97) !important;
+  opacity: 0.95 !important;
+}
+
+*:focus-visible {
+  outline: none;
+}
+

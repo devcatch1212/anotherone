@@ -1,65 +1,54 @@
-import Image from "next/image";
+'use client';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/auth.store';
 
-export default function Home() {
+export default function SplashPage() {
+  const router = useRouter();
+  const { isAuthenticated, onboardingCompleted } = useAuthStore();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!isAuthenticated) {
+        router.replace('/login');
+      } else if (!onboardingCompleted) {
+        router.replace('/onboarding/wage-type');
+      } else {
+        router.replace('/home');
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, onboardingCompleted, router]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex flex-col items-center justify-center min-h-dvh" style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)' }}>
+      <div className="flex flex-col items-center gap-4">
+        {/* 앱 아이콘 */}
+        <div style={{
+          width: 80, height: 80,
+          background: 'rgba(255,255,255,0.2)',
+          borderRadius: 24,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255,255,255,0.3)',
+        }}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" fill="white"/>
+          </svg>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        <h1 style={{ color: 'white', fontSize: 28, fontWeight: 700, letterSpacing: -0.5 }}>근무관리</h1>
+        <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14 }}>출퇴근 · 급여 · 휴가 한 번에</p>
+      </div>
+      {/* 로딩 인디케이터 */}
+      <div style={{ position: 'absolute', bottom: 60, display: 'flex', gap: 8 }}>
+        {[0,1,2].map(i => (
+          <div key={i} style={{
+            width: 8, height: 8,
+            borderRadius: '50%',
+            background: i === 0 ? 'white' : 'rgba(255,255,255,0.4)',
+          }} />
+        ))}
+      </div>
     </div>
   );
 }
