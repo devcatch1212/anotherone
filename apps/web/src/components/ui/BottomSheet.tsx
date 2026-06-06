@@ -47,18 +47,20 @@ export function BottomSheet({ open, onClose, title, children, snapHeight = '60vh
       <div
         ref={sheetRef}
         style={{
-          position: 'relative', width: '100%',
-          maxWidth: 390,
+          position: 'relative',
+          width: 'calc(100% - 32px)',
+          maxWidth: 358,
           background: 'rgba(255, 255, 255, 0.72)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.6)',
-          borderRadius: '24px 24px 0 0',
+          border: '1px solid rgba(255, 255, 255, 0.6)',
+          borderRadius: '24px',
           display: 'flex', flexDirection: 'column',
           maxHeight: snapMax[snapHeight],
           animation: 'bsUp 0.28s cubic-bezier(0.32,0.72,0,1)',
           overflow: 'hidden',
-          boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.08)',
+          boxShadow: '0 12px 40px rgba(0, 0, 0, 0.12)',
+          marginBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
         }}
       >
         {/* 드래그 핸들 */}

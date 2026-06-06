@@ -554,6 +554,7 @@ export default function CalendarPage() {
                     color: 'var(--color-text-primary)',
                     boxSizing: 'border-box',
                     transition: 'all 0.2s',
+                    minWidth: 0,
                   }}
                   onFocus={e => {
                     e.target.style.background = 'rgba(255, 255, 255, 0.9)';
