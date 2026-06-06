@@ -439,7 +439,7 @@ export default function CalendarPage() {
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="" snapHeight="auto">
         {selectedDay && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <p style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>
+            <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)' }}>
               {format(selectedDay, 'M월 d일 (E)', { locale: ko })}
             </p>
             {selWork && (
@@ -449,11 +449,11 @@ export default function CalendarPage() {
                     <span style={{ fontSize: 20 }}>{WORK_STATUS[selWork.status].icon}</span>
                     <div>
                       <p style={{ fontSize: 12, fontWeight: 700, color: WORK_STATUS[selWork.status].color }}>{WORK_STATUS[selWork.status].label}</p>
-                      {selWork.checkIn && <p style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>{selWork.checkIn} ~ {selWork.checkOut}</p>}
+                      {selWork.checkIn && <p style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 1 }}>{selWork.checkIn} ~ {selWork.checkOut}</p>}
                     </div>
                   </div>
                   {selWork.earnedAmount
-                    ? <span style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>+{selWork.earnedAmount.toLocaleString()}원</span>
+                    ? <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)' }}>+{selWork.earnedAmount.toLocaleString()}원</span>
                     : null}
                 </div>
               </div>
@@ -465,7 +465,7 @@ export default function CalendarPage() {
                     <span style={{ fontSize: 20 }}>🌴</span>
                     <div>
                       <p style={{ fontSize: 12, fontWeight: 700, color: LEAVE_TYPE_COLOR[selLeave.type] }}>{LEAVE_TYPE_LABEL[selLeave.type]}</p>
-                      <p style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>{selLeave.reason}</p>
+                      <p style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 1 }}>{selLeave.reason}</p>
                     </div>
                   </div>
                   <span style={{
@@ -476,23 +476,37 @@ export default function CalendarPage() {
               </div>
             )}
             {!selWork && !selLeave && (
-              <div style={{ padding: '16px 0', textAlign: 'center', fontSize: 13, color: '#9CA3AF' }}>
+              <div style={{ padding: '16px 0', textAlign: 'center', fontSize: 13, color: 'var(--color-text-muted)' }}>
                 이 날의 기록이 없습니다
               </div>
             )}
             {selWork && (
-              <button style={{
-                width: '100%', padding: '13px 0', borderRadius: 12,
-                border: '1.5px solid #E5E7EB', background: '#fff',
-                fontSize: 13, fontWeight: 600, color: '#374151', cursor: 'pointer',
-              }}>근무시간 수정</button>
+              <button
+                className="glass-btn transition-all duration-100"
+                style={{
+                  width: '100%', height: 48, borderRadius: 12,
+                  border: '1px solid rgba(0, 0, 0, 0.08)',
+                  background: 'rgba(255, 255, 255, 0.4)',
+                  fontSize: 13, fontWeight: 700, color: 'var(--color-text-secondary)', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+                onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
+                onMouseUp={e => e.currentTarget.style.transform = 'none'}
+              >근무시간 수정</button>
             )}
             {!selLeave && (
-              <button onClick={() => { setSheetOpen(false); setApplyOpen(true); setApplyStart(selKey ?? ''); }} style={{
-                width: '100%', padding: '13px 0', borderRadius: 12,
-                border: '1.5px solid #DDD6FE', background: '#F5F3FF',
-                fontSize: 13, fontWeight: 600, color: '#7C3AED', cursor: 'pointer',
-              }}>🌴 이 날 휴가 신청</button>
+              <button
+                onClick={() => { setSheetOpen(false); setApplyOpen(true); setApplyStart(selKey ?? ''); }}
+                className="glass-btn-primary transition-all duration-100"
+                style={{
+                  width: '100%', height: 48, borderRadius: 12,
+                  border: 'none',
+                  fontSize: 13, fontWeight: 700, color: '#fff', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}
+                onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
+                onMouseUp={e => e.currentTarget.style.transform = 'none'}
+              >🌴 이 날 휴가 신청</button>
             )}
           </div>
         )}
@@ -504,15 +518,15 @@ export default function CalendarPage() {
 
           {/* 휴가 종류 */}
           <div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 10 }}>휴가 종류</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 10 }}>휴가 종류</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
               {Object.entries(LEAVE_TYPE_LABEL).map(([type, label]) => (
                 <button key={type} onClick={() => setApplyType(type)} style={{
                   height: 44, borderRadius: 12, border: 'none', cursor: 'pointer',
-                  fontSize: 14, fontWeight: 600,
-                  background: applyType === type ? LEAVE_TYPE_COLOR[type] : '#F3F4F6',
-                  color: applyType === type ? '#fff' : '#6B7280',
-                  transition: 'background 0.15s',
+                  fontSize: 13, fontWeight: 700,
+                  background: applyType === type ? LEAVE_TYPE_COLOR[type] : 'rgba(0, 0, 0, 0.05)',
+                  color: applyType === type ? '#fff' : 'var(--color-text-secondary)',
+                  transition: 'all 0.15s',
                 }}>{label}</button>
               ))}
             </div>
@@ -522,18 +536,34 @@ export default function CalendarPage() {
           <div style={{ display: 'grid', gridTemplateColumns: applyType === 'half' ? '1fr' : '1fr 1fr', gap: 12 }}>
             {(['시작일', ...(applyType !== 'half' ? ['종료일'] : [])] as string[]).map((lbl, i) => (
               <div key={lbl}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 8 }}>{lbl}</p>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 8 }}>{lbl}</p>
                 <input
                   type="date"
                   value={i === 0 ? applyStart : applyEnd}
                   min={i === 1 ? applyStart : undefined}
                   onChange={e => i === 0 ? setApplyStart(e.target.value) : setApplyEnd(e.target.value)}
                   style={{
-                    width: '100%', height: 48, borderRadius: 12,
-                    border: '1.5px solid #E5E7EB', padding: '0 14px',
-                    fontSize: 14, outline: 'none', fontFamily: 'inherit',
-                    color: '#111827', background: '#fff',
+                    width: '100%', height: 46, borderRadius: 12,
+                    border: '1px solid rgba(255, 255, 255, 0.6)',
+                    background: 'rgba(255, 255, 255, 0.45)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    padding: '0 14px',
+                    fontSize: 14, fontWeight: 600,
+                    outline: 'none', fontFamily: 'inherit',
+                    color: 'var(--color-text-primary)',
                     boxSizing: 'border-box',
+                    transition: 'all 0.2s',
+                  }}
+                  onFocus={e => {
+                    e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                    e.target.style.border = '1px solid var(--color-primary)';
+                    e.target.style.boxShadow = '0 0 10px rgba(59, 130, 246, 0.2)';
+                  }}
+                  onBlur={e => {
+                    e.target.style.background = 'rgba(255, 255, 255, 0.45)';
+                    e.target.style.border = '1px solid rgba(255, 255, 255, 0.6)';
+                    e.target.style.boxShadow = 'none';
                   }}
                 />
               </div>
@@ -542,7 +572,7 @@ export default function CalendarPage() {
 
           {/* 사유 */}
           <div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 8 }}>사유</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 8 }}>사유</p>
             <textarea
               value={applyReason}
               onChange={e => setApplyReason(e.target.value)}
@@ -550,12 +580,26 @@ export default function CalendarPage() {
               rows={3}
               style={{
                 width: '100%', borderRadius: 12,
-                border: '1.5px solid #E5E7EB',
+                border: '1px solid rgba(255, 255, 255, 0.6)',
+                background: 'rgba(255, 255, 255, 0.45)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
                 padding: '12px 14px',
                 fontSize: 14, lineHeight: 1.6,
                 outline: 'none', resize: 'none',
-                fontFamily: 'inherit', color: '#111827',
+                fontFamily: 'inherit', color: 'var(--color-text-primary)',
                 boxSizing: 'border-box',
+                transition: 'all 0.2s',
+              }}
+              onFocus={e => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                e.target.style.border = '1px solid var(--color-primary)';
+                e.target.style.boxShadow = '0 0 10px rgba(59, 130, 246, 0.2)';
+              }}
+              onBlur={e => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.45)';
+                e.target.style.border = '1px solid rgba(255, 255, 255, 0.6)';
+                e.target.style.boxShadow = 'none';
               }}
             />
           </div>
@@ -563,9 +607,10 @@ export default function CalendarPage() {
           {/* 차감 미리보기 */}
           {applyStart && (
             <div style={{
-              background: '#F5F3FF', borderRadius: 12,
+              background: 'rgba(124, 58, 237, 0.06)',
+              borderRadius: 12,
               padding: '12px 16px',
-              border: '1px solid #EDE9FE',
+              border: '1px solid rgba(124, 58, 237, 0.15)',
             }}>
               <p style={{ fontSize: 13, fontWeight: 600, color: '#7C3AED', margin: 0 }}>
                 {applyType === 'half'
@@ -581,14 +626,26 @@ export default function CalendarPage() {
           <button
             onClick={handleApplySubmit}
             disabled={!applyStart || !applyReason || (applyType !== 'half' && !applyEnd)}
+            className="glass-btn-primary transition-all duration-100"
             style={{
-              height: 54, width: '100%', borderRadius: 14, border: 'none',
+              height: 52, width: '100%', borderRadius: 16, border: 'none',
               background: (applyStart && applyReason && (applyType === 'half' || applyEnd))
-                ? 'var(--color-primary)' : '#E5E7EB',
+                ? 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-vacation) 100%)' : 'rgba(0, 0, 0, 0.05)',
               color: (applyStart && applyReason && (applyType === 'half' || applyEnd))
-                ? '#fff' : '#9CA3AF',
-              fontSize: 16, fontWeight: 700, cursor: 'pointer',
+                ? '#fff' : 'rgba(0, 0, 0, 0.25)',
+              fontSize: 15, fontWeight: 700, cursor: (applyStart && applyReason && (applyType === 'half' || applyEnd)) ? 'pointer' : 'not-allowed',
               letterSpacing: '-0.2px',
+              boxShadow: (applyStart && applyReason && (applyType === 'half' || applyEnd)) ? '0 8px 20px rgba(99, 102, 241, 0.25)' : 'none',
+            }}
+            onMouseDown={e => {
+              if (applyStart && applyReason && (applyType === 'half' || applyEnd)) {
+                e.currentTarget.style.transform = 'scale(0.97)';
+                e.currentTarget.style.opacity = '0.95';
+              }
+            }}
+            onMouseUp={e => {
+              e.currentTarget.style.transform = 'none';
+              e.currentTarget.style.opacity = '1';
             }}
           >
             신청하기

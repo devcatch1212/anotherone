@@ -30,8 +30,7 @@ export function BottomSheet({ open, onClose, title, children, snapHeight = '60vh
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 50,
-      display: 'flex', alignItems: 'flex-end',
-      maxWidth: 390, left: '50%', transform: 'translateX(-50%)',
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
     }}>
       {/* Backdrop */}
       <div
@@ -49,6 +48,7 @@ export function BottomSheet({ open, onClose, title, children, snapHeight = '60vh
         ref={sheetRef}
         style={{
           position: 'relative', width: '100%',
+          maxWidth: 390,
           background: 'rgba(255, 255, 255, 0.72)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
