@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { MSWProvider } from './msw-provider';
 import { ToastProvider } from '@/components/ui';
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
   title: '근무 관리 - 출퇴근 & 급여 확인',
@@ -34,6 +35,7 @@ export default function RootLayout({
         <MSWProvider>
           <ToastProvider>{children}</ToastProvider>
         </MSWProvider>
+        <Analytics />
       </body>
     </html>
   );
