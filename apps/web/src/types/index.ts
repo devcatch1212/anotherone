@@ -12,20 +12,15 @@ export type NotificationType = 'overtime_approved' | 'overtime_rejected' | 'leav
 export interface User {
   id: string;
   name: string;
-  employeeId: string;
-  email: string;
-  department: string;
-  position: string;
-  wageType: WageType;
-  hourlyWage?: number;
-  dailyWage?: number;
-  dailyWorkHours: number;
-  weeklyWorkDays: number;
-  company: Company;
+  email: string | null;
+  emailVerified?: string | null;
+  image?: string | null;
   onboardingCompleted: boolean;
+  employments: Employment[];
 }
 
 export interface Company {
+  id: string;
   name: string;
   address: string;
   latitude: number;
@@ -33,8 +28,27 @@ export interface Company {
   radiusMeters: number;
 }
 
+export interface Employment {
+  id: string;
+  userId: string;
+  companyId: string;
+  company: Company;
+  position: string;
+  wageType: WageType;
+  hourlyWage?: number;
+  dailyWage?: number;
+  dailyWorkHours: number;
+  weeklyWorkDays: number;
+  workStartTime?: string;
+  workEndTime?: string;
+  workDaysOfWeek?: number[];
+  breakMinutes?: number;
+  isPrimary: boolean;
+}
+
 export interface AttendanceRecord {
   id: string;
+  companyId: string;
   date: string; // YYYY-MM-DD
   checkIn?: string; // ISO datetime
   checkOut?: string; // ISO datetime
@@ -47,6 +61,7 @@ export interface AttendanceRecord {
 
 export interface PayrollRecord {
   id: string;
+  companyId: string;
   year: number;
   month: number;
   basePay: number;
@@ -67,6 +82,7 @@ export interface PayrollRecord {
 
 export interface LeaveRecord {
   id: string;
+  companyId: string;
   type: LeaveType;
   startDate: string;
   endDate: string;
@@ -84,6 +100,7 @@ export interface LeaveBalance {
 
 export interface Notification {
   id: string;
+  companyId: string;
   type: NotificationType;
   title: string;
   body: string;
@@ -93,6 +110,7 @@ export interface Notification {
 
 export interface OvertimeRequest {
   id: string;
+  companyId: string;
   date: string;
   startTime: string;
   endTime: string;

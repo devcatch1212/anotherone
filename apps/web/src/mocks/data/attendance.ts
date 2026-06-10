@@ -6,7 +6,8 @@ const today = new Date();
 export const mockAttendance: AttendanceRecord[] = [
   {
     id: 'att-1',
-    date: format(today, 'yyyy-MM-dd'),
+    companyId: 'company-1',
+    date: format(new Date(), 'yyyy-MM-dd'),
     checkIn: new Date(today.setHours(9, 2, 0, 0)).toISOString(),
     status: 'normal',
     workedMinutes: 0,
@@ -14,6 +15,7 @@ export const mockAttendance: AttendanceRecord[] = [
   },
   {
     id: 'att-2',
+    companyId: 'company-1',
     date: format(subDays(new Date(), 1), 'yyyy-MM-dd'),
     checkIn: new Date(new Date().setHours(9, 0, 0, 0)).toISOString(),
     checkOut: new Date(new Date().setHours(18, 10, 0, 0)).toISOString(),
@@ -25,6 +27,7 @@ export const mockAttendance: AttendanceRecord[] = [
   },
   {
     id: 'att-3',
+    companyId: 'company-1',
     date: format(subDays(new Date(), 2), 'yyyy-MM-dd'),
     checkIn: new Date(new Date().setHours(9, 31, 0, 0)).toISOString(),
     checkOut: new Date(new Date().setHours(18, 0, 0, 0)).toISOString(),
@@ -36,12 +39,14 @@ export const mockAttendance: AttendanceRecord[] = [
   },
   {
     id: 'att-4',
+    companyId: 'company-1',
     date: format(subDays(new Date(), 3), 'yyyy-MM-dd'),
     status: 'vacation',
     workedMinutes: 0,
   },
   {
     id: 'att-5',
+    companyId: 'company-1',
     date: format(subDays(new Date(), 4), 'yyyy-MM-dd'),
     status: 'absent',
     workedMinutes: 0,

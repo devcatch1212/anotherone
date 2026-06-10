@@ -7,11 +7,9 @@ export async function POST(request: Request) {
     // 온보딩 완료 시 전달되는 데이터를 기반으로 최종 유저 객체를 모의 생성 및 응답
     const updatedUser = {
       id: 'user-1',
-      name: '김민준',
-      employeeId: 'EMP001',
-      email: 'minjun@company.com',
-      department: '현장팀',
-      position: '계약직',
+      name: '김토스',
+      email: 'test@example.com',
+      position: '매니저',
       wageType: body.wageType || 'hourly',
       hourlyWage: body.hourlyWage || 12000,
       dailyWage: body.dailyWage,

@@ -2,7 +2,8 @@ import { PayrollRecord } from '@/types';
 
 export const mockPayroll: PayrollRecord[] = [
   {
-    id: 'pay-1',
+    id: 'pr-2026-05',
+    companyId: 'company-1',
     year: 2026,
     month: 5,
     basePay: 1920000,
@@ -21,7 +22,8 @@ export const mockPayroll: PayrollRecord[] = [
     workedDays: 20,
   },
   {
-    id: 'pay-2',
+    id: 'pr-2026-04',
+    companyId: 'company-1',
     year: 2026,
     month: 4,
     basePay: 1800000,
@@ -40,7 +42,8 @@ export const mockPayroll: PayrollRecord[] = [
     workedDays: 18,
   },
   {
-    id: 'pay-3',
+    id: 'pr-2026-03',
+    companyId: 'company-1',
     year: 2026,
     month: 3,
     basePay: 1920000,

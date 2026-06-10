@@ -5,9 +5,9 @@ import { leaveHandlers } from './leave';
 import { notificationHandlers } from './notifications';
 
 export const handlers = [
-  ...authHandlers,
-  ...attendanceHandlers,
-  ...payrollHandlers,
-  ...leaveHandlers,
+  // ...authHandlers, // Backend API로 연동됨
+  // ...attendanceHandlers, // Backend API로 연동됨
+  // ...payrollHandlers, // Backend API로 연동됨
+  // ...leaveHandlers, // Backend API로 연동됨
   ...notificationHandlers,
 ];

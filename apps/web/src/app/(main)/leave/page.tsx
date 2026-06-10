@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { LeaveRecord, LeaveBalance } from '@/types';
 import { mockLeaves, mockLeaveBalance } from '@/mocks/data/leave';
+import { fetchApi } from '@/lib/api';
+import { useAuthStore } from '@/store/auth.store';
 import { format } from 'date-fns';
 
 const LEAVE_TYPE_LABEL: Record<string, string> = { annual: '연차', half: '반차', sick: '병가', official: '공가' };
@@ -13,12 +15,16 @@ const STATUS_CONFIG: Record<string, { label: string; variant: string; color: str
 };
 
 export default function LeavePage() {
+  const { currentCompanyId } = useAuthStore();
   const [balance, setBalance] = useState<LeaveBalance>(mockLeaveBalance);
-  const [records, setRecords] = useState<LeaveRecord[]>(mockLeaves);
+  const [records, setRecords] = useState<LeaveRecord[]>([]);
 
   useEffect(() => {
-    fetch('/api/leave').then(r => r.json()).then(({ records: r, balance: b }) => { setRecords(r); setBalance(b); }).catch(() => {});
-  }, []);
+    if (!currentCompanyId) return;
+    fetchApi(`/api/leave?employmentId=${currentCompanyId}`)
+      .then(res => { setRecords(res.records); setBalance(mockLeaveBalance); })
+      .catch(() => setRecords(mockLeaves));
+  }, [currentCompanyId]);
 
   const usedPercent = Math.round((balance.used / balance.total) * 100);
 

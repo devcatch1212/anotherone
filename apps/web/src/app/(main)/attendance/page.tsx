@@ -1,7 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, subMonths, addMonths, isSameMonth, isToday, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, subMonths, addMonths, isToday } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { useAuthStore } from '@/store/auth.store';
+import { fetchApi } from '@/lib/api';
 import { AttendanceRecord, AttendanceStatus } from '@/types';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Badge } from '@/components/ui/Badge';
@@ -20,18 +22,26 @@ const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
 export default function AttendancePage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [records, setRecords] = useState<AttendanceRecord[]>(mockAttendance);
+  const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [selected, setSelected] = useState<AttendanceRecord | null | undefined>(undefined);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [view, setView] = useState<'calendar' | 'list'>('calendar');
+  const { currentCompanyId } = useAuthStore();
 
-  // 현재 월 기록 fetch (MSW Mock)
+  // 현재 월 기록 fetch
   useEffect(() => {
-    fetch(`/api/attendance?year=${format(currentMonth, 'yyyy')}&month=${format(currentMonth, 'M')}`)
-      .then(r => r.json())
-      .then(({ records: r }) => setRecords(r))
-      .catch(() => setRecords(mockAttendance));
-  }, [currentMonth]);
+    if (!currentCompanyId) return;
+    const fetchAttendance = async () => {
+      try {
+        const resData = await fetchApi(`/api/attendance?employmentId=${currentCompanyId}&year=${format(currentMonth, 'yyyy')}&month=${format(currentMonth, 'M')}`);
+        setRecords(resData.records);
+      } catch (err) {
+        console.error(err);
+        setRecords(mockAttendance);
+      }
+    };
+    fetchAttendance();
+  }, [currentMonth, currentCompanyId]);
 
   // 캘린더 날짜 계산
   const monthStart = startOfMonth(currentMonth);

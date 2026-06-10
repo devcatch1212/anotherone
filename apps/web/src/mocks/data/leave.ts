@@ -9,6 +9,7 @@ export const mockLeaveBalance: LeaveBalance = {
 export const mockLeaves: LeaveRecord[] = [
   {
     id: 'leave-1',
+    companyId: 'company-1',
     type: 'annual',
     startDate: '2026-05-02',
     endDate: '2026-05-02',
@@ -19,6 +20,7 @@ export const mockLeaves: LeaveRecord[] = [
   },
   {
     id: 'leave-2',
+    companyId: 'company-1',
     type: 'half',
     startDate: '2026-04-15',
     endDate: '2026-04-15',
@@ -29,6 +31,7 @@ export const mockLeaves: LeaveRecord[] = [
   },
   {
     id: 'leave-3',
+    companyId: 'company-1',
     type: 'annual',
     startDate: '2026-06-10',
     endDate: '2026-06-11',

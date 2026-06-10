@@ -3,20 +3,37 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { useToast } from '@/components/ui/Toast';
+import { fetchApi } from '@/lib/api';
+
+const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, updateUser } = useAuthStore();
+  const { user, currentCompanyId, updateEmployment } = useAuthStore();
   const { toast } = useToast();
   const [tab, setTab] = useState<'profile' | 'password'>('profile');
   const [saving, setSaving] = useState(false);
 
+  const employment = user?.employments?.find(e => e.companyId === currentCompanyId) || user?.employments?.[0];
+
   // 급여/회사 정보 수정
-  const [wageType, setWageType] = useState(user?.wageType ?? 'hourly');
-  const [hourlyWage, setHourlyWage] = useState(user?.hourlyWage ?? 12000);
-  const [dailyWage, setDailyWage] = useState(user?.dailyWage ?? 100000);
-  const [companyName, setCompanyName] = useState(user?.company?.name ?? '');
-  const [companyAddress, setCompanyAddress] = useState(user?.company?.address ?? '');
+  const [wageType, setWageType] = useState(employment?.wageType ?? 'hourly');
+  const [hourlyWage, setHourlyWage] = useState(employment?.hourlyWage ?? 12000);
+  const [dailyWage, setDailyWage] = useState(employment?.dailyWage ?? 100000);
+  const [companyName, setCompanyName] = useState(employment?.company?.name ?? '');
+  const [companyAddress, setCompanyAddress] = useState(employment?.company?.address ?? '');
+
+  // 기본 근무 시간 수정
+  const [workStartTime, setWorkStartTime] = useState(employment?.workStartTime ?? '09:00');
+  const [workEndTime, setWorkEndTime] = useState(employment?.workEndTime ?? '18:00');
+  const [breakMinutes, setBreakMinutes] = useState(employment?.breakMinutes ?? 60);
+  const [workDaysOfWeek, setWorkDaysOfWeek] = useState<number[]>(employment?.workDaysOfWeek ?? [0, 1, 2, 3, 4]);
+
+  const toggleDay = (idx: number) => {
+    setWorkDaysOfWeek(prev =>
+      prev.includes(idx) ? prev.filter(d => d !== idx) : [...prev, idx].sort()
+    );
+  };
 
   // 비밀번호 변경
   const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
@@ -24,15 +41,33 @@ export default function ProfilePage() {
 
   const handleSaveProfile = async () => {
     setSaving(true);
-    await new Promise(r => setTimeout(r, 500)); // Mock delay
-    updateUser({
-      wageType,
-      hourlyWage: wageType === 'hourly' ? hourlyWage : undefined,
-      dailyWage: wageType === 'daily' ? dailyWage : undefined,
-      company: { ...user!.company, name: companyName, address: companyAddress },
-    });
-    toast('설정이 저장되었습니다', 'success');
-    setSaving(false);
+    try {
+      if (employment) {
+        const payload = {
+          employmentId: employment.id,
+          wageType,
+          hourlyWage: wageType === 'hourly' ? hourlyWage : undefined,
+          dailyWage: wageType === 'daily' ? dailyWage : undefined,
+          companyName,
+          companyAddress,
+          workStartTime,
+          workEndTime,
+          breakMinutes,
+          workDaysOfWeek,
+        };
+        const { employment: updatedEmployment } = await fetchApi('/api/settings/profile', {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        });
+        
+        updateEmployment(employment.companyId, updatedEmployment);
+      }
+      toast('설정이 저장되었습니다', 'success');
+    } catch (e: any) {
+      toast(`오류: ${e.message}`, 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -41,10 +76,19 @@ export default function ProfilePage() {
     if (pw.next !== pw.confirm) { setPwError('새 비밀번호가 일치하지 않습니다'); return; }
     if (pw.next.length < 6) { setPwError('비밀번호는 6자 이상이어야 합니다'); return; }
     setSaving(true);
-    await new Promise(r => setTimeout(r, 500));
-    toast('비밀번호가 변경되었습니다', 'success');
-    setPw({ current: '', next: '', confirm: '' });
-    setSaving(false);
+    
+    try {
+      await fetchApi('/api/settings/password', {
+        method: 'PUT',
+        body: JSON.stringify({ current: pw.current, next: pw.next }),
+      });
+      toast('비밀번호가 변경되었습니다', 'success');
+      setPw({ current: '', next: '', confirm: '' });
+    } catch (e: any) {
+      setPwError(e.message || '비밀번호 변경 실패');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -232,6 +276,70 @@ export default function ProfilePage() {
                     e.target.style.boxShadow = 'none';
                   }}
                 />
+              </div>
+            </div>
+
+            {/* 기본 근무 시간 설정 */}
+            <div className="glass-card" style={{
+              borderRadius: 24, padding: '20px', flexDirection: 'column', display: 'flex', gap: 16,
+              background: 'rgba(255, 255, 255, 0.45)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.6)',
+            }}>
+              <h2 style={{ fontSize: 14, fontWeight: 800, color: 'var(--color-text-primary)' }}>기본 근무 시간 설정</h2>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)' }}>주당 근무요일</label>
+                  <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between' }}>
+                    {DAY_LABELS.map((label, idx) => (
+                      <button key={idx} type="button" onClick={() => toggleDay(idx)}
+                        style={{
+                          width: 38, height: 38, borderRadius: '50%',
+                          fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                          border: 'none',
+                          background: workDaysOfWeek.includes(idx)
+                            ? 'linear-gradient(135deg, var(--color-primary) 0%, #6366F1 100%)'
+                            : 'rgba(255, 255, 255, 0.25)',
+                          color: workDaysOfWeek.includes(idx) ? '#fff' : 'var(--color-text-secondary)',
+                          boxShadow: workDaysOfWeek.includes(idx) ? '0 4px 14px rgba(99, 102, 241, 0.3)' : 'none',
+                          transition: 'all 0.2s'
+                        }}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)' }}>출근 시간</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255, 255, 255, 0.3)', padding: '0 14px', height: 46, borderRadius: 14, border: '1px solid rgba(255, 255, 255, 0.5)' }}>
+                      <span style={{ fontSize: 16 }}>⏰</span>
+                      <input type="time" value={workStartTime} onChange={e => setWorkStartTime(e.target.value)}
+                        style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', width: '100%', cursor: 'pointer' }} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)' }}>퇴근 시간</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255, 255, 255, 0.3)', padding: '0 14px', height: 46, borderRadius: 14, border: '1px solid rgba(255, 255, 255, 0.5)' }}>
+                      <span style={{ fontSize: 16 }}>⏰</span>
+                      <input type="time" value={workEndTime} onChange={e => setWorkEndTime(e.target.value)}
+                        style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', width: '100%', cursor: 'pointer' }} />
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)' }}>휴게시간 (분)</label>
+                  <input type="number" value={breakMinutes} onChange={e => setBreakMinutes(Number(e.target.value))} min={0}
+                    style={{
+                      width: '100%', height: 46, borderRadius: 14, border: '1px solid rgba(255, 255, 255, 0.5)',
+                      background: 'rgba(255, 255, 255, 0.3)', padding: '0 14px', fontSize: 14, fontWeight: 700,
+                      color: 'var(--color-text-primary)', outline: 'none', boxSizing: 'border-box'
+                    }} />
+                </div>
               </div>
             </div>
 

@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '@/store/auth.store';
 import Link from 'next/link';
+import { fetchApi } from '@/lib/api';
 
 const schema = z.object({
   email: z.string().email('올바른 이메일 형식을 입력해주세요').min(1, '이메일을 입력해주세요'),
@@ -34,22 +35,13 @@ export default function LoginPage() {
   const onSubmit = async (data: FormData) => {
     setServerError('');
     try {
-      const res = await fetch('/api/auth/login', {
+      const resData = await fetchApi('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: data.email, password: data.password }),
       });
       
-      let json: any = {};
-      try {
-        json = await res.json();
-      } catch (err) {
-        throw new Error('서버 응답을 처리하는 중 오류가 발생했습니다. (API Fallback 작동 확인)');
-      }
-
-      if (!res.ok) throw new Error(json.message || '로그인에 실패했습니다');
-      setAuth(json.token, json.user);
-      if (!json.user.onboardingCompleted) {
+      setAuth(resData.access_token, resData.user);
+      if (!resData.user.onboardingCompleted) {
         router.replace('/onboarding/wage-type');
       } else {
         router.replace('/home');

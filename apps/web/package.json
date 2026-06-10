@@ -9,7 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@anotherone/db": "*",
     "@anotherone/types": "*",
+    "@faker-js/faker": "^9.5.0",
     "@hookform/resolvers": "^5.4.0",
     "@vercel/analytics": "^2.0.1",
     "clsx": "^2.1.1",

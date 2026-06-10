@@ -8,11 +8,9 @@ export async function POST(request: Request) {
     // 기본 모의 유저 데이터 반환
     const user = {
       id: 'user-1',
-      name: '김민준',
-      employeeId: 'EMP001',
-      email: email,
-      department: '현장팀',
-      position: '계약직',
+      name: '김토스',
+      email,
+      position: '매니저',
       wageType: 'hourly',
       hourlyWage: 12000,
       dailyWorkHours: 8,

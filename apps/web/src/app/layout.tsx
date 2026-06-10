@@ -3,6 +3,7 @@ import './globals.css';
 import { MSWProvider } from './msw-provider';
 import { ToastProvider } from '@/components/ui';
 import { Analytics } from '@vercel/analytics/next';
+import AppUpdateChecker from '@/components/AppUpdateChecker';
 
 export const metadata: Metadata = {
   title: '근무 관리 - 출퇴근 & 급여 확인',
@@ -32,6 +33,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <AppUpdateChecker />
         <MSWProvider>
           <ToastProvider>{children}</ToastProvider>
         </MSWProvider>

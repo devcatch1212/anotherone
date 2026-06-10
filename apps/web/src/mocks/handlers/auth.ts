@@ -47,8 +47,6 @@ export const authHandlers = [
       email: string;
       password?: string;
       name: string;
-      employeeId?: string;
-      department?: string;
       position?: string;
     };
 
@@ -59,22 +57,10 @@ export const authHandlers = [
 
     const newUser: User = {
       id: 'user-' + Date.now(),
-      name: body.name,
+      name: body.name || '',
       email: body.email,
-      employeeId: body.employeeId || '',
-      department: body.department || '',
-      position: body.position || '',
-      wageType: 'hourly',
-      dailyWorkHours: 8,
-      weeklyWorkDays: 5,
-      company: {
-        name: '',
-        address: '',
-        latitude: 0,
-        longitude: 0,
-        radiusMeters: 100,
-      },
       onboardingCompleted: false, // 최초 가입이므로 온보딩 미완료
+      employments: [],
     };
 
     mockUsers.push(newUser);
@@ -102,17 +88,56 @@ export const authHandlers = [
     if (user) {
       const userIdx = mockUsers.findIndex(u => u.id === user.id);
       if (userIdx !== -1) {
+        const newEmployment = {
+          id: 'emp-' + Date.now(),
+          userId: user.id,
+          companyId: 'company-' + Date.now(),
+          company: body.company,
+          position: '직원',
+          wageType: body.wageType || 'hourly',
+          hourlyWage: body.hourlyWage,
+          dailyWage: body.dailyWage,
+          dailyWorkHours: body.dailyWorkHours || 8,
+          weeklyWorkDays: body.weeklyWorkDays || 5,
+          workStartTime: body.workStartTime || '09:00',
+          workEndTime: body.workEndTime || '18:00',
+          workDaysOfWeek: body.workDaysOfWeek || [0, 1, 2, 3, 4],
+          breakMinutes: body.breakMinutes || 60,
+          isPrimary: mockUsers[userIdx].employments.length === 0,
+        };
+        
         mockUsers[userIdx] = {
           ...mockUsers[userIdx],
-          ...body,
+          employments: [...(mockUsers[userIdx].employments || []), newEmployment],
           onboardingCompleted: true,
         };
         return HttpResponse.json({ success: true, user: mockUsers[userIdx] });
       }
     }
     
-    const updatedFallbackUser = { ...currentMockUser, ...body, onboardingCompleted: true };
-    // currentMockUser의 속성을 직접 업데이트하여 변경 내용 유지
+    const newEmployment = {
+      id: 'emp-' + Date.now(),
+      userId: currentMockUser.id,
+      companyId: 'company-' + Date.now(),
+      company: body.company,
+      position: '직원',
+      wageType: body.wageType || 'hourly',
+      hourlyWage: body.hourlyWage,
+      dailyWage: body.dailyWage,
+      dailyWorkHours: body.dailyWorkHours || 8,
+      weeklyWorkDays: body.weeklyWorkDays || 5,
+      workStartTime: body.workStartTime || '09:00',
+      workEndTime: body.workEndTime || '18:00',
+      workDaysOfWeek: body.workDaysOfWeek || [0, 1, 2, 3, 4],
+      breakMinutes: body.breakMinutes || 60,
+      isPrimary: (currentMockUser.employments || []).length === 0,
+    };
+    
+    const updatedFallbackUser = {
+      ...currentMockUser,
+      employments: [...(currentMockUser.employments || []), newEmployment],
+      onboardingCompleted: true
+    };
     Object.assign(currentMockUser, updatedFallbackUser);
     return HttpResponse.json({ success: true, user: updatedFallbackUser });
   }),

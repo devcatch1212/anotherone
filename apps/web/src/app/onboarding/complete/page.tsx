@@ -5,45 +5,49 @@ import { useOnboardingStore } from '@/store/onboarding.store';
 import { useAuthStore } from '@/store/auth.store';
 import { StepIndicator } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils';
+import { fetchApi } from '@/lib/api';
 
 export default function OnboardingCompletePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState('');
   const store = useOnboardingStore();
   const { completeOnboarding, updateUser } = useAuthStore();
 
   const handleComplete = async () => {
     setLoading(true);
+    setServerError('');
     try {
-      const res = await fetch('/api/onboarding', {
+      const resData = await fetchApi('/api/onboarding/company', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           wageType: store.wageType,
           hourlyWage: store.hourlyWage,
           dailyWage: store.dailyWage,
           dailyWorkHours: store.dailyWorkHours,
           weeklyWorkDays: store.weeklyWorkDays,
-          company: {
-            name: store.companyName,
-            address: store.companyAddress,
-            latitude: store.companyLat,
-            longitude: store.companyLng,
-            radiusMeters: store.radiusMeters,
-          },
+          workStartTime: store.workStartTime,
+          workEndTime: store.workEndTime,
+          workDaysOfWeek: store.workDaysOfWeek,
+          breakMinutes: store.breakMinutes,
+          companyName: store.companyName,
+          address: store.companyAddress,
+          latitude: store.companyLat,
+          longitude: store.companyLng,
+          radiusMeters: store.radiusMeters,
         }),
       });
       
-      if (res.ok) {
-        const json = await res.json();
-        if (json.user) {
-          updateUser(json.user);
-        }
-      }
+      // The API returns { company, employment }, but we also need updated User data
+      // For now, we will fetch me
+      const meData = await fetchApi('/api/auth/me');
+      updateUser(meData);
       
       completeOnboarding();
       store.reset();
       router.replace('/home');
+    } catch (e: any) {
+      setServerError(e.message || '저장 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -143,6 +147,18 @@ export default function OnboardingCompletePage() {
             설정 완료 후에도 환경설정 메뉴에서 언제든지 내용을 수정하실 수 있습니다.
           </p>
         </div>
+
+        {serverError && (
+          <div style={{
+            background: 'rgba(244, 63, 94, 0.1)',
+            border: '1px solid rgba(244, 63, 94, 0.2)',
+            borderRadius: 14,
+            padding: '12px 16px',
+            fontSize: 13, color: 'var(--color-danger)', fontWeight: 600
+          }}>
+            ⚠ {serverError}
+          </div>
+        )}
 
         {/* 이전 / 시작하기 버튼 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10, marginTop: 8 }}>

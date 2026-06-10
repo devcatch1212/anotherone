@@ -3,17 +3,24 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PayrollRecord } from '@/types';
 import { formatCurrency } from '@/lib/utils';
-import { mockPayroll } from '@/mocks/data/payroll';
+import { fetchApi } from '@/lib/api';
+import { useAuthStore } from '@/store/auth.store';
+import { useToast } from '@/components/ui/Toast';
 
 export default function PayrollPage() {
-  const [records, setRecords] = useState<PayrollRecord[]>(mockPayroll);
+  const { currentCompanyId } = useAuthStore();
+  const { toast } = useToast();
+  const [records, setRecords] = useState<PayrollRecord[]>([]);
 
   useEffect(() => {
-    fetch('/api/payroll')
-      .then(r => r.json())
-      .then(({ records: r }) => setRecords(r))
-      .catch(() => setRecords(mockPayroll));
-  }, []);
+    if (!currentCompanyId) return;
+    fetchApi(`/api/payroll?employmentId=${currentCompanyId}`)
+      .then(res => setRecords(res.records || []))
+      .catch(e => {
+        console.error('payroll fetch error', e);
+        toast('급여명세서를 불러오는 데 실패했습니다.', 'error');
+      });
+  }, [currentCompanyId, toast]);
 
   const annualTotal     = records.reduce((s, r) => s + r.netPay, 0);
   const annualGross     = records.reduce((s, r) => s + r.totalGross, 0);

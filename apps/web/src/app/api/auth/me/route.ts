@@ -14,11 +14,9 @@ export async function GET(request: Request) {
 
   const user = {
     id: 'user-1',
-    name,
-    employeeId: 'EMP001',
-    email,
-    department: '현장팀',
-    position: '계약직',
+    name: '김토스',
+    email: 'test@example.com',
+    position: '매니저',
     wageType: 'hourly',
     hourlyWage: 12000,
     dailyWorkHours: 8,

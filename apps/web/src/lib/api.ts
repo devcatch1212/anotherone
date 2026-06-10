@@ -1,0 +1,43 @@
+import { useAuthStore } from '@/store/auth.store';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+export async function fetchApi(endpoint: string, options: RequestInit = {}) {
+  const token = useAuthStore.getState().token;
+
+  const headers = new Headers(options.headers || {});
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  
+  if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+  
+  const response = await fetch(url, {
+    cache: 'no-store', // 브라우저 캐싱 완벽 차단
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    let message = 'An error occurred';
+    try {
+      const errorData = await response.json();
+      if (Array.isArray(errorData.message)) {
+        message = errorData.message.join(', ');
+      } else {
+        message = errorData.message || message;
+      }
+    } catch (e) {
+      // ignore
+    }
+    throw new Error(message);
+  }
+
+  // Handle empty responses
+  const text = await response.text();
+  return text ? JSON.parse(text) : {};
+}

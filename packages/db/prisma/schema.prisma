@@ -1,0 +1,242 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                  String   @id @default(uuid())
+  name                String
+  email               String?  @unique
+  emailVerified       DateTime?
+  password            String?
+  image               String?
+  onboardingCompleted Boolean  @default(false)
+
+  // Relations
+  employments         Employment[]
+  accounts            Account[]
+  sessions            Session[]
+  
+  attendanceRecords   AttendanceRecord[]
+  payrollRecords      PayrollRecord[]
+  leaveRecords        LeaveRecord[]
+  notifications       Notification[]
+  overtimeRequests    OvertimeRequest[]
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Company {
+  id           String   @id @default(uuid())
+  name         String
+  address      String
+  latitude     Float
+  longitude    Float
+  radiusMeters Int
+  
+  employments  Employment[]
+  
+  attendanceRecords   AttendanceRecord[]
+  payrollRecords      PayrollRecord[]
+  leaveRecords        LeaveRecord[]
+  notifications       Notification[]
+  overtimeRequests    OvertimeRequest[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Employment {
+  id              String   @id @default(uuid())
+  position        String
+  wageType        String   // 'hourly' | 'daily'
+  hourlyWage      Int?
+  dailyWage       Int?
+  dailyWorkHours  Int
+  weeklyWorkDays  Int
+  workStartTime   String?
+  workEndTime     String?
+  workDaysOfWeek  Int[]    // array of numbers: 0=월, 6=일
+  breakMinutes    Int?
+  isPrimary       Boolean  @default(false)
+
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, companyId])
+}
+
+model AttendanceRecord {
+  id              String   @id @default(uuid())
+  date            String   // YYYY-MM-DD
+  checkIn         DateTime?
+  checkOut        DateTime?
+  status          String   // normal, late, absent, vacation, holiday
+  workedMinutes   Int?
+  overtimeMinutes Int?
+  nightMinutes    Int?
+  distance        Float?
+  basePay         Int?     // 기본급
+  overtimePay     Int?     // 연장수당
+  nightPay        Int?     // 야간수당
+  earnedPay       Int?     // 해당 일자의 일급/시급 계산 결과 (총합)
+
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, companyId, date])
+}
+
+model PayrollRecord {
+  id                  String   @id @default(uuid())
+  year                Int
+  month               Int
+  basePay             Int
+  holidayPay          Int
+  overtimePay         Int
+  nightPay            Int
+  totalGross          Int
+  nationalPension     Int
+  healthInsurance     Int
+  employmentInsurance Int
+  incomeTax           Int
+  totalDeduction      Int
+  netPay              Int
+  paidAt              DateTime?
+  confirmed           Boolean  @default(false)
+  workedDays          Int
+
+  userId              String
+  user                User     @relation(fields: [userId], references: [id])
+  companyId           String
+  company             Company  @relation(fields: [companyId], references: [id])
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([userId, companyId, year, month])
+}
+
+model LeaveRecord {
+  id        String   @id @default(uuid())
+  type      String   // annual, half, sick, official
+  startDate String   // YYYY-MM-DD
+  endDate   String   // YYYY-MM-DD
+  days      Float
+  reason    String
+  status    String   // pending, approved, rejected
+  appliedAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  type      String   // overtime_approved, overtime_rejected, leave_approved, leave_rejected, payroll_issued
+  title     String
+  body      String
+  read      Boolean  @default(false)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OvertimeRequest {
+  id        String   @id @default(uuid())
+  date      String   // YYYY-MM-DD
+  startTime String   // HH:mm
+  endTime   String   // HH:mm
+  reason    String
+  status    String   // pending, approved, rejected
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model AppConfig {
+  id              String   @id @default(uuid())
+  latestVersion   String
+  minVersion      String
+  forceUpdate     Boolean  @default(false)
+  maintenanceMode Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model LegalDocument {
+  id        String   @id @default(uuid())
+  type      String   // "terms" | "privacy"
+  version   String   // e.g. "v1.0"
+  content   String   @db.Text
+  isActive  Boolean  @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

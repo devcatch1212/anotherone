@@ -8,12 +8,13 @@ import { useAttendanceStore } from '@/store/attendance.store';
 import { useToast } from '@/components/ui/Toast';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { calculateDistance, formatTime, formatDuration } from '@/lib/utils';
+import { fetchApi } from '@/lib/api';
 import { mockAttendance } from '@/mocks/data/attendance';
 
 type GpsStatus = 'loading' | 'ok' | 'far' | 'denied';
 
 export default function HomePage() {
-  const { user } = useAuthStore();
+  const { user, currentCompanyId } = useAuthStore();
   const { state: workState, todayRecord, records, setState, setTodayRecord, setRecords } = useAttendanceStore();
   const { toast } = useToast();
 
@@ -25,7 +26,8 @@ export default function HomePage() {
   const [overtime, setOvertime] = useState({ start: '', end: '', reason: '' });
   const watchRef = useRef<number | null>(null);
 
-  const company = user?.company ?? { latitude: 37.5004, longitude: 127.0368, radiusMeters: 100 };
+  const employment = user?.employments?.find(e => e.companyId === currentCompanyId) || user?.employments?.[0];
+  const company = employment?.company ?? { latitude: 37.5004, longitude: 127.0368, radiusMeters: 100 };
   const userName = user?.name ?? '김민준';
   const leaveRemaining = 11;
   const monthlyWorked = 112;
@@ -72,11 +74,15 @@ export default function HomePage() {
     if (workState !== 'before') return;
     setCheckingIn(true);
     try {
-      const res = await fetch('/api/attendance/check-in', { method: 'POST' });
-      const { record } = await res.json();
-      setTodayRecord(record); setState('working');
+      const resData = await fetchApi('/api/attendance/check-in', { 
+        method: 'POST',
+        body: JSON.stringify({ employmentId: employment?.id, latitude: company.latitude, longitude: company.longitude })
+      });
+      setTodayRecord(resData.attendance); setState('working');
       toast(new Date().getHours() > 9 ? '⚠️ 지각 처리되었습니다' : '출근이 기록되었습니다',
         new Date().getHours() > 9 ? 'warning' : 'success');
+    } catch (e: any) {
+      toast(`오류: ${e.message}`, 'error');
     } finally { setCheckingIn(false); }
   };
 
@@ -88,16 +94,20 @@ export default function HomePage() {
     if (workState !== 'working') return;
     setCheckingIn(true);
     try {
-      const res = await fetch('/api/attendance/check-out', { method: 'POST' });
-      const { record } = await res.json();
-      setTodayRecord({ ...todayRecord!, ...record }); setState('done');
+      const resData = await fetchApi('/api/attendance/check-out', { 
+        method: 'POST',
+        body: JSON.stringify({ employmentId: employment?.id })
+      });
+      setTodayRecord({ ...todayRecord!, ...resData.attendance }); setState('done');
       toast('퇴근이 기록되었습니다', 'success');
+    } catch (e: any) {
+      toast(`오류: ${e.message}`, 'error');
     } finally { setCheckingIn(false); }
   };
 
   const handleOvertimeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch('/api/attendance/overtime', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(overtime) });
+    await fetchApi('/api/attendance/overtime', { method: 'POST', body: JSON.stringify({ ...overtime, employmentId: employment?.id }) });
     setOvertimeOpen(false); setOvertime({ start: '', end: '', reason: '' });
     toast('연장근로 신청이 완료되었습니다', 'success');
   };

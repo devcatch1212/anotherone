@@ -3,31 +3,39 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PayrollRecord } from '@/types';
 import { formatCurrency } from '@/lib/utils';
-import { mockPayroll } from '@/mocks/data/payroll';
+import { fetchApi } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
+import { useToast } from '@/components/ui/Toast';
 
 export default function PayrollDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { toast } = useToast();
+  const { user, currentCompanyId } = useAuthStore();
   const [record, setRecord] = useState<PayrollRecord | null>(null);
   const [confirmed, setConfirmed] = useState(false);
-
-  const wageType = user?.wageType ?? 'hourly';
+  const employment = user?.employments?.find(e => e.companyId === currentCompanyId) || user?.employments?.[0];
+  const wageType = employment?.wageType ?? 'hourly';
 
   useEffect(() => {
-    fetch(`/api/payroll/${id}`)
-      .then(r => r.json())
-      .then(({ record: r }) => { setRecord(r); setConfirmed(r.confirmed); })
+    fetchApi(`/api/payroll/${id}`)
+      .then(r => { 
+        if (r) {
+          setRecord(r); 
+          setConfirmed(r.confirmed); 
+        } else {
+          toast('급여명세서를 찾을 수 없습니다.', 'error');
+          router.replace('/payroll');
+        }
+      })
       .catch(() => {
-        const r = mockPayroll.find(p => p.id === id) ?? mockPayroll[0];
-        setRecord(r);
-        setConfirmed(r.confirmed);
+        toast('급여명세서를 불러오는 데 실패했습니다.', 'error');
+        router.replace('/payroll');
       });
-  }, [id]);
+  }, [id, router, toast]);
 
   const handleConfirm = async () => {
-    await fetch(`/api/payroll/${id}/confirm`, { method: 'POST' });
+    await fetchApi(`/api/payroll/${id}/confirm`, { method: 'POST' });
     setConfirmed(true);
   };
 

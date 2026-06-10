@@ -5,6 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/components/ui/Toast';
+import { fetchApi } from '@/lib/api';
+import { useAuthStore } from '@/store/auth.store';
 
 const schema = z.object({
   type: z.enum(['annual', 'half', 'sick', 'official']),
@@ -23,6 +25,7 @@ const TYPE_OPTIONS = [
 
 export default function LeaveApplyPage() {
   const router = useRouter();
+  const { currentCompanyId } = useAuthStore();
   const { toast } = useToast();
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -31,16 +34,21 @@ export default function LeaveApplyPage() {
   const selectedType = watch('type');
 
   const onSubmit = async (data: FormData) => {
+    if (!currentCompanyId) return;
     const start = new Date(data.startDate);
     const end = new Date(data.endDate);
     const days = data.type === 'half' ? 0.5 : Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    await fetch('/api/leave', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, days }),
-    });
-    toast('휴가 신청이 완료되었습니다 ✅', 'success');
-    router.replace('/leave');
+    
+    try {
+      await fetchApi('/api/leave', {
+        method: 'POST',
+        body: JSON.stringify({ ...data, days, employmentId: currentCompanyId }),
+      });
+      toast('휴가 신청이 완료되었습니다 ✅', 'success');
+      router.replace('/leave');
+    } catch (e: any) {
+      toast(`오류: ${e.message}`, 'error');
+    }
   };
 
   return (

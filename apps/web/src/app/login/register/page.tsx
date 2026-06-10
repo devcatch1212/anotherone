@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '@/store/auth.store';
 import Link from 'next/link';
+import { fetchApi } from '@/lib/api';
 
 const schema = z.object({
   name: z.string().min(1, '이름을 입력해주세요'),
@@ -36,9 +37,8 @@ export default function RegisterPage() {
   const onSubmit = async (data: FormData) => {
     setServerError('');
     try {
-      const res = await fetch('/api/auth/register', {
+      const resData = await fetchApi('/api/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: data.email,
           password: data.password,
@@ -46,17 +46,8 @@ export default function RegisterPage() {
         }),
       });
       
-      let json: any = {};
-      try {
-        json = await res.json();
-      } catch (err) {
-        throw new Error('서버 응답을 처리하는 중 오류가 발생했습니다. (API Fallback 작동 확인)');
-      }
-
-      if (!res.ok) throw new Error(json.message || '회원가입에 실패했습니다');
-      
       // 회원가입 성공 시 즉시 자동 로그인(JWT 토큰 저장)
-      setAuth(json.token, json.user);
+      setAuth(resData.access_token, resData.user);
       
       // 온보딩 미완료 유저이므로 온보딩 첫 단계로 리다이렉트
       router.replace('/onboarding/wage-type');

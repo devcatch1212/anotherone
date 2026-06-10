@@ -11,11 +11,9 @@ export async function POST(request: Request) {
 
     const newUser = {
       id: 'user-' + Date.now(),
-      name: name,
+      name: body.name || '신규유저',
       email: email,
-      employeeId: '',
-      department: '',
-      position: '',
+      position: '직원',
       wageType: 'hourly',
       dailyWorkHours: 8,
       weeklyWorkDays: 5,

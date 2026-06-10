@@ -3,14 +3,40 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth.store';
+import { fetchApi } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 
 const WAGE_TYPE_LABEL: Record<string, string> = { hourly: '시급제', daily: '일급제' };
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user, clearAuth } = useAuthStore();
+  const { user, currentCompanyId, clearAuth } = useAuthStore();
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [termsContent, setTermsContent] = useState('이용약관을 불러오는 중입니다...');
+  const [privacyContent, setPrivacyContent] = useState('개인정보처리방침을 불러오는 중입니다...');
+  const [appVersion, setAppVersion] = useState('v1.0.0');
+  const { toast } = useToast();
+
+  const handleOpenTerms = async () => {
+    setShowTerms(true);
+    try {
+      const doc = await fetchApi('/api/legal/terms');
+      setTermsContent(doc.content);
+    } catch (e) {
+      toast('이용약관을 불러올 수 없습니다.', 'error');
+    }
+  };
+
+  const handleOpenPrivacy = async () => {
+    setShowPrivacy(true);
+    try {
+      const doc = await fetchApi('/api/legal/privacy');
+      setPrivacyContent(doc.content);
+    } catch (e) {
+      toast('개인정보처리방침을 불러올 수 없습니다.', 'error');
+    }
+  };
 
   const handleLogout = () => {
     fetch('/api/auth/logout', { method: 'POST' }).finally(() => {
@@ -19,18 +45,20 @@ export default function SettingsPage() {
     });
   };
 
-  const wageLabel = user?.wageType === 'hourly'
-    ? `시급 ${(user?.hourlyWage ?? 0).toLocaleString()}원`
-    : `일급 ${(user?.dailyWage ?? 0).toLocaleString()}원`;
+  const employment = user?.employments?.find(e => e.companyId === currentCompanyId) || user?.employments?.[0];
+
+  const wageLabel = employment?.wageType === 'hourly'
+    ? `시급 ${(employment?.hourlyWage ?? 0).toLocaleString()}원`
+    : `일급 ${(employment?.dailyWage ?? 0).toLocaleString()}원`;
 
   const menuSections = [
     {
       title: '급여 & 근무지',
       items: [
-        { label: '급여 유형', value: WAGE_TYPE_LABEL[user?.wageType ?? 'hourly'], icon: '⚙️', href: '/settings/profile' },
+        { label: '급여 유형', value: WAGE_TYPE_LABEL[employment?.wageType ?? 'hourly'], icon: '⚙️', href: '/settings/profile' },
         { label: '급여', value: wageLabel, icon: '💵', href: '/settings/profile' },
-        { label: '회사명', value: user?.company?.name || '미등록', icon: '🏭', href: '/settings/profile' },
-        { label: '근무지 주소', value: user?.company?.address || '미등록', icon: '📍', href: '/settings/profile' },
+        { label: '회사명', value: employment?.company?.name || '미등록', icon: '🏭', href: '/settings/profile' },
+        { label: '근무지 주소', value: employment?.company?.address || '미등록', icon: '📍', href: '/settings/profile' },
       ],
     },
   ];
@@ -170,7 +198,7 @@ export default function SettingsPage() {
           </div>
 
           {/* 이용약관 */}
-          <div onClick={() => setShowTerms(true)}
+          <div onClick={handleOpenTerms}
             className="transition-all active:bg-white/40 duration-300"
             style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -187,7 +215,7 @@ export default function SettingsPage() {
           </div>
 
           {/* 개인정보처리방침 */}
-          <div onClick={() => setShowPrivacy(true)}
+          <div onClick={handleOpenPrivacy}
             className="transition-all active:bg-white/40 duration-300"
             style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -256,14 +284,7 @@ export default function SettingsPage() {
           }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0 }}>이용약관</h3>
             <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: 280, overflowY: 'auto', paddingRight: 4 }}>
-              {`제 1 조 (목적)
-본 약관은 "근무관리" 서비스의 이용 조건 및 절차에 관한 기본적인 사항을 규정합니다.
-
-제 2 조 (이용자의 의무)
-이용자는 본 서비스가 제공하는 출퇴근 기록 및 근무관리 기능을 신의성실의 원칙에 따라 올바르게 사용하여야 합니다.
-
-제 3 조 (서비스의 제공)
-본 서비스는 가상의 모의 근무관리 기능 및 온보딩 편의를 제공하며, 정식 출시 전 모의 테스트 환경을 지원합니다.`}
+              {termsContent}
             </div>
             <button onClick={() => setShowTerms(false)}
               className="glass-btn-primary"
@@ -296,14 +317,7 @@ export default function SettingsPage() {
           }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0 }}>개인정보처리방침</h3>
             <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: 280, overflowY: 'auto', paddingRight: 4 }}>
-              {`1. 개인정보의 수집 항목
-본 서비스는 회원가입 및 본인 식별을 위해 이름, 이메일 주소를 수집합니다.
-
-2. 개인정보의 이용 목적
-수집된 정보는 근무관리 시뮬레이션 및 가상 데이터 통계 관리 목적으로만 제한적으로 사용됩니다.
-
-3. 정보의 보유 및 파기
-가입된 정보는 클라이언트 MSW(Mock Service Worker) 환경의 메모리 내에서만 유지되며, 브라우저 세션이 초기화되거나 로그아웃 시 파기됩니다.`}
+              {privacyContent}
             </div>
             <button onClick={() => setShowPrivacy(false)}
               className="glass-btn-primary"

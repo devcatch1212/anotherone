@@ -9,6 +9,9 @@ import { ko } from 'date-fns/locale';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { mockLeaves, mockLeaveBalance } from '@/mocks/data/leave';
 import { LeaveRecord } from '@/types';
+import { useAuthStore } from '@/store/auth.store';
+import { fetchApi } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 
 // ── 타입 ────────────────────────────────────────────
 type DayStatus = 'normal' | 'overtime' | 'dayoff' | 'sick' | 'short' | 'absent';
@@ -43,27 +46,7 @@ const HOURLY = 12000;
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
 // ── Mock 데이터 ──────────────────────────────────────
-function buildWorkData(): WorkDay[] {
-  const today = new Date();
-  const statuses: DayStatus[] = ['normal','normal','normal','overtime','dayoff','normal','normal','short','normal','sick'];
-  const records: WorkDay[] = [];
-  for (let i = 0; i < 25; i++) {
-    const d = new Date(today); d.setDate(d.getDate() - i);
-    if (d.getDay() === 0 || d.getDay() === 6) continue;
-    const status = statuses[i % statuses.length];
-    const isWork = status !== 'dayoff' && status !== 'absent';
-    const hours = status === 'overtime' ? 10 : status === 'short' ? 5 : 8;
-    records.push({
-      date: format(d, 'yyyy-MM-dd'), status,
-      checkIn: isWork ? '09:00' : undefined,
-      checkOut: isWork ? `${9 + hours}:00` : undefined,
-      earnedAmount: isWork ? HOURLY * hours : 0,
-    });
-  }
-  return records;
-}
-
-const ALL_WORK = buildWorkData();
+const ALL_WORK: WorkDay[] = []; // 가짜 데이터 제거
 
 function getDaysInRange(start: string, end: string): string[] {
   const result: string[] = [];
@@ -76,17 +59,41 @@ function getDaysInRange(start: string, end: string): string[] {
 // ── 컴포넌트 ─────────────────────────────────────────
 export default function CalendarPage() {
   const router = useRouter();
+  const { currentCompanyId } = useAuthStore();
+  const { toast } = useToast();
   const [tab, setTab] = useState<Tab>('work');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [leaveRecords, setLeaveRecords] = useState<LeaveRecord[]>(mockLeaves);
   const [balance] = useState(mockLeaveBalance);
+  const [workRecords, setWorkRecords] = useState<WorkDay[]>([]);
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyType, setApplyType] = useState('annual');
   const [applyStart, setApplyStart] = useState('');
   const [applyEnd, setApplyEnd]   = useState('');
   const [applyReason, setApplyReason] = useState('');
+
+  useEffect(() => {
+    if (!currentCompanyId) return;
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth() + 1;
+    fetchApi(`/api/attendance?employmentId=${currentCompanyId}&year=${year}&month=${month}`)
+      .then(res => {
+        const records: WorkDay[] = res.records.map((r: any) => ({
+          date: format(new Date(r.date), 'yyyy-MM-dd'),
+          status: 'normal', // 임시 매핑 (실제론 r.status 반영)
+          checkIn: r.checkIn ? format(new Date(r.checkIn), 'HH:mm') : undefined,
+          checkOut: r.checkOut ? format(new Date(r.checkOut), 'HH:mm') : undefined,
+          earnedAmount: r.earnedPay || 0,
+        }));
+        setWorkRecords(records);
+      })
+      .catch(e => {
+        console.error('attendance fetch error', e);
+        toast('출퇴근 기록을 불러오는 데 실패했습니다.', 'error');
+      });
+  }, [currentCompanyId, currentMonth, toast]);
 
   const daysWorked  = differenceInDays(new Date(), EMPLOYER.hireDate);
   const monthKey    = format(currentMonth, 'yyyy-MM');
@@ -95,18 +102,18 @@ export default function CalendarPage() {
   const days        = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const startOffset = getDay(monthStart);
 
-  const workMap = new Map(ALL_WORK.map(r => [r.date, r]));
+  const workMap = new Map(workRecords.map(r => [r.date, r]));
   const leaveDateMap = new Map<string, LeaveRecord>();
   leaveRecords.forEach(r => getDaysInRange(r.startDate, r.endDate).forEach(d => leaveDateMap.set(d, r)));
 
-  const monthTotal = ALL_WORK
+  const monthTotal = workRecords
     .filter(r => r.date.startsWith(monthKey))
     .reduce((sum, r) => sum + (r.earnedAmount ?? 0), 0);
 
   const monthStats = {
-    normal:   ALL_WORK.filter(r => r.date.startsWith(monthKey) && r.status === 'normal').length,
-    overtime: ALL_WORK.filter(r => r.date.startsWith(monthKey) && r.status === 'overtime').length,
-    short:    ALL_WORK.filter(r => r.date.startsWith(monthKey) && r.status === 'short').length,
+    normal:   workRecords.filter(r => r.date.startsWith(monthKey) && r.status === 'normal').length,
+    overtime: workRecords.filter(r => r.date.startsWith(monthKey) && r.status === 'overtime').length,
+    short:    workRecords.filter(r => r.date.startsWith(monthKey) && r.status === 'short').length,
     leave:    leaveRecords.filter(r => r.status !== 'rejected' && (r.startDate.startsWith(monthKey) || r.endDate.startsWith(monthKey))).reduce((s, r) => s + r.days, 0),
   };
 
@@ -115,7 +122,7 @@ export default function CalendarPage() {
     const end = applyType === 'half' ? applyStart : (applyEnd || applyStart);
     const days = applyType === 'half' ? 0.5 : getDaysInRange(applyStart, end).filter(d => ![0,6].includes(new Date(d).getDay())).length;
     setLeaveRecords(prev => [{
-      id: `leave-${Date.now()}`, type: applyType as LeaveRecord['type'],
+      id: `leave-${Date.now()}`, companyId: 'company-1', type: applyType as LeaveRecord['type'],
       startDate: applyStart, endDate: end, days, reason: applyReason,
       status: 'pending', appliedAt: new Date().toISOString(),
     }, ...prev]);
