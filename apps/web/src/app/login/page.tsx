@@ -40,6 +40,12 @@ export default function LoginPage() {
         body: JSON.stringify({ email: data.email, password: data.password }),
       });
       
+      if (data.remember) {
+        window.localStorage.setItem('remember-me', 'true');
+      } else {
+        window.localStorage.setItem('remember-me', 'false');
+      }
+      
       setAuth(resData.access_token, resData.user);
       if (!resData.user.onboardingCompleted) {
         router.replace('/onboarding/wage-type');

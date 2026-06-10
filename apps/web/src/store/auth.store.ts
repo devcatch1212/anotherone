@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { User, Employment } from '@/types';
 
 interface AuthState {
@@ -39,6 +39,32 @@ export const useAuthStore = create<AuthState>()(
       clearAuth: () => set({ token: null, user: null, isAuthenticated: false, currentCompanyId: null }),
       completeOnboarding: () => set({ onboardingCompleted: true }),
     }),
-    { name: 'auth-storage' }
+    {
+      name: 'auth-storage',
+      storage: createJSONStorage(() => ({
+        getItem: (name: string) => {
+          if (typeof window === 'undefined') return null;
+          if (window.localStorage.getItem('remember-me') === 'true') {
+            return window.localStorage.getItem(name);
+          }
+          return window.sessionStorage.getItem(name);
+        },
+        setItem: (name: string, value: string) => {
+          if (typeof window === 'undefined') return;
+          if (window.localStorage.getItem('remember-me') === 'true') {
+            window.localStorage.setItem(name, value);
+            window.sessionStorage.removeItem(name);
+          } else {
+            window.sessionStorage.setItem(name, value);
+            window.localStorage.removeItem(name);
+          }
+        },
+        removeItem: (name: string) => {
+          if (typeof window === 'undefined') return;
+          window.localStorage.removeItem(name);
+          window.sessionStorage.removeItem(name);
+        },
+      })),
+    }
   )
 );

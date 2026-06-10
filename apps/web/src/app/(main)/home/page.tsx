@@ -40,13 +40,32 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    setRecords(mockAttendance);
-    const today = mockAttendance.find(r => r.date === format(new Date(), 'yyyy-MM-dd'));
-    if (today) {
-      setTodayRecord(today);
-      setState(today.checkOut ? 'done' : today.checkIn ? 'working' : 'before');
-    }
-  }, []);
+    if (!employment?.id) return;
+    const year = new Date().getFullYear();
+    const month = new Date().getMonth() + 1;
+    
+    fetchApi(`/api/attendance?employmentId=${employment.id}&year=${year}&month=${month}`)
+      .then(res => {
+        if (res.records) {
+          // 최신순 정렬
+          const sorted = [...res.records].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          setRecords(sorted);
+          
+          const todayStr = format(new Date(), 'yyyy-MM-dd');
+          const today = sorted.find((r: any) => r.date === todayStr);
+          if (today) {
+            setTodayRecord(today);
+            setState(today.checkOut ? 'done' : today.checkIn ? 'working' : 'before');
+          } else {
+            setTodayRecord(null);
+            setState('before');
+          }
+        }
+      })
+      .catch(e => {
+        console.error('Failed to fetch attendance', e);
+      });
+  }, [employment?.id, setRecords, setTodayRecord, setState]);
 
   const startGps = useCallback(() => {
     if (!navigator.geolocation) { setDistance(42); setGpsStatus('ok'); return; }
