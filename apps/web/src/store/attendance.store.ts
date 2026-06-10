@@ -6,7 +6,7 @@ interface AttendanceStoreState {
   todayRecord: AttendanceRecord | null;
   records: AttendanceRecord[];
   setState: (s: AttendanceState) => void;
-  setTodayRecord: (r: AttendanceRecord) => void;
+  setTodayRecord: (r: AttendanceRecord | null) => void;
   setRecords: (r: AttendanceRecord[]) => void;
 }
 
