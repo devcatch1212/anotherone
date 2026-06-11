@@ -12,33 +12,9 @@ const WAGE_TYPE_LABEL: Record<string, string> = { hourly: '시급제', daily: '�
 export default function SettingsPage() {
   const router = useRouter();
   const { user, currentCompanyId } = useAuthStore();
-  const [showTerms, setShowTerms] = useState(false);
-  const [showPrivacy, setShowPrivacy] = useState(false);
-  const [termsContent, setTermsContent] = useState('이용약관을 불러오는 중입니다...');
-  const [privacyContent, setPrivacyContent] = useState('개인정보처리방침을 불러오는 중입니다...');
   const [appVersion, setAppVersion] = useState('v1.0.0');
   const [showWithdraw, setShowWithdraw] = useState(false);
   const { toast } = useToast();
-
-  const handleOpenTerms = async () => {
-    setShowTerms(true);
-    try {
-      const doc = await fetchApi('/api/legal/terms');
-      setTermsContent(doc.content);
-    } catch (e) {
-      toast('이용약관을 불러올 수 없습니다.', 'error');
-    }
-  };
-
-  const handleOpenPrivacy = async () => {
-    setShowPrivacy(true);
-    try {
-      const doc = await fetchApi('/api/legal/privacy');
-      setPrivacyContent(doc.content);
-    } catch (e) {
-      toast('개인정보처리방침을 불러올 수 없습니다.', 'error');
-    }
-  };
 
   const handleLogout = async () => {
     await handleGlobalLogout();
@@ -209,11 +185,11 @@ export default function SettingsPage() {
           </div>
 
           {/* 이용약관 */}
-          <div onClick={handleOpenTerms}
+          <Link href="/settings/terms"
             className="transition-all active:bg-white/40 duration-300"
             style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '14px 20px', cursor: 'pointer',
+              padding: '14px 20px', textDecoration: 'none',
               borderBottom: '1px solid rgba(0, 0, 0, 0.03)',
             }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -223,14 +199,14 @@ export default function SettingsPage() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
               <path d="M9 18l6-6-6-6" stroke="var(--color-text-muted)" strokeWidth="2" strokeLinecap="round" />
             </svg>
-          </div>
+          </Link>
 
           {/* 개인정보처리방침 */}
-          <div onClick={handleOpenPrivacy}
+          <Link href="/settings/privacy"
             className="transition-all active:bg-white/40 duration-300"
             style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '14px 20px', cursor: 'pointer',
+              padding: '14px 20px', textDecoration: 'none',
               borderBottom: '1px solid rgba(0, 0, 0, 0.03)',
             }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -240,7 +216,7 @@ export default function SettingsPage() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
               <path d="M9 18l6-6-6-6" stroke="var(--color-text-muted)" strokeWidth="2" strokeLinecap="round" />
             </svg>
-          </div>
+          </Link>
 
           {/* 비밀번호 변경 */}
           <Link href="/settings/profile?tab=password"
@@ -292,71 +268,7 @@ export default function SettingsPage() {
 
       </div>
 
-      {/* 이용약관 모달 */}
-      {showTerms && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0, 0, 0, 0.35)',
-          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 100, padding: 20
-        }}>
-          <div className="glass-card" style={{
-            background: 'rgba(255, 255, 255, 0.9)',
-            backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.7)',
-            borderRadius: 24, padding: 24, width: '100%', maxWidth: 350,
-            display: 'flex', flexDirection: 'column', gap: 16,
-            maxHeight: '75dvh', overflowY: 'auto'
-          }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0 }}>이용약관</h3>
-            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: 280, overflowY: 'auto', paddingRight: 4 }}>
-              {termsContent}
-            </div>
-            <button onClick={() => setShowTerms(false)}
-              className="glass-btn-primary"
-              style={{
-                height: 44, width: '100%', borderRadius: 12, border: 'none',
-                color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer'
-              }}>
-              확인
-            </button>
-          </div>
-        </div>
-      )}
 
-      {/* 개인정보처리방침 모달 */}
-      {showPrivacy && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0, 0, 0, 0.35)',
-          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 100, padding: 20
-        }}>
-          <div className="glass-card" style={{
-            background: 'rgba(255, 255, 255, 0.9)',
-            backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.7)',
-            borderRadius: 24, padding: 24, width: '100%', maxWidth: 350,
-            display: 'flex', flexDirection: 'column', gap: 16,
-            maxHeight: '75dvh', overflowY: 'auto'
-          }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', margin: 0 }}>개인정보처리방침</h3>
-            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: 280, overflowY: 'auto', paddingRight: 4 }}>
-              {privacyContent}
-            </div>
-            <button onClick={() => setShowPrivacy(false)}
-              className="glass-btn-primary"
-              style={{
-                height: 44, width: '100%', borderRadius: 12, border: 'none',
-                color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer'
-              }}>
-              확인
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* 회원 탈퇴 모달 */}
       {showWithdraw && (
