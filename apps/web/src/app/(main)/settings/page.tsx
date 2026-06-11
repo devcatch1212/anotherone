@@ -243,7 +243,7 @@ export default function SettingsPage() {
           </div>
 
           {/* 비밀번호 변경 */}
-          <Link href="/settings/profile"
+          <Link href="/settings/profile?tab=password"
             className="transition-all active:bg-white/40 duration-300"
             style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',

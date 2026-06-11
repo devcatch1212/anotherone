@@ -1,17 +1,19 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { useToast } from '@/components/ui/Toast';
 import { fetchApi } from '@/lib/api';
 
 const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 
-export default function ProfilePage() {
+function ProfilePageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, currentCompanyId, updateEmployment } = useAuthStore();
   const { toast } = useToast();
-  const [tab, setTab] = useState<'profile' | 'password'>('profile');
+  const initialTab = searchParams.get('tab') === 'password' ? 'password' : 'profile';
+  const [tab, setTab] = useState<'profile' | 'password'>(initialTab);
   const [saving, setSaving] = useState(false);
 
   const employment = user?.employments?.find(e => e.companyId === currentCompanyId) || user?.employments?.[0];
@@ -465,5 +467,17 @@ export default function ProfilePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={
+      <div style={{ display: 'flex', minHeight: '100dvh', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: 14 }}>
+        설정을 불러오는 중...
+      </div>
+    }>
+      <ProfilePageContent />
+    </Suspense>
   );
 }
