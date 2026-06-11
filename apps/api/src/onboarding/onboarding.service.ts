@@ -15,11 +15,13 @@ export class OnboardingService {
       position,
       wageType,
       hourlyWage,
+      dailyWage,
       dailyWorkHours,
       weeklyWorkDays,
       workStartTime,
       workEndTime,
       workDaysOfWeek,
+      breakMinutes,
     } = data;
 
     // 1. 회사 생성 (이 데모에서는 항상 새로 생성한다고 가정)
@@ -38,14 +40,16 @@ export class OnboardingService {
       data: {
         userId,
         companyId: company.id,
-        position,
+        position: position || '직원',
         wageType,
         hourlyWage,
+        dailyWage,
         dailyWorkHours,
         weeklyWorkDays,
         workStartTime,
         workEndTime,
         workDaysOfWeek,
+        breakMinutes,
         isPrimary: true, // 첫 온보딩이므로 Primary로 설정
       },
     });
