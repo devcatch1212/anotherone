@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { useAuthStore } from '@/store/auth.store';
 import { fetchApi } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
+import { handleGlobalLogout } from '@/utils/logout';
 
 const WAGE_TYPE_LABEL: Record<string, string> = { hourly: '시급제', daily: '일급제' };
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user, currentCompanyId, clearAuth } = useAuthStore();
+  const { user, currentCompanyId } = useAuthStore();
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [termsContent, setTermsContent] = useState('이용약관을 불러오는 중입니다...');
@@ -39,21 +40,15 @@ export default function SettingsPage() {
     }
   };
 
-  const handleLogout = () => {
-    fetch('/api/auth/logout', { method: 'POST' }).finally(() => {
-      clearAuth();
-      router.replace('/login');
-    });
+  const handleLogout = async () => {
+    await handleGlobalLogout();
   };
 
   const handleWithdraw = async () => {
     try {
       const res = await fetchApi('/api/settings/withdraw', { method: 'POST' });
       toast(res.message || '회원 탈퇴가 처리되었습니다.', 'success');
-      await fetch('/api/auth/logout', { method: 'POST' }).finally(() => {
-        clearAuth();
-        router.replace('/login');
-      });
+      await handleGlobalLogout();
     } catch (e: any) {
       toast(e.message || '회원 탈퇴 처리에 실패했습니다.', 'error');
     } finally {

@@ -83,6 +83,7 @@ export default function ProfilePage() {
         });
         updateEmployment(employment.companyId, updated);
         toast('근무가 종료되었습니다.', 'success');
+        router.refresh();
         router.replace('/settings');
       }
     } catch (e: any) {

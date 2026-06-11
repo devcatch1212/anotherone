@@ -65,6 +65,21 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
+      version: 2, // 스키마 불일치 에러를 방지하기 위해 버전 업그레이드
+      migrate: (persistedState: any, version: number) => {
+        if (version < 2) {
+          // 구버전 캐시가 감지되면 데이터를 비워서 런타임 에러 차단
+          return {
+            token: null,
+            user: null,
+            currentCompanyId: null,
+            currentEmploymentId: null,
+            isAuthenticated: false,
+            onboardingCompleted: false,
+          };
+        }
+        return persistedState as any;
+      },
       storage: createJSONStorage(() => ({
         getItem: (name: string) => {
           if (typeof window === 'undefined') return null;

@@ -45,6 +45,7 @@ export default function OnboardingCompletePage() {
       
       completeOnboarding();
       store.reset();
+      router.refresh();
       router.replace('/home');
     } catch (e: any) {
       setServerError(e.message || '저장 중 오류가 발생했습니다.');

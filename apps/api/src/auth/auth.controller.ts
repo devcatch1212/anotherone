@@ -22,4 +22,9 @@ export class AuthController {
   async getMe(@Request() req: any) {
     return this.authService.getMe(req.user.id);
   }
+
+  @Post('logout')
+  async logout() {
+    return this.authService.logout();
+  }
 }

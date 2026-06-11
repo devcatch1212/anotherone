@@ -69,4 +69,8 @@ export class AuthService {
     const { password, ...result } = user;
     return result;
   }
+
+  async logout() {
+    return { success: true, message: '로그아웃되었습니다.' };
+  }
 }
