@@ -16,6 +16,7 @@ export default function SettingsPage() {
   const [termsContent, setTermsContent] = useState('이용약관을 불러오는 중입니다...');
   const [privacyContent, setPrivacyContent] = useState('개인정보처리방침을 불러오는 중입니다...');
   const [appVersion, setAppVersion] = useState('v1.0.0');
+  const [showWithdraw, setShowWithdraw] = useState(false);
   const { toast } = useToast();
 
   const handleOpenTerms = async () => {
@@ -43,6 +44,21 @@ export default function SettingsPage() {
       clearAuth();
       router.replace('/login');
     });
+  };
+
+  const handleWithdraw = async () => {
+    try {
+      const res = await fetchApi('/api/settings/withdraw', { method: 'POST' });
+      toast(res.message || '회원 탈퇴가 처리되었습니다.', 'success');
+      await fetch('/api/auth/logout', { method: 'POST' }).finally(() => {
+        clearAuth();
+        router.replace('/login');
+      });
+    } catch (e: any) {
+      toast(e.message || '회원 탈퇴 처리에 실패했습니다.', 'error');
+    } finally {
+      setShowWithdraw(false);
+    }
   };
 
   const employment = user?.employments?.find(e => e.companyId === currentCompanyId) || user?.employments?.[0];
@@ -261,6 +277,22 @@ export default function SettingsPage() {
             <span>🚪</span>
             <span>로그아웃</span>
           </button>
+
+          {/* 회원 탈퇴 */}
+          <button onClick={() => setShowWithdraw(true)}
+            className="transition-all active:bg-red-500/10 duration-300"
+            style={{
+              width: '100%', border: 'none', background: 'transparent',
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '14px 20px', cursor: 'pointer',
+              color: 'var(--color-danger)', fontSize: 12, fontWeight: 500,
+              textAlign: 'left',
+              opacity: 0.7,
+              borderTop: '1px solid rgba(0, 0, 0, 0.03)'
+            }}>
+            <span>👤❌</span>
+            <span>회원 탈퇴</span>
+          </button>
         </div>
 
       </div>
@@ -327,6 +359,47 @@ export default function SettingsPage() {
               }}>
               확인
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 회원 탈퇴 모달 */}
+      {showWithdraw && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.35)',
+          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 100, padding: 20
+        }}>
+          <div className="glass-card" style={{
+            background: 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.7)',
+            borderRadius: 24, padding: 24, width: '100%', maxWidth: 350,
+            display: 'flex', flexDirection: 'column', gap: 16,
+          }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-danger)', margin: 0 }}>회원 탈퇴</h3>
+            <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.6, margin: 0 }}>
+              정말 회원 탈퇴를 진행하시겠습니까?<br />
+              탈퇴 시 즉시 로그아웃되며, 기존에 누적된 출퇴근 및 급여 데이터는 안전하게 보존됩니다.
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setShowWithdraw(false)}
+                style={{
+                  flex: 1, height: 44, borderRadius: 12, border: '1px solid rgba(0,0,0,0.1)',
+                  background: '#fff', color: 'var(--color-text-secondary)', fontSize: 14, fontWeight: 700, cursor: 'pointer'
+                }}>
+                취소
+              </button>
+              <button onClick={handleWithdraw}
+                style={{
+                  flex: 1, height: 44, borderRadius: 12, border: 'none',
+                  background: 'var(--color-danger)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer'
+                }}>
+                탈퇴하기
+              </button>
+            </div>
           </div>
         </div>
       )}

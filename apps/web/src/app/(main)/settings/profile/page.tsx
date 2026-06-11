@@ -70,6 +70,28 @@ export default function ProfilePage() {
     }
   };
 
+  const handleEndEmployment = async () => {
+    if (!window.confirm('정말 이 근무지에서의 근무를 종료(퇴사)하시겠습니까? 퇴사 후에는 출퇴근 체크를 하실 수 없으며, 과거 근무 이력과 급여 명세서는 그대로 보존됩니다.')) {
+      return;
+    }
+    setSaving(true);
+    try {
+      if (employment) {
+        const { employment: updated } = await fetchApi('/api/settings/employment/end', {
+          method: 'POST',
+          body: JSON.stringify({ employmentId: employment.id }),
+        });
+        updateEmployment(employment.companyId, updated);
+        toast('근무가 종료되었습니다.', 'success');
+        router.replace('/settings');
+      }
+    } catch (e: any) {
+      toast(`오류: ${e.message}`, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPwError('');
@@ -147,6 +169,17 @@ export default function ProfilePage() {
       <div style={{ padding: '16px 16px 80px', display: 'flex', flexDirection: 'column', gap: 16 }}>
         {tab === 'profile' ? (
           <>
+            {/* 근무 종료 상태 배너 */}
+            {employment && !employment.isActive && (
+              <div style={{
+                background: '#FEF2F2', border: '1px solid #FEE2E2', borderRadius: 16,
+                padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8,
+                color: 'var(--color-danger)', fontSize: 13, fontWeight: 700
+              }}>
+                <span>🚫</span>
+                <span>이 근무지는 이미 근무가 종료(퇴사)된 상태입니다.</span>
+              </div>
+            )}
             {/* 급여 유형 */}
             <div className="glass-card" style={{
               borderRadius: 24, padding: '20px', flexDirection: 'column', display: 'flex', gap: 16,
@@ -343,12 +376,13 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <button onClick={handleSaveProfile} disabled={saving}
+            <button onClick={handleSaveProfile} disabled={saving || !employment?.isActive}
               className="glass-btn-primary"
               style={{
                 height: 54, width: '100%', borderRadius: 16, border: 'none',
                 color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                opacity: !employment?.isActive ? 0.6 : 1,
               }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -356,6 +390,19 @@ export default function ProfilePage() {
               </svg>
               {saving ? '저장 중...' : '변경사항 저장'}
             </button>
+
+            {employment?.isActive && (
+              <button onClick={handleEndEmployment} disabled={saving}
+                className="transition-all active:bg-red-500/10"
+                style={{
+                  height: 50, width: '100%', borderRadius: 16, border: '1.5px solid var(--color-danger)',
+                  background: 'transparent', color: 'var(--color-danger)', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  marginTop: 12,
+                }}>
+                🚫 근무 종료 (퇴사 처리)
+              </button>
+            )}
           </>
         ) : (
           <form onSubmit={handleChangePassword} className="glass-card" style={{

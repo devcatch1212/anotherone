@@ -15,6 +15,7 @@ model User {
   password            String?
   image               String?
   onboardingCompleted Boolean  @default(false)
+  status              String   @default("active") // 'active' | 'withdrawn'
 
   // Relations
   employments         Employment[]
@@ -64,6 +65,8 @@ model Employment {
   workDaysOfWeek  Int[]    // array of numbers: 0=월, 6=일
   breakMinutes    Int?
   isPrimary       Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  endedAt         DateTime?
 
   userId          String
   user            User     @relation(fields: [userId], references: [id])

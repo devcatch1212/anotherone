@@ -24,8 +24,9 @@ export default function HomePage() {
   const [overtimeOpen, setOvertimeOpen] = useState(false);
   const [overtime, setOvertime] = useState({ start: '', end: '', reason: '' });
   const watchRef = useRef<number | null>(null);
+  const userCoordsRef = useRef<{ latitude: number; longitude: number } | null>(null);
 
-  const employment = user?.employments?.find(e => e.companyId === currentCompanyId) || user?.employments?.[0];
+  const employment = user?.employments?.find(e => e.companyId === currentCompanyId && e.isActive) || user?.employments?.find(e => e.isActive);
   const company = employment?.company ?? { latitude: 37.5004, longitude: 127.0368, radiusMeters: 100 };
   const userName = user?.name ?? '김민준';
   const leaveRemaining = 11;
@@ -67,14 +68,24 @@ export default function HomePage() {
   }, [employment?.id, setRecords, setTodayRecord, setState]);
 
   const startGps = useCallback(() => {
-    if (!navigator.geolocation) { setDistance(42); setGpsStatus('ok'); return; }
+    if (!navigator.geolocation) { 
+      userCoordsRef.current = { latitude: company.latitude, longitude: company.longitude };
+      setDistance(42); 
+      setGpsStatus('ok'); 
+      return; 
+    }
     watchRef.current = navigator.geolocation.watchPosition(
       (pos) => {
+        userCoordsRef.current = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
         const d = calculateDistance(pos.coords.latitude, pos.coords.longitude, company.latitude, company.longitude);
         setDistance(Math.round(d));
         setGpsStatus(d <= company.radiusMeters ? 'ok' : 'far');
       },
-      () => { setDistance(42); setGpsStatus('ok'); },
+      () => { 
+        userCoordsRef.current = { latitude: company.latitude, longitude: company.longitude };
+        setDistance(42); 
+        setGpsStatus('ok'); 
+      },
       { enableHighAccuracy: true }
     );
   }, [company]);
@@ -92,9 +103,14 @@ export default function HomePage() {
     if (workState !== 'before') return;
     setCheckingIn(true);
     try {
+      const coords = userCoordsRef.current || { latitude: company.latitude, longitude: company.longitude };
       const resData = await fetchApi('/api/attendance/check-in', { 
         method: 'POST',
-        body: JSON.stringify({ employmentId: employment?.id, latitude: company.latitude, longitude: company.longitude })
+        body: JSON.stringify({ 
+          employmentId: employment?.id, 
+          latitude: coords.latitude, 
+          longitude: coords.longitude 
+        })
       });
       setTodayRecord(resData.attendance); setState('working');
       toast(new Date().getHours() > 9 ? '⚠️ 지각 처리되었습니다' : '출근이 기록되었습니다',
@@ -112,9 +128,14 @@ export default function HomePage() {
     if (workState !== 'working') return;
     setCheckingIn(true);
     try {
+      const coords = userCoordsRef.current || { latitude: company.latitude, longitude: company.longitude };
       const resData = await fetchApi('/api/attendance/check-out', { 
         method: 'POST',
-        body: JSON.stringify({ employmentId: employment?.id })
+        body: JSON.stringify({ 
+          employmentId: employment?.id,
+          latitude: coords.latitude,
+          longitude: coords.longitude
+        })
       });
       setTodayRecord({ ...todayRecord!, ...resData.attendance }); setState('done');
       toast('퇴근이 기록되었습니다', 'success');
@@ -242,107 +263,129 @@ export default function HomePage() {
           borderRadius: 20, padding: '20px',
           display: 'flex', flexDirection: 'column', gap: 12,
         }}>
-          {/* 상단 상태 */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{
-              fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 99,
-              background: workState === 'working' ? 'var(--color-accent-light)' : workState === 'done' ? 'var(--color-primary-light)' : '#F3F4F6',
-              color: workState === 'working' ? 'var(--color-accent-dark)' : workState === 'done' ? 'var(--color-primary)' : '#6B7280',
-            }}>
-              {workState === 'working' ? '근무 중' : workState === 'done' ? '퇴근 완료' : '출근 전'}
-            </span>
-            {todayRecord?.checkIn && (
-              <span style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500 }}>출근 {formatTime(todayRecord.checkIn)}</span>
-            )}
-          </div>
-
-          {/* 시계 */}
-          <p style={{
-            fontSize: 46, fontWeight: 700, color: '#111827',
-            letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums',
-            lineHeight: 1.1, margin: 0,
-          }}>
-            {format(now, 'HH:mm:ss')}
-          </p>
-
-          {/* GPS 알림 */}
-          <div style={{
-            background: gpsColor.bg, borderRadius: 12,
-            padding: '8px 12px',
-            display: 'flex', alignItems: 'center', gap: 8,
-          }}>
-            <span style={{ fontSize: 14 }}>{gpsColor.icon}</span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: gpsColor.text }}>{gpsText}</span>
-          </div>
-
-          {/* 통합형 슬림 출퇴근 버튼 (높이 48px) */}
-          <div style={{ marginTop: 4 }}>
-            {workState === 'before' && (
-              <button
-                onClick={handleCheckIn}
-                disabled={checkingIn}
-                className="glass-btn-primary"
-                style={{
-                  width: '100%', height: 48, borderRadius: 12,
-                  color: gpsStatus === 'ok' ? '#fff' : '#8E9AA0',
-                  fontWeight: 700, fontSize: 14, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 7v5l3 3M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"
-                    stroke={gpsStatus === 'ok' ? 'white' : '#8E9AA0'} strokeWidth="2.5" strokeLinecap="round" />
-                </svg>
-                {checkingIn ? '처리 중...' : '출근 기록하기'}
-              </button>
-            )}
-
-            {workState === 'working' && (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  onClick={handleCheckOut}
-                  disabled={checkingIn}
-                  className="glass-btn-primary"
-                  style={{
-                    flex: 2, height: 48, borderRadius: 12,
-                    color: gpsStatus === 'ok' ? '#fff' : '#8E9AA0',
-                    fontWeight: 700, fontSize: 14, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <rect x="6" y="6" width="12" height="12" rx="2" fill={gpsStatus === 'ok' ? 'white' : '#8E9AA0'} />
-                  </svg>
-                  {checkingIn ? '처리 중...' : '퇴근 기록하기'}
-                </button>
-                <button
-                  onClick={() => setOvertimeOpen(true)}
-                  className="glass-btn"
-                  style={{
-                    flex: 1, height: 48, borderRadius: 12,
-                    color: 'var(--color-primary)', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                  }}
-                >
-                  ⏱️ 연장 신청
-                </button>
+          {!employment ? (
+            <div style={{ textAlign: 'center', padding: '24px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 32 }}>📋</span>
+              <div>
+                <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--color-text-primary)', margin: '0 0 4px' }}>
+                  활성화된 근무지가 없습니다
+                </p>
+                <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.5 }}>
+                  출퇴근을 기록하려면 새로운 근무지를 등록하거나<br />근무지 활성화 설정을 확인해주세요.
+                </p>
               </div>
-            )}
-
-            {workState === 'done' && (
-              <div style={{
-                width: '100%', height: 48, borderRadius: 12,
-                background: 'var(--color-primary-light)', border: '1.5px dashed var(--color-primary)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                color: 'var(--color-primary)', fontWeight: 700, fontSize: 14,
+              <Link href="/onboarding/company" className="glass-btn-primary" style={{
+                padding: '10px 20px', borderRadius: 12, textDecoration: 'none', color: '#fff',
+                fontSize: 13, fontWeight: 700, marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 4
               }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M20 6L9 17l-5-5" stroke="var(--color-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                오늘 근무 종료 {todayRecord?.checkOut && `(${formatTime(todayRecord.checkOut)} 퇴근)`}
+                근무지 새로 등록하기 ➕
+              </Link>
+            </div>
+          ) : (
+            <>
+              {/* 상단 상태 */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 99,
+                  background: workState === 'working' ? 'var(--color-accent-light)' : workState === 'done' ? 'var(--color-primary-light)' : '#F3F4F6',
+                  color: workState === 'working' ? 'var(--color-accent-dark)' : workState === 'done' ? 'var(--color-primary)' : '#6B7280',
+                }}>
+                  {workState === 'working' ? '근무 중' : workState === 'done' ? '퇴근 완료' : '출근 전'}
+                </span>
+                {todayRecord?.checkIn && (
+                  <span style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500 }}>출근 {formatTime(todayRecord.checkIn)}</span>
+                )}
               </div>
-            )}
-          </div>
+
+              {/* 시계 */}
+              <p style={{
+                fontSize: 46, fontWeight: 700, color: '#111827',
+                letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums',
+                lineHeight: 1.1, margin: 0,
+              }}>
+                {format(now, 'HH:mm:ss')}
+              </p>
+
+              {/* GPS 알림 */}
+              <div style={{
+                background: gpsColor.bg, borderRadius: 12,
+                padding: '8px 12px',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}>
+                <span style={{ fontSize: 14 }}>{gpsColor.icon}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: gpsColor.text }}>{gpsText}</span>
+              </div>
+
+              {/* 통합형 슬림 출퇴근 버튼 (높이 48px) */}
+              <div style={{ marginTop: 4 }}>
+                {workState === 'before' && (
+                  <button
+                    onClick={handleCheckIn}
+                    disabled={checkingIn}
+                    className="glass-btn-primary"
+                    style={{
+                      width: '100%', height: 48, borderRadius: 12,
+                      color: gpsStatus === 'ok' ? '#fff' : '#8E9AA0',
+                      fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 7v5l3 3M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"
+                        stroke={gpsStatus === 'ok' ? 'white' : '#8E9AA0'} strokeWidth="2.5" strokeLinecap="round" />
+                    </svg>
+                    {checkingIn ? '처리 중...' : '출근 기록하기'}
+                  </button>
+                )}
+
+                {workState === 'working' && (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={handleCheckOut}
+                      disabled={checkingIn}
+                      className="glass-btn-primary"
+                      style={{
+                        flex: 2, height: 48, borderRadius: 12,
+                        color: gpsStatus === 'ok' ? '#fff' : '#8E9AA0',
+                        fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <rect x="6" y="6" width="12" height="12" rx="2" fill={gpsStatus === 'ok' ? 'white' : '#8E9AA0'} />
+                      </svg>
+                      {checkingIn ? '처리 중...' : '퇴근 기록하기'}
+                    </button>
+                    <button
+                      onClick={() => setOvertimeOpen(true)}
+                      className="glass-btn"
+                      style={{
+                        flex: 1, height: 48, borderRadius: 12,
+                        color: 'var(--color-primary)', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                      }}
+                    >
+                      ⏱️ 연장 신청
+                    </button>
+                  </div>
+                )}
+
+                {workState === 'done' && (
+                  <div style={{
+                    width: '100%', height: 48, borderRadius: 12,
+                    background: 'var(--color-primary-light)', border: '1.5px dashed var(--color-primary)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    color: 'var(--color-primary)', fontWeight: 700, fontSize: 14,
+                  }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path d="M20 6L9 17l-5-5" stroke="var(--color-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    오늘 근무 종료 {todayRecord?.checkOut && `(${formatTime(todayRecord.checkOut)} 퇴근)`}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* 최근 기록 */}

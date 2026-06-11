@@ -6,12 +6,12 @@ export class CheckInDto {
   employmentId!: string;
 
   @IsNumber({}, { message: '위도는 숫자여야 합니다.' })
-  @IsOptional()
-  latitude?: number;
+  @IsNotEmpty({ message: '위도 정보가 필요합니다.' })
+  latitude!: number;
 
   @IsNumber({}, { message: '경도는 숫자여야 합니다.' })
-  @IsOptional()
-  longitude?: number;
+  @IsNotEmpty({ message: '경도 정보가 필요합니다.' })
+  longitude!: number;
 
   @IsNumber({}, { message: '거리는 숫자여야 합니다.' })
   @IsOptional()
@@ -22,6 +22,14 @@ export class CheckOutDto {
   @IsString({ message: '근로계약(employmentId) 식별자는 문자열이어야 합니다.' })
   @IsNotEmpty({ message: '근로계약 식별자가 필요합니다.' })
   employmentId!: string;
+
+  @IsNumber({}, { message: '위도는 숫자여야 합니다.' })
+  @IsNotEmpty({ message: '위도 정보가 필요합니다.' })
+  latitude!: number;
+
+  @IsNumber({}, { message: '경도는 숫자여야 합니다.' })
+  @IsNotEmpty({ message: '경도 정보가 필요합니다.' })
+  longitude!: number;
 }
 
 export class GetAttendanceDto {

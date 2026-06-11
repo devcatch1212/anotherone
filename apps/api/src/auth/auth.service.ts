@@ -43,6 +43,10 @@ export class AuthService {
       throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
     }
 
+    if (user.status === 'withdrawn') {
+      throw new UnauthorizedException('탈퇴한 계정입니다.');
+    }
+
     const payload = { sub: user.id, email: user.email };
     return {
       access_token: this.jwtService.sign(payload),
@@ -59,7 +63,9 @@ export class AuthService {
         },
       },
     });
-    if (!user) throw new UnauthorizedException('유저를 찾을 수 없습니다.');
+    if (!user || user.status === 'withdrawn') {
+      throw new UnauthorizedException('유저를 찾을 수 없거나 탈퇴한 계정입니다.');
+    }
     const { password, ...result } = user;
     return result;
   }

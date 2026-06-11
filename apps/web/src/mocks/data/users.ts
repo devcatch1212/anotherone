@@ -29,6 +29,7 @@ export let mockUsers: User[] = [
         workDaysOfWeek: [0, 1, 2, 3, 4],
         breakMinutes: 60,
         isPrimary: true,
+        isActive: true,
       }
     ],
   },
@@ -60,6 +61,7 @@ export let mockUsers: User[] = [
         workDaysOfWeek: [0, 1, 2, 3, 4, 5],
         breakMinutes: 60,
         isPrimary: true,
+        isActive: true,
       }
     ],
   },

@@ -104,6 +104,7 @@ export const authHandlers = [
           workDaysOfWeek: body.workDaysOfWeek || [0, 1, 2, 3, 4],
           breakMinutes: body.breakMinutes || 60,
           isPrimary: mockUsers[userIdx].employments.length === 0,
+          isActive: true,
         };
         
         mockUsers[userIdx] = {
@@ -131,6 +132,7 @@ export const authHandlers = [
       workDaysOfWeek: body.workDaysOfWeek || [0, 1, 2, 3, 4],
       breakMinutes: body.breakMinutes || 60,
       isPrimary: (currentMockUser.employments || []).length === 0,
+      isActive: true,
     };
     
     const updatedFallbackUser = {

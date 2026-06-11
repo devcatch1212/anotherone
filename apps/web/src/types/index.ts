@@ -44,6 +44,8 @@ export interface Employment {
   workDaysOfWeek?: number[];
   breakMinutes?: number;
   isPrimary: boolean;
+  isActive: boolean;
+  endedAt?: string | null;
 }
 
 export interface AttendanceRecord {

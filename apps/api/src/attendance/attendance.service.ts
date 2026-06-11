@@ -3,6 +3,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CheckInDto, CheckOutDto } from './dto/attendance.dto';
 import { differenceInMinutes, format } from 'date-fns';
 
+function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3; // 지구 반지름 (미터 단위)
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // 미터 단위 거리 반환
+}
+
 @Injectable()
 export class AttendanceService {
   constructor(private readonly prisma: PrismaService) {}
@@ -10,8 +21,19 @@ export class AttendanceService {
   async checkIn(userId: string, data: CheckInDto) {
     const employment = await this.prisma.employment.findFirst({
       where: { id: data.employmentId, userId },
+      include: { company: true },
     });
     if (!employment) throw new NotFoundException('유효하지 않은 근로계약입니다.');
+
+    const company = employment.company;
+    const distance = getDistance(data.latitude, data.longitude, company.latitude, company.longitude);
+    const allowedRadius = company.radiusMeters || 100;
+
+    if (distance > allowedRadius) {
+      throw new BadRequestException(
+        `📍 근무지 인증 실패! 반경 ${allowedRadius}m 밖입니다. (현재 거리: ${Math.round(distance)}m)`
+      );
+    }
 
     const now = new Date();
     const dateStr = format(now, 'yyyy-MM-dd');
@@ -47,7 +69,7 @@ export class AttendanceService {
         date: dateStr,
         checkIn: now,
         status,
-        distance: data.distance ?? 0,
+        distance: Math.round(distance),
       },
     });
 
@@ -58,8 +80,19 @@ export class AttendanceService {
   async checkOut(userId: string, data: CheckOutDto) {
     const employment = await this.prisma.employment.findFirst({
       where: { id: data.employmentId, userId },
+      include: { company: true },
     });
     if (!employment) throw new NotFoundException('유효하지 않은 근로계약입니다.');
+
+    const company = employment.company;
+    const distance = getDistance(data.latitude, data.longitude, company.latitude, company.longitude);
+    const allowedRadius = company.radiusMeters || 100;
+
+    if (distance > allowedRadius) {
+      throw new BadRequestException(
+        `📍 근무지 인증 실패! 반경 ${allowedRadius}m 밖입니다. (현재 거리: ${Math.round(distance)}m)`
+      );
+    }
 
     const dateStr = format(new Date(), 'yyyy-MM-dd');
 

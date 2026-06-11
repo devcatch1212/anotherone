@@ -8,19 +8,28 @@ import { useAuthStore } from '@/store/auth.store';
 import { useToast } from '@/components/ui/Toast';
 
 export default function PayrollPage() {
-  const { currentEmploymentId } = useAuthStore();
+  const { user, currentEmploymentId } = useAuthStore();
   const { toast } = useToast();
   const [records, setRecords] = useState<PayrollRecord[]>([]);
+  const [selectedEmpId, setSelectedEmpId] = useState<string>('');
 
   useEffect(() => {
-    if (!currentEmploymentId) return;
-    fetchApi(`/api/payroll?employmentId=${currentEmploymentId}`)
+    if (currentEmploymentId) {
+      setSelectedEmpId(currentEmploymentId);
+    } else if (user?.employments && user.employments.length > 0) {
+      setSelectedEmpId(user.employments[0].id);
+    }
+  }, [currentEmploymentId, user]);
+
+  useEffect(() => {
+    if (!selectedEmpId) return;
+    fetchApi(`/api/payroll?employmentId=${selectedEmpId}`)
       .then(res => setRecords(res.records || []))
       .catch(e => {
         console.error('payroll fetch error', e);
         toast('급여명세서를 불러오는 데 실패했습니다.', 'error');
       });
-  }, [currentEmploymentId, toast]);
+  }, [selectedEmpId, toast]);
 
   const annualTotal     = records.reduce((s, r) => s + r.netPay, 0);
   const annualGross     = records.reduce((s, r) => s + r.totalGross, 0);
@@ -45,6 +54,32 @@ export default function PayrollPage() {
       </div>
 
       <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+        {/* 근무지 선택 필터 */}
+        {user?.employments && user.employments.length > 0 && (
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.45)',
+            backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.6)',
+            borderRadius: 16, padding: '10px 14px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12
+          }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-secondary)', flexShrink: 0 }}>근무지 선택</span>
+            <select value={selectedEmpId} onChange={(e) => setSelectedEmpId(e.target.value)}
+              style={{
+                border: 'none', background: 'transparent',
+                fontSize: 13, fontWeight: 800, color: 'var(--color-primary)',
+                outline: 'none', cursor: 'pointer', textAlign: 'right', direction: 'rtl',
+                maxWidth: 200, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap'
+              }}>
+              {user.employments.map(emp => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.company.name} ({emp.isActive ? '근무 중' : '근무 종료'})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* 연간 요약 카드 */}
         <div className="glass-card-primary" style={{

@@ -63,4 +63,50 @@ export class SettingsService {
 
     return { message: '비밀번호가 성공적으로 변경되었습니다.' };
   }
+
+  async withdraw(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+    if (user.status === 'withdrawn') {
+      throw new BadRequestException('이미 탈퇴한 회원입니다.');
+    }
+
+    const uniqueSuffix = `_withdrawn_${Date.now()}`;
+    const newEmail = user.email ? `${user.email}${uniqueSuffix}` : null;
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        status: 'withdrawn',
+        email: newEmail,
+      },
+    });
+
+    return { message: '회원 탈퇴가 완료되었습니다.' };
+  }
+
+  async endEmployment(userId: string, employmentId: string) {
+    const employment = await this.prisma.employment.findFirst({
+      where: { id: employmentId, userId },
+    });
+    if (!employment) {
+      throw new NotFoundException('유효하지 않은 근로계약입니다.');
+    }
+    if (!employment.isActive) {
+      throw new BadRequestException('이미 종료된 근로계약입니다.');
+    }
+
+    const updated = await this.prisma.employment.update({
+      where: { id: employmentId },
+      data: {
+        isActive: false,
+        endedAt: new Date(),
+      },
+      include: { company: true },
+    });
+
+    return { message: '근무가 종료 처리되었습니다.', employment: updated };
+  }
 }
