@@ -306,7 +306,7 @@ export default function HomePage() {
                   출퇴근을 기록하려면 새로운 근무지를 등록하거나<br />근무지 활성화 설정을 확인해주세요.
                 </p>
               </div>
-              <Link href="/onboarding/company" className="glass-btn-primary" style={{
+              <Link href="/onboarding/wage-type" className="glass-btn-primary" style={{
                 padding: '10px 20px', borderRadius: 12, textDecoration: 'none', color: '#fff',
                 fontSize: 13, fontWeight: 700, marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 4
               }}>
