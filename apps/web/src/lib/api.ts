@@ -1,6 +1,6 @@
 import { useAuthStore } from '@/store/auth.store';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://anotherone-tjgi.onrender.com';
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const token = useAuthStore.getState().token;

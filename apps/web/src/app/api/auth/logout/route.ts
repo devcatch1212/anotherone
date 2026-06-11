@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST() {
   try {
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://anotherone-tjgi.onrender.com';
     
     // 백엔드 NestJS 로그아웃 API 호출
     await fetch(`${API_BASE_URL}/api/auth/logout`, {
