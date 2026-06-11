@@ -59,14 +59,14 @@ function getDaysInRange(start: string, end: string): string[] {
 // ── 컴포넌트 ─────────────────────────────────────────
 export default function CalendarPage() {
   const router = useRouter();
-  const { currentCompanyId } = useAuthStore();
+  const { user, currentCompanyId } = useAuthStore();
   const { toast } = useToast();
   const [tab, setTab] = useState<Tab>('work');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [leaveRecords, setLeaveRecords] = useState<LeaveRecord[]>(mockLeaves);
-  const [balance] = useState(mockLeaveBalance);
+  const [leaveRecords, setLeaveRecords] = useState<LeaveRecord[]>([]);
+  const [balance, setBalance] = useState({ total: 15, used: 0, remaining: 15 });
   const [workRecords, setWorkRecords] = useState<WorkDay[]>([]);
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyType, setApplyType] = useState('annual');
@@ -74,15 +74,23 @@ export default function CalendarPage() {
   const [applyEnd, setApplyEnd]   = useState('');
   const [applyReason, setApplyReason] = useState('');
 
+  const employment = user?.employments?.find(e => e.companyId === currentCompanyId && e.isActive) || user?.employments?.find(e => e.isActive);
+  const companyName = employment?.company?.name ?? '근무지 없음';
+  const hireDate = (employment as any)?.createdAt ? new Date((employment as any).createdAt) : new Date(2025, 4, 23);
+  const daysWorked  = differenceInDays(new Date(), hireDate);
+
   useEffect(() => {
-    if (!currentCompanyId) return;
+    if (!employment?.id) {
+      setWorkRecords([]);
+      return;
+    }
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth() + 1;
-    fetchApi(`/api/attendance?employmentId=${currentCompanyId}&year=${year}&month=${month}`)
+    fetchApi(`/api/attendance?employmentId=${employment.id}&year=${year}&month=${month}`)
       .then(res => {
         const records: WorkDay[] = res.records.map((r: any) => ({
           date: format(new Date(r.date), 'yyyy-MM-dd'),
-          status: 'normal', // 임시 매핑 (실제론 r.status 반영)
+          status: r.status || 'normal',
           checkIn: r.checkIn ? format(new Date(r.checkIn), 'HH:mm') : undefined,
           checkOut: r.checkOut ? format(new Date(r.checkOut), 'HH:mm') : undefined,
           earnedAmount: r.earnedPay || 0,
@@ -93,9 +101,33 @@ export default function CalendarPage() {
         console.error('attendance fetch error', e);
         toast('출퇴근 기록을 불러오는 데 실패했습니다.', 'error');
       });
-  }, [currentCompanyId, currentMonth, toast]);
+  }, [employment?.id, currentMonth, toast]);
 
-  const daysWorked  = differenceInDays(new Date(), EMPLOYER.hireDate);
+  useEffect(() => {
+    if (!employment?.id) {
+      setLeaveRecords([]);
+      setBalance({ total: 15, used: 0, remaining: 15 });
+      return;
+    }
+    fetchApi(`/api/leave?employmentId=${employment.id}`)
+      .then(res => {
+        if (res && res.records) {
+          setLeaveRecords(res.records);
+          const approvedDays = res.records
+            .filter((l: any) => l.status === 'approved')
+            .reduce((sum: number, l: any) => sum + l.days, 0);
+          setBalance({
+            total: 15,
+            used: approvedDays,
+            remaining: Math.max(0, 15 - approvedDays),
+          });
+        }
+      })
+      .catch(e => {
+        console.error('Failed to fetch leaves', e);
+        toast('휴가 내역을 불러오는 데 실패했습니다.', 'error');
+      });
+  }, [employment?.id, toast]);
   const monthKey    = format(currentMonth, 'yyyy-MM');
   const monthStart  = startOfMonth(currentMonth);
   const monthEnd    = endOfMonth(currentMonth);
@@ -117,16 +149,43 @@ export default function CalendarPage() {
     leave:    leaveRecords.filter(r => r.status !== 'rejected' && (r.startDate.startsWith(monthKey) || r.endDate.startsWith(monthKey))).reduce((s, r) => s + r.days, 0),
   };
 
-  const handleApplySubmit = () => {
-    if (!applyStart || !applyReason) return;
+  const handleApplySubmit = async () => {
+    if (!applyStart || !applyReason || !employment?.id) return;
     const end = applyType === 'half' ? applyStart : (applyEnd || applyStart);
     const days = applyType === 'half' ? 0.5 : getDaysInRange(applyStart, end).filter(d => ![0,6].includes(new Date(d).getDay())).length;
-    setLeaveRecords(prev => [{
-      id: `leave-${Date.now()}`, companyId: 'company-1', type: applyType as LeaveRecord['type'],
-      startDate: applyStart, endDate: end, days, reason: applyReason,
-      status: 'pending', appliedAt: new Date().toISOString(),
-    }, ...prev]);
-    setApplyOpen(false); setApplyStart(''); setApplyEnd(''); setApplyReason('');
+    
+    try {
+      await fetchApi('/api/leave', {
+        method: 'POST',
+        body: JSON.stringify({
+          employmentId: employment.id,
+          type: applyType,
+          startDate: applyStart,
+          endDate: end,
+          days,
+          reason: applyReason,
+        }),
+      });
+      toast('휴가 신청이 완료되었습니다.', 'success');
+      
+      const leavesRes = await fetchApi(`/api/leave?employmentId=${employment.id}`);
+      if (leavesRes && leavesRes.records) {
+        setLeaveRecords(leavesRes.records);
+        const approvedDays = leavesRes.records
+          .filter((l: any) => l.status === 'approved')
+          .reduce((sum: number, l: any) => sum + l.days, 0);
+        setBalance({
+          total: 15,
+          used: approvedDays,
+          remaining: Math.max(0, 15 - approvedDays),
+        });
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast(`휴가 신청 실패: ${e.message}`, 'error');
+    } finally {
+      setApplyOpen(false); setApplyStart(''); setApplyEnd(''); setApplyReason('');
+    }
   };
 
   const selKey   = selectedDay ? format(selectedDay, 'yyyy-MM-dd') : null;
@@ -237,7 +296,7 @@ export default function CalendarPage() {
           <div>
             <p style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 500, marginBottom: 2 }}>현재 근무지</p>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.3px' }}>
-              {EMPLOYER.name}
+              {companyName}
             </h1>
           </div>
           <span style={{
