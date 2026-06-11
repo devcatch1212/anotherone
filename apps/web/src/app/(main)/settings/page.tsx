@@ -42,10 +42,10 @@ export default function SettingsPage() {
     {
       title: '급여 & 근무지',
       items: [
-        { label: '급여 유형', value: WAGE_TYPE_LABEL[employment?.wageType ?? 'hourly'], icon: '⚙️', href: '/settings/profile' },
-        { label: '급여', value: wageLabel, icon: '💵', href: '/settings/profile' },
-        { label: '회사명', value: employment?.company?.name || '미등록', icon: '🏭', href: '/settings/profile' },
-        { label: '근무지 주소', value: employment?.company?.address || '미등록', icon: '📍', href: '/settings/profile' },
+        { label: '급여 유형', value: WAGE_TYPE_LABEL[employment?.wageType ?? 'hourly'], icon: '⚙️', href: '/settings/profile?focus=wageType' },
+        { label: '급여', value: wageLabel, icon: '💵', href: '/settings/profile?focus=wage' },
+        { label: '회사명', value: employment?.company?.name || '미등록', icon: '🏭', href: '/settings/profile?focus=companyName' },
+        { label: '근무지 주소', value: employment?.company?.address || '미등록', icon: '📍', href: '/settings/profile?focus=companyAddress' },
       ],
     },
   ];

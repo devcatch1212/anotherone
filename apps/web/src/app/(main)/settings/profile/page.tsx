@@ -1,5 +1,5 @@
 'use client';
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { useToast } from '@/components/ui/Toast';
@@ -15,6 +15,37 @@ function ProfilePageContent() {
   const initialTab = searchParams.get('tab') === 'password' ? 'password' : 'profile';
   const [tab, setTab] = useState<'profile' | 'password'>(initialTab);
   const [saving, setSaving] = useState(false);
+
+  const wageTypeRef = useRef<HTMLDivElement>(null);
+  const wageInputRef = useRef<HTMLInputElement>(null);
+  const companyNameRef = useRef<HTMLInputElement>(null);
+  const companyAddressRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const focusTarget = searchParams.get('focus');
+    if (!focusTarget) return;
+
+    setTab('profile');
+
+    const timer = setTimeout(() => {
+      if (focusTarget === 'wageType' && wageTypeRef.current) {
+        wageTypeRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const firstBtn = wageTypeRef.current.querySelector('button');
+        if (firstBtn) firstBtn.focus();
+      } else if (focusTarget === 'wage' && wageInputRef.current) {
+        wageInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        wageInputRef.current.focus();
+      } else if (focusTarget === 'companyName' && companyNameRef.current) {
+        companyNameRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        companyNameRef.current.focus();
+      } else if (focusTarget === 'companyAddress' && companyAddressRef.current) {
+        companyAddressRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        companyAddressRef.current.focus();
+      }
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [searchParams]);
 
   const employment = user?.employments?.find(e => e.companyId === currentCompanyId) || user?.employments?.[0];
 
@@ -184,7 +215,7 @@ function ProfilePageContent() {
               </div>
             )}
             {/* 급여 유형 */}
-            <div className="glass-card" style={{
+            <div ref={wageTypeRef} className="glass-card" style={{
               borderRadius: 24, padding: '20px', flexDirection: 'column', display: 'flex', gap: 16,
               background: 'rgba(255, 255, 255, 0.45)',
               backdropFilter: 'blur(20px)',
@@ -220,7 +251,7 @@ function ProfilePageContent() {
                 </label>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <span style={{ position: 'absolute', left: 14, fontSize: 15, fontWeight: 700, color: 'var(--color-text-muted)' }}>₩</span>
-                  <input type="number" value={wageType === 'hourly' ? hourlyWage : dailyWage} 
+                  <input ref={wageInputRef} type="number" value={wageType === 'hourly' ? hourlyWage : dailyWage} 
                     onChange={e => wageType === 'hourly' ? setHourlyWage(Number(e.target.value)) : setDailyWage(Number(e.target.value))}
                     style={{
                       width: '100%', height: 46, borderRadius: 14,
@@ -260,7 +291,7 @@ function ProfilePageContent() {
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)' }}>회사명</label>
-                <input value={companyName} onChange={e => setCompanyName(e.target.value)}
+                <input ref={companyNameRef} value={companyName} onChange={e => setCompanyName(e.target.value)}
                   placeholder="회사명을 입력하세요"
                   style={{
                     width: '100%', height: 46, borderRadius: 14,
@@ -288,7 +319,7 @@ function ProfilePageContent() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)' }}>근무지 주소</label>
-                <input value={companyAddress} onChange={e => setCompanyAddress(e.target.value)}
+                <input ref={companyAddressRef} value={companyAddress} onChange={e => setCompanyAddress(e.target.value)}
                   placeholder="근무지 주소를 입력하세요"
                   style={{
                     width: '100%', height: 46, borderRadius: 14,
