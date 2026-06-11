@@ -29,10 +29,22 @@ export default function HomePage() {
   const employment = user?.employments?.find(e => e.companyId === currentCompanyId && e.isActive) || user?.employments?.find(e => e.isActive);
   const company = employment?.company ?? { latitude: 37.5004, longitude: 127.0368, radiusMeters: 100 };
   const userName = user?.name ?? '김민준';
-  const leaveRemaining = 11;
-  const monthlyWorked = 112;
-  const monthlyTarget = 160;
-  const workedPercent = Math.min(100, Math.round((monthlyWorked / monthlyTarget) * 100));
+
+  const [leaveRemaining, setLeaveRemaining] = useState(0);
+
+  // 1. 목표 근무 시간 계산 (주당 근무시간 * 4주)
+  const monthlyTarget = employment 
+    ? (employment.weeklyWorkDays * employment.dailyWorkHours * 4) 
+    : 0;
+
+  // 2. 실제 이번 달 일한 시간 합산 (분 -> 시간 단위 변환)
+  const monthlyWorkedMins = records.reduce((sum, r) => sum + (r.workedMinutes ?? 0), 0);
+  const monthlyWorked = Math.round((monthlyWorkedMins / 60) * 10) / 10;
+
+  // 3. 달성 퍼센트 계산
+  const workedPercent = monthlyTarget > 0 
+    ? Math.min(100, Math.round((monthlyWorked / monthlyTarget) * 100))
+    : 0;
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -66,6 +78,26 @@ export default function HomePage() {
         console.error('Failed to fetch attendance', e);
       });
   }, [employment?.id, setRecords, setTodayRecord, setState]);
+
+  useEffect(() => {
+    if (!employment?.id) {
+      setLeaveRemaining(0);
+      return;
+    }
+    fetchApi(`/api/leave?employmentId=${employment.id}`)
+      .then(res => {
+        if (res && res.records) {
+          const approvedDays = res.records
+            .filter((l: any) => l.status === 'approved')
+            .reduce((sum: number, l: any) => sum + l.days, 0);
+          setLeaveRemaining(Math.max(0, 15 - approvedDays));
+        }
+      })
+      .catch(e => {
+        console.error('Failed to fetch leaves', e);
+        setLeaveRemaining(15);
+      });
+  }, [employment?.id]);
 
   const startGps = useCallback(() => {
     if (!navigator.geolocation) { 
@@ -255,7 +287,7 @@ export default function HomePage() {
               background: 'var(--color-accent)', transition: 'width 0.7s',
             }} />
           </div>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{workedPercent}% 달성 · {monthlyTarget - monthlyWorked}h 남음</p>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{workedPercent}% 달성 · {Math.max(0, Math.round((monthlyTarget - monthlyWorked) * 10) / 10)}h 남음</p>
         </div>
 
         {/* 시간 + GPS + 출퇴근 액션 통합 카드 */}
