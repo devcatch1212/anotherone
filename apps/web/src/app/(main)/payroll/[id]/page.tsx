@@ -134,7 +134,7 @@ export default function PayrollDetailPage() {
             {formatCurrency(record.netPay)}
           </p>
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginBottom: 12 }}>
-            지급일 {record.paidAt.slice(0, 10)} · {record.workedDays}일 근무
+            {record.paidAt ? `지급일 ${record.paidAt.slice(0, 10)} · ` : ''}{record.workedDays}일 근무
           </p>
           {/* 수신 상태 배지 */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>

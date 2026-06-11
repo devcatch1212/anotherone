@@ -13,7 +13,8 @@ export class AttendanceService {
     });
     if (!employment) throw new NotFoundException('유효하지 않은 근로계약입니다.');
 
-    const dateStr = format(new Date(), 'yyyy-MM-dd');
+    const now = new Date();
+    const dateStr = format(now, 'yyyy-MM-dd');
 
     const existing = await this.prisma.attendanceRecord.findFirst({
       where: {
@@ -27,19 +28,32 @@ export class AttendanceService {
       throw new BadRequestException('이미 오늘의 출근 기록이 존재합니다.');
     }
 
+    // 지각 여부 판별: workStartTime(HH:mm)과 실제 출근 시간 비교
+    let status = 'normal';
+    if (employment.workStartTime) {
+      const [startH, startM] = employment.workStartTime.split(':').map(Number);
+      const scheduledStart = new Date(now);
+      scheduledStart.setHours(startH, startM, 0, 0);
+      // 1분 초과 시 지각 처리
+      if (now.getTime() > scheduledStart.getTime() + 60 * 1000) {
+        status = 'late';
+      }
+    }
+
     const attendance = await this.prisma.attendanceRecord.create({
       data: {
         userId,
         companyId: employment.companyId,
         date: dateStr,
-        checkIn: new Date(),
-        status: 'normal',
-        distance: 0,
+        checkIn: now,
+        status,
+        distance: data.distance ?? 0,
       },
     });
 
-    return { message: '출근 처리되었습니다.', attendance };
+    return { message: status === 'late' ? '지각 처리되었습니다.' : '출근 처리되었습니다.', attendance };
   }
+
 
   async checkOut(userId: string, data: CheckOutDto) {
     const employment = await this.prisma.employment.findFirst({

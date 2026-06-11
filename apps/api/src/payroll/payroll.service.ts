@@ -170,24 +170,30 @@ export class PayrollService {
   async getPayrollById(userId: string, payrollId: string) {
     const record = await this.prisma.payrollRecord.findFirst({
       where: { id: payrollId, userId },
-      include: { company: true, user: true },
+      include: { company: true },
     });
 
     if (!record) {
       throw new NotFoundException('급여명세서를 찾을 수 없습니다.');
     }
-    
+
     if (!record.confirmed) {
-      await this.generateOrUpdatePayroll(userId, record.user.employments?.[0]?.id || "", record.year, record.month);
-      // refetch after generation
+      // companyId로 올바른 employment를 찾아 재정산
+      const employment = await this.prisma.employment.findFirst({
+        where: { userId, companyId: record.companyId },
+      });
+      if (employment) {
+        await this.generateOrUpdatePayroll(userId, employment.id, record.year, record.month);
+      }
       return await this.prisma.payrollRecord.findFirst({
-         where: { id: payrollId, userId },
-         include: { company: true, user: true },
+        where: { id: payrollId, userId },
+        include: { company: true },
       });
     }
 
     return record;
   }
+
 
   async confirmPayroll(userId: string, payrollId: string) {
     const record = await this.prisma.payrollRecord.findFirst({

@@ -9,7 +9,6 @@ import { useToast } from '@/components/ui/Toast';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { calculateDistance, formatTime, formatDuration } from '@/lib/utils';
 import { fetchApi } from '@/lib/api';
-import { mockAttendance } from '@/mocks/data/attendance';
 
 type GpsStatus = 'loading' | 'ok' | 'far' | 'denied';
 

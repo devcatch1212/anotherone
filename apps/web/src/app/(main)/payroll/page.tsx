@@ -8,19 +8,19 @@ import { useAuthStore } from '@/store/auth.store';
 import { useToast } from '@/components/ui/Toast';
 
 export default function PayrollPage() {
-  const { currentCompanyId } = useAuthStore();
+  const { currentEmploymentId } = useAuthStore();
   const { toast } = useToast();
   const [records, setRecords] = useState<PayrollRecord[]>([]);
 
   useEffect(() => {
-    if (!currentCompanyId) return;
-    fetchApi(`/api/payroll?employmentId=${currentCompanyId}`)
+    if (!currentEmploymentId) return;
+    fetchApi(`/api/payroll?employmentId=${currentEmploymentId}`)
       .then(res => setRecords(res.records || []))
       .catch(e => {
         console.error('payroll fetch error', e);
         toast('급여명세서를 불러오는 데 실패했습니다.', 'error');
       });
-  }, [currentCompanyId, toast]);
+  }, [currentEmploymentId, toast]);
 
   const annualTotal     = records.reduce((s, r) => s + r.netPay, 0);
   const annualGross     = records.reduce((s, r) => s + r.totalGross, 0);
@@ -94,7 +94,9 @@ export default function PayrollPage() {
                 <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.3px', marginBottom: 3 }}>
                   {formatCurrency(r.netPay)}
                 </p>
-                <p style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>지급일 {r.paidAt.slice(0, 10)}</p>
+                <p style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+                  {r.paidAt ? `지급일 ${r.paidAt.slice(0, 10)}` : '정산 중'}
+                </p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 {r.confirmed && (

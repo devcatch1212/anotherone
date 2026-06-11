@@ -6,11 +6,13 @@ interface AuthState {
   token: string | null;
   user: User | null;
   currentCompanyId: string | null;
+  currentEmploymentId: string | null;  // 추가: 현재 고용계약 ID
   isAuthenticated: boolean;
   onboardingCompleted: boolean;
   setAuth: (token: string, user: User) => void;
   updateUser: (user: Partial<User>) => void;
   setCurrentCompany: (companyId: string) => void;
+  setCurrentEmployment: (employmentId: string) => void;
   updateEmployment: (companyId: string, data: Partial<Employment>) => void;
   clearAuth: () => void;
   completeOnboarding: () => void;
@@ -22,21 +24,43 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       user: null,
       currentCompanyId: null,
+      currentEmploymentId: null,
       isAuthenticated: false,
       onboardingCompleted: false,
-      setAuth: (token, user) => set({ 
-        token, user, isAuthenticated: true, onboardingCompleted: user.onboardingCompleted,
-        currentCompanyId: user.employments?.find(e => e.isPrimary)?.companyId || user.employments?.[0]?.companyId || null
-      }),
+      setAuth: (token, user) => {
+        const primaryEmployment = user.employments?.find(e => e.isPrimary) || user.employments?.[0];
+        set({
+          token,
+          user,
+          isAuthenticated: true,
+          onboardingCompleted: user.onboardingCompleted,
+          currentCompanyId: primaryEmployment?.companyId || null,
+          currentEmploymentId: primaryEmployment?.id || null,
+        });
+      },
       updateUser: (partial) => set({ user: get().user ? { ...get().user!, ...partial } : null }),
-      setCurrentCompany: (companyId) => set({ currentCompanyId: companyId }),
+      setCurrentCompany: (companyId) => {
+        const user = get().user;
+        const employment = user?.employments?.find(e => e.companyId === companyId);
+        set({
+          currentCompanyId: companyId,
+          currentEmploymentId: employment?.id || null,
+        });
+      },
+      setCurrentEmployment: (employmentId) => set({ currentEmploymentId: employmentId }),
       updateEmployment: (companyId, data) => {
         const user = get().user;
         if (!user) return;
         const newEmployments = user.employments.map(e => e.companyId === companyId ? { ...e, ...data } : e);
         set({ user: { ...user, employments: newEmployments } });
       },
-      clearAuth: () => set({ token: null, user: null, isAuthenticated: false, currentCompanyId: null }),
+      clearAuth: () => set({
+        token: null,
+        user: null,
+        isAuthenticated: false,
+        currentCompanyId: null,
+        currentEmploymentId: null,
+      }),
       completeOnboarding: () => set({ onboardingCompleted: true }),
     }),
     {
