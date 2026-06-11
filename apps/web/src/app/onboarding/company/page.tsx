@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { StepIndicator } from '@/components/ui';
+import Script from 'next/script';
 
 // 카카오 주소 API 타입 (window.daum)
 declare global {
@@ -247,6 +248,10 @@ export default function CompanyPage() {
           </div>
         </div>
       </div>
+      <Script 
+        src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" 
+        strategy="afterInteractive"
+      />
     </div>
   );
 }

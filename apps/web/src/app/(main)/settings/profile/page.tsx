@@ -4,6 +4,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { useToast } from '@/components/ui/Toast';
 import { fetchApi } from '@/lib/api';
+import Script from 'next/script';
+
+// 카카오 주소 API 타입 (window.daum)
+declare global {
+  interface Window {
+    daum: any;
+  }
+}
 
 const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 
@@ -71,6 +79,18 @@ function ProfilePageContent() {
   // 비밀번호 변경
   const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
   const [pwError, setPwError] = useState('');
+
+  const openAddressSearch = () => {
+    if (typeof window !== 'undefined' && window.daum) {
+      new window.daum.Postcode({
+        oncomplete: (data: any) => {
+          setCompanyAddress(data.address);
+        },
+      }).open();
+    } else {
+      alert('주소 검색 서비스를 로드하는 중입니다. 잠시 후 다시 시도해 주세요.');
+    }
+  };
 
   const handleSaveProfile = async () => {
     setSaving(true);
@@ -319,30 +339,42 @@ function ProfilePageContent() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-secondary)' }}>근무지 주소</label>
-                <input ref={companyAddressRef} value={companyAddress} onChange={e => setCompanyAddress(e.target.value)}
-                  placeholder="근무지 주소를 입력하세요"
-                  style={{
-                    width: '100%', height: 46, borderRadius: 14,
-                    border: '1px solid rgba(255, 255, 255, 0.5)',
-                    background: 'rgba(255, 255, 255, 0.3)',
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)',
-                    padding: '0 14px', fontSize: 14, fontWeight: 600,
-                    color: 'var(--color-text-primary)', outline: 'none',
-                    boxSizing: 'border-box',
-                    transition: 'all 0.2s',
-                  }}
-                  onFocus={e => {
-                    e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                    e.target.style.border = '1px solid var(--color-primary)';
-                    e.target.style.boxShadow = '0 0 12px rgba(59, 130, 246, 0.25)';
-                  }}
-                  onBlur={e => {
-                    e.target.style.background = 'rgba(255, 255, 255, 0.3)';
-                    e.target.style.border = '1px solid rgba(255, 255, 255, 0.5)';
-                    e.target.style.boxShadow = 'none';
-                  }}
-                />
+                <div style={{ display: 'flex', gap: 8, width: '100%', boxSizing: 'border-box' }}>
+                  <input ref={companyAddressRef} value={companyAddress} readOnly
+                    placeholder="주소 검색 버튼을 눌러주세요"
+                    style={{
+                      flex: 1, minWidth: 0, height: 46, borderRadius: 14,
+                      border: '1px solid rgba(255, 255, 255, 0.5)',
+                      background: 'rgba(255, 255, 255, 0.3)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      padding: '0 14px', fontSize: 14, fontWeight: 600,
+                      color: 'var(--color-text-primary)', outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <button type="button" onClick={openAddressSearch}
+                    style={{
+                      height: 46, padding: '0 16px',
+                      background: 'linear-gradient(135deg, var(--color-primary) 0%, #6366F1 100%)',
+                      color: '#fff', fontSize: 13, fontWeight: 700,
+                      borderRadius: 14, border: 'none', cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
+                      flexShrink: 0, whiteSpace: 'nowrap',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseDown={e => {
+                      e.currentTarget.style.transform = 'scale(0.97)';
+                      e.currentTarget.style.opacity = '0.95';
+                    }}
+                    onMouseUp={e => {
+                      e.currentTarget.style.transform = 'none';
+                      e.currentTarget.style.opacity = '1';
+                    }}
+                  >
+                    주소 검색
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -503,12 +535,18 @@ function ProfilePageContent() {
 
 export default function ProfilePage() {
   return (
-    <Suspense fallback={
-      <div style={{ display: 'flex', minHeight: '100dvh', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: 14 }}>
-        설정을 불러오는 중...
-      </div>
-    }>
-      <ProfilePageContent />
-    </Suspense>
+    <>
+      <Suspense fallback={
+        <div style={{ display: 'flex', minHeight: '100dvh', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: 14 }}>
+          설정을 불러오는 중...
+        </div>
+      }>
+        <ProfilePageContent />
+      </Suspense>
+      <Script 
+        src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" 
+        strategy="afterInteractive"
+      />
+    </>
   );
 }
