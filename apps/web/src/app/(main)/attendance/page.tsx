@@ -10,12 +10,12 @@ import { Badge } from '@/components/ui/Badge';
 import { formatTime, formatDuration } from '@/lib/utils';
 import { mockAttendance } from '@/mocks/data/attendance';
 
-const STATUS_CONFIG: Record<AttendanceStatus, { label: string; dotColor: string; badgeVariant: 'success' | 'warning' | 'danger' | 'vacation' | 'neutral' }> = {
-  normal:   { label: '정상',  dotColor: 'bg-green-500',  badgeVariant: 'success' },
-  late:     { label: '지각',  dotColor: 'bg-amber-400',  badgeVariant: 'warning' },
-  absent:   { label: '결근',  dotColor: 'bg-red-500',    badgeVariant: 'danger' },
-  vacation: { label: '휴가',  dotColor: 'bg-violet-500', badgeVariant: 'vacation' },
-  holiday:  { label: '공휴일', dotColor: 'bg-gray-300',  badgeVariant: 'neutral' },
+const STATUS_CONFIG: Record<AttendanceStatus, { label: string; color: string; badgeVariant: 'success' | 'warning' | 'danger' | 'vacation' | 'neutral' }> = {
+  normal:   { label: '정상',  color: '#22C55E',  badgeVariant: 'success' },
+  late:     { label: '지각',  color: '#F59E0B',  badgeVariant: 'warning' },
+  absent:   { label: '결근',  color: '#EF4444',    badgeVariant: 'danger' },
+  vacation: { label: '휴가',  color: '#8B5CF6', badgeVariant: 'vacation' },
+  holiday:  { label: '공휴일', color: '#D1D5DB',  badgeVariant: 'neutral' },
 };
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -110,15 +110,18 @@ export default function AttendancePage() {
         </div>
 
         {view === 'calendar' ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <div className="glass-card" style={{ borderRadius: 24, padding: 18 }}>
             {/* 요일 헤더 */}
-            <div className="grid grid-cols-7 mb-2">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 12 }}>
               {DAY_LABELS.map((d, i) => (
-                <div key={d} className={`text-center text-xs font-semibold py-1 ${i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-gray-400'}`}>{d}</div>
+                <div key={d} style={{
+                  textAlign: 'center', fontSize: 12, fontWeight: 700, padding: '4px 0',
+                  color: i === 0 ? 'var(--color-danger)' : i === 6 ? 'var(--color-primary)' : 'var(--color-text-muted)'
+                }}>{d}</div>
               ))}
             </div>
             {/* 날짜 그리드 */}
-            <div className="grid grid-cols-7 gap-y-1">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', rowGap: 8 }}>
               {/* 오프셋 빈 셀 */}
               {Array.from({ length: startOffset }).map((_, i) => <div key={`off-${i}`} />)}
               {days.map(day => {
@@ -130,36 +133,53 @@ export default function AttendancePage() {
                   <button
                     key={key}
                     onClick={() => handleDayClick(day)}
-                    className="flex flex-col items-center py-1 rounded-xl transition-colors hover:bg-gray-50 active:bg-gray-100"
+                    className="flex flex-col items-center py-1 rounded-xl transition-base hover:bg-white/40"
+                    style={{
+                      border: 'none', background: 'none', cursor: 'pointer', outline: 'none'
+                    }}
                   >
-                    <span className={`w-7 h-7 flex items-center justify-center rounded-full text-sm font-medium ${
-                      today ? 'bg-blue-500 text-white font-bold' :
-                      dayOfWeek === 0 ? 'text-red-400' :
-                      dayOfWeek === 6 ? 'text-blue-400' :
-                      'text-gray-700'
-                    }`}>
+                    <span 
+                      className="flex items-center justify-center rounded-full text-sm font-semibold"
+                      style={{
+                        width: 28, height: 28,
+                        background: today ? 'linear-gradient(135deg, var(--color-primary) 0%, #6366F1 100%)' : 'transparent',
+                        color: today ? '#fff' :
+                          dayOfWeek === 0 ? 'var(--color-danger)' :
+                          dayOfWeek === 6 ? 'var(--color-primary)' :
+                          'var(--color-text-primary)',
+                        boxShadow: today ? '0 4px 10px rgba(59, 130, 246, 0.3)' : 'none',
+                      }}
+                    >
                       {format(day, 'd')}
                     </span>
                     {/* 상태 dot */}
                     {rec && rec.status !== 'holiday' && (
-                      <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${STATUS_CONFIG[rec.status]?.dotColor ?? 'bg-gray-300'}`} />
+                      <span style={{
+                        width: 6, height: 6, borderRadius: '50%', marginTop: 4,
+                        backgroundColor: STATUS_CONFIG[rec.status]?.color ?? '#D1D5DB'
+                      }} />
                     )}
-                    {!rec && <span className="w-1.5 h-1.5 mt-0.5" />}
+                    {!rec && <span style={{ width: 6, height: 6, marginTop: 4 }} />}
                   </button>
                 );
               })}
             </div>
             {/* 범례 */}
-            <div className="flex items-center justify-center gap-4 mt-4 pt-3 border-t border-gray-50">
+            <div 
+              style={{
+                display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16,
+                marginTop: 16, paddingTop: 12, borderTop: '1px solid rgba(255, 255, 255, 0.4)'
+              }}
+            >
               {[
-                { dot: 'bg-green-500', label: '정상' },
-                { dot: 'bg-amber-400', label: '지각' },
-                { dot: 'bg-red-500',   label: '결근' },
-                { dot: 'bg-violet-500', label: '휴가' },
+                { color: '#22C55E', label: '정상' },
+                { color: '#F59E0B', label: '지각' },
+                { color: '#EF4444',   label: '결근' },
+                { color: '#8B5CF6', label: '휴가' },
               ].map(l => (
-                <div key={l.label} className="flex items-center gap-1.5">
-                  <span className={`w-2 h-2 rounded-full ${l.dot}`} />
-                  <span className="text-xs text-gray-500">{l.label}</span>
+                <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: l.color }} />
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)' }}>{l.label}</span>
                 </div>
               ))}
             </div>
