@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../**/*.{js,ts,jsx,tsx,mdx}";
 
 :root {
   /* Brand - 영롱한 일렉트릭 블루 & 인디고 계열 */
