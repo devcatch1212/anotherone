@@ -34,15 +34,21 @@ export default function SettingsPage() {
 
   const employment = user?.employments?.find(e => e.companyId === currentCompanyId) || user?.employments?.[0];
 
-  const wageLabel = employment?.wageType === 'hourly'
-    ? `시급 ${(employment?.hourlyWage ?? 0).toLocaleString()}원`
-    : `일급 ${(employment?.dailyWage ?? 0).toLocaleString()}원`;
+  const wageTypeLabel = employment
+    ? WAGE_TYPE_LABEL[employment.wageType]
+    : '미등록';
+
+  const wageLabel = employment
+    ? (employment.wageType === 'hourly'
+        ? `시급 ${(employment.hourlyWage ?? 0).toLocaleString()}원`
+        : `일급 ${(employment.dailyWage ?? 0).toLocaleString()}원`)
+    : '미등록';
 
   const menuSections = [
     {
       title: '급여 & 근무지',
       items: [
-        { label: '급여 유형', value: WAGE_TYPE_LABEL[employment?.wageType ?? 'hourly'], icon: '⚙️', href: '/settings/profile?focus=wageType' },
+        { label: '급여 유형', value: wageTypeLabel, icon: '⚙️', href: '/settings/profile?focus=wageType' },
         { label: '급여', value: wageLabel, icon: '💵', href: '/settings/profile?focus=wage' },
         { label: '회사명', value: employment?.company?.name || '미등록', icon: '🏭', href: '/settings/profile?focus=companyName' },
         { label: '근무지 주소', value: employment?.company?.address || '미등록', icon: '📍', href: '/settings/profile?focus=companyAddress' },
