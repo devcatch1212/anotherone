@@ -2,8 +2,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOnboardingStore } from '@/store/onboarding.store';
+import { useAuthStore } from '@/store/auth.store';
 import { StepIndicator } from '@/components/ui';
 import { format } from 'date-fns';
+import { fetchApi } from '@/lib/api';
 
 const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 const CURRENT_MIN_WAGE = 10030;
@@ -11,6 +13,33 @@ const CURRENT_MIN_WAGE = 10030;
 export default function WageTypePage() {
   const router = useRouter();
   const store = useOnboardingStore();
+  const { completeOnboarding, updateUser } = useAuthStore();
+  const [loadingSkip, setLoadingSkip] = useState(false);
+
+  const handleSkip = async () => {
+    setLoadingSkip(true);
+    try {
+      // 1. 백엔드에 skip API 호출하여 온보딩 상태를 완료로 업데이트
+      await fetchApi('/api/onboarding/skip', { method: 'POST' });
+      
+      // 2. 최신 사용자 정보 동기화
+      const meData = await fetchApi('/api/auth/me');
+      updateUser(meData);
+      
+      // 3. Zustand 로컬 상태 업데이트 및 홈 이동
+      completeOnboarding();
+      store.reset();
+      router.replace('/home');
+    } catch (e) {
+      console.error('Failed to skip onboarding:', e);
+      // API 오류 시에도 사용자 경험을 위해 로컬 상태 변경 후 진입
+      completeOnboarding();
+      store.reset();
+      router.replace('/home');
+    } finally {
+      setLoadingSkip(false);
+    }
+  };
 
   const [wageType, setWageType] = useState<'hourly' | 'monthly'>(
     store.wageType === 'daily' ? 'monthly' : 'hourly'
@@ -82,17 +111,18 @@ export default function WageTypePage() {
           <StepIndicator steps={3} current={1} />
           <button
             type="button"
-            onClick={() => router.push('/onboarding/company')}
+            onClick={handleSkip}
+            disabled={loadingSkip}
             style={{
               background: 'none', border: 'none',
               fontSize: 13, fontWeight: 700,
-              color: 'var(--color-primary)', cursor: 'pointer',
+              color: 'var(--color-primary)', cursor: loadingSkip ? 'not-allowed' : 'pointer',
               opacity: 0.8
             }}
-            onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-            onMouseLeave={e => e.currentTarget.style.opacity = '0.8'}
+            onMouseEnter={e => !loadingSkip && (e.currentTarget.style.opacity = '1')}
+            onMouseLeave={e => !loadingSkip && (e.currentTarget.style.opacity = '0.8')}
           >
-            건너뛰기
+            {loadingSkip ? '처리 중...' : '건너뛰기'}
           </button>
         </div>
         <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-text-primary)', letterSpacing: '-0.5px' }}>

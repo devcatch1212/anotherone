@@ -62,4 +62,12 @@ export class OnboardingService {
 
     return { company, employment };
   }
+
+  async skipOnboarding(userId: string) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { onboardingCompleted: true },
+    });
+    return { success: true, user };
+  }
 }

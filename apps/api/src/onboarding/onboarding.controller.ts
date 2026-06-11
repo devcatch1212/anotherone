@@ -12,4 +12,10 @@ export class OnboardingController {
   async createCompanyAndEmployment(@Request() req: any, @Body() body: CompanyOnboardingDto) {
     return this.onboardingService.createCompanyAndEmployment(req.user.id, body);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('skip')
+  async skipOnboarding(@Request() req: any) {
+    return this.onboardingService.skipOnboarding(req.user.id);
+  }
 }

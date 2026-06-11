@@ -143,4 +143,9 @@ export const authHandlers = [
     Object.assign(currentMockUser, updatedFallbackUser);
     return HttpResponse.json({ success: true, user: updatedFallbackUser });
   }),
+
+  http.post('/api/onboarding/skip', () => {
+    currentMockUser.onboardingCompleted = true;
+    return HttpResponse.json({ success: true, user: currentMockUser });
+  }),
 ];
