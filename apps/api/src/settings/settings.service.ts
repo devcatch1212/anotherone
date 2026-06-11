@@ -23,6 +23,8 @@ export class SettingsService {
       data: {
         name: data.companyName,
         address: data.companyAddress,
+        latitude: data.latitude,
+        longitude: data.longitude,
       },
     });
 

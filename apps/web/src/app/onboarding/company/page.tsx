@@ -5,14 +5,6 @@ import { useOnboardingStore } from '@/store/onboarding.store';
 import { StepIndicator } from '@/components/ui';
 import Script from 'next/script';
 
-// 카카오 주소 API 타입 (window.daum)
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    daum: any;
-  }
-}
-
 export default function CompanyPage() {
   const router = useRouter();
   const {
@@ -22,33 +14,72 @@ export default function CompanyPage() {
   } = useOnboardingStore();
   const [companyName, setCompanyName] = useState(savedName);
   const [companyAddress, setCompanyAddress] = useState(savedAddr);
-  const [lat, setLat] = useState(0);
-  const [lng, setLng] = useState(0);
+  const [lat, setLat] = useState(37.5004); // Default to Gangnam Mock coordinate
+  const [lng, setLng] = useState(127.0368);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const [error, setError] = useState('');
 
   // 카카오 주소 검색 실행
   const openAddressSearch = () => {
-    if (typeof window !== 'undefined' && window.daum) {
-      new window.daum.Postcode({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        oncomplete: (data: any) => {
-          setCompanyAddress(data.address);
-          // 실제 백엔드에서는 주소 → 좌표 변환 API 호출
-          // Mock: 강남구 테헤란로 152 좌표 사용
+    if (typeof window === 'undefined') return;
+
+    if (!window.daum) {
+      alert('주소 검색 서비스를 로드하는 중입니다. 잠시 후 다시 시도해 주세요.');
+      return;
+    }
+
+    new window.daum.Postcode({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      oncomplete: (data: any) => {
+        const fullAddress = data.address;
+        setCompanyAddress(fullAddress);
+
+        setIsGeocoding(true);
+        // 카카오 맵 SDK가 로드되어 있는지 확인 (autoload=false이므로 services는 load 콜백 이후에 접근 가능)
+        const hasKakaoMaps = window.kakao && window.kakao.maps;
+
+        if (hasKakaoMaps) {
+          window.kakao.maps.load(() => {
+            try {
+              const geocoder = new window.kakao.maps.services.Geocoder();
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              geocoder.addressSearch(fullAddress, (result: any[], status: any) => {
+                if (status === window.kakao.maps.services.Status.OK && result[0]) {
+                  const latitude = parseFloat(result[0].y);
+                  const longitude = parseFloat(result[0].x);
+                  setLat(latitude);
+                  setLng(longitude);
+                  console.log(`[Kakao Geocoder] 주소 변환 성공: ${fullAddress} -> (${latitude}, ${longitude})`);
+                } else {
+                  console.warn(`[Kakao Geocoder] 주소 변환 실패. Mock 좌표를 적용합니다. 주소: ${fullAddress}`);
+                  setLat(37.5004);
+                  setLng(127.0368);
+                }
+                setIsGeocoding(false);
+              });
+            } catch (err) {
+              console.error('[Kakao Geocoder] Geocoder 초기화 중 오류 발생. Mock 좌표를 적용합니다.', err);
+              setLat(37.5004);
+              setLng(127.0368);
+              setIsGeocoding(false);
+            }
+          });
+        } else {
+          console.warn('[Kakao Geocoder] Kakao Maps SDK가 로드되지 않았습니다. Mock 좌표를 적용합니다.');
           setLat(37.5004);
           setLng(127.0368);
-        },
-      }).open();
-    } else {
-      // 카카오 스크립트 없을 때 Mock 처리
-      setCompanyAddress('서울특별시 강남구 테헤란로 152 (Mock 주소)');
-      setLat(37.5004);
-      setLng(127.0368);
-    }
+          setIsGeocoding(false);
+        }
+      },
+    }).open();
   };
 
   const handleNext = () => {
     setError('');
+    if (isGeocoding) {
+      setError('위치 변환이 아직 완료되지 않았습니다. 잠시만 기다려 주세요.');
+      return;
+    }
     if (!companyName.trim()) {
       setError('회사명을 입력해주세요');
       return;
@@ -227,23 +258,30 @@ export default function CompanyPage() {
             <button
               type="button"
               onClick={handleNext}
+              disabled={isGeocoding}
               style={{
                 height: 50, borderRadius: 16, border: 'none',
-                background: 'linear-gradient(135deg, var(--color-primary) 0%, #6366F1 100%)',
+                background: isGeocoding 
+                  ? 'var(--color-text-muted)' 
+                  : 'linear-gradient(135deg, var(--color-primary) 0%, #6366F1 100%)',
                 color: '#fff', fontSize: 15, fontWeight: 700,
-                cursor: 'pointer', boxShadow: '0 6px 16px rgba(99, 102, 241, 0.2)',
-                transition: 'all 0.2s'
+                cursor: isGeocoding ? 'not-allowed' : 'pointer', 
+                boxShadow: isGeocoding ? 'none' : '0 6px 16px rgba(99, 102, 241, 0.2)',
+                transition: 'all 0.2s',
+                opacity: isGeocoding ? 0.7 : 1
               }}
               onMouseDown={e => {
+                if (isGeocoding) return;
                 e.currentTarget.style.transform = 'scale(0.97)';
                 e.currentTarget.style.opacity = '0.95';
               }}
               onMouseUp={e => {
+                if (isGeocoding) return;
                 e.currentTarget.style.transform = 'none';
                 e.currentTarget.style.opacity = '1';
               }}
             >
-              다음 단계 →
+              {isGeocoding ? '위치 변환 중...' : '다음 단계 →'}
             </button>
           </div>
         </div>
@@ -252,6 +290,12 @@ export default function CompanyPage() {
         src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" 
         strategy="afterInteractive"
       />
+      {process.env.NEXT_PUBLIC_KAKAO_APP_KEY && (
+        <Script
+          src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=services&autoload=false`}
+          strategy="afterInteractive"
+        />
+      )}
     </div>
   );
 }

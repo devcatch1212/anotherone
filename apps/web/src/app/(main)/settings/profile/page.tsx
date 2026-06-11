@@ -6,13 +6,6 @@ import { useToast } from '@/components/ui/Toast';
 import { fetchApi } from '@/lib/api';
 import Script from 'next/script';
 
-// 카카오 주소 API 타입 (window.daum)
-declare global {
-  interface Window {
-    daum: any;
-  }
-}
-
 const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 
 function ProfilePageContent() {
@@ -23,6 +16,7 @@ function ProfilePageContent() {
   const initialTab = searchParams.get('tab') === 'password' ? 'password' : 'profile';
   const [tab, setTab] = useState<'profile' | 'password'>(initialTab);
   const [saving, setSaving] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   const wageTypeRef = useRef<HTMLDivElement>(null);
   const wageInputRef = useRef<HTMLInputElement>(null);
@@ -63,6 +57,8 @@ function ProfilePageContent() {
   const [dailyWage, setDailyWage] = useState(employment?.dailyWage ?? 100000);
   const [companyName, setCompanyName] = useState(employment?.company?.name ?? '');
   const [companyAddress, setCompanyAddress] = useState(employment?.company?.address ?? '');
+  const [lat, setLat] = useState(employment?.company?.latitude ?? 37.5004);
+  const [lng, setLng] = useState(employment?.company?.longitude ?? 127.0368);
 
   // 기본 근무 시간 수정
   const [workStartTime, setWorkStartTime] = useState(employment?.workStartTime ?? '09:00');
@@ -81,18 +77,64 @@ function ProfilePageContent() {
   const [pwError, setPwError] = useState('');
 
   const openAddressSearch = () => {
-    if (typeof window !== 'undefined' && window.daum) {
-      new window.daum.Postcode({
-        oncomplete: (data: any) => {
-          setCompanyAddress(data.address);
-        },
-      }).open();
-    } else {
+    if (typeof window === 'undefined') return;
+
+    if (!window.daum) {
       alert('주소 검색 서비스를 로드하는 중입니다. 잠시 후 다시 시도해 주세요.');
+      return;
     }
+
+    new window.daum.Postcode({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      oncomplete: (data: any) => {
+        const fullAddress = data.address;
+        setCompanyAddress(fullAddress);
+
+        setIsGeocoding(true);
+        // 카카오 맵 SDK가 로드되어 있는지 확인 (autoload=false이므로 services는 load 콜백 이후에 접근 가능)
+        const hasKakaoMaps = window.kakao && window.kakao.maps;
+
+        if (hasKakaoMaps) {
+          window.kakao.maps.load(() => {
+            try {
+              const geocoder = new window.kakao.maps.services.Geocoder();
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              geocoder.addressSearch(fullAddress, (result: any[], status: any) => {
+                if (status === window.kakao.maps.services.Status.OK && result[0]) {
+                  const latitude = parseFloat(result[0].y);
+                  const longitude = parseFloat(result[0].x);
+                  setLat(latitude);
+                  setLng(longitude);
+                  console.log(`[Kakao Geocoder] 주소 변환 성공: ${fullAddress} -> (${latitude}, ${longitude})`);
+                } else {
+                  console.warn(`[Kakao Geocoder] 주소 변환 실패. Mock 좌표를 적용합니다. 주소: ${fullAddress}`);
+                  setLat(37.5004);
+                  setLng(127.0368);
+                }
+                setIsGeocoding(false);
+              });
+            } catch (err) {
+              console.error('[Kakao Geocoder] Geocoder 초기화 중 오류 발생. Mock 좌표를 적용합니다.', err);
+              setLat(37.5004);
+              setLng(127.0368);
+              setIsGeocoding(false);
+            }
+          });
+        } else {
+          console.warn('[Kakao Geocoder] Kakao Maps SDK가 로드되지 않았습니다. Mock 좌표를 적용합니다.');
+          setLat(37.5004);
+          setLng(127.0368);
+          setIsGeocoding(false);
+        }
+      },
+    }).open();
   };
 
   const handleSaveProfile = async () => {
+    if (isGeocoding) {
+      toast('위치 좌표가 아직 변환 중입니다. 잠시 후 다시 시도해 주세요.', 'error');
+      return;
+    }
     setSaving(true);
     try {
       if (employment) {
@@ -103,6 +145,8 @@ function ProfilePageContent() {
           dailyWage: wageType === 'daily' ? dailyWage : undefined,
           companyName,
           companyAddress,
+          latitude: lat,
+          longitude: lng,
           workStartTime,
           workEndTime,
           breakMinutes,
@@ -442,7 +486,7 @@ function ProfilePageContent() {
               </div>
             </div>
 
-            <button onClick={handleSaveProfile} disabled={saving || !employment?.isActive}
+            <button onClick={handleSaveProfile} disabled={saving || isGeocoding || !employment?.isActive}
               className="glass-btn-primary"
               style={{
                 height: 54, width: '100%', borderRadius: 16, border: 'none',
@@ -547,6 +591,12 @@ export default function ProfilePage() {
         src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" 
         strategy="afterInteractive"
       />
+      {process.env.NEXT_PUBLIC_KAKAO_APP_KEY && (
+        <Script
+          src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=services&autoload=false`}
+          strategy="afterInteractive"
+        />
+      )}
     </>
   );
 }

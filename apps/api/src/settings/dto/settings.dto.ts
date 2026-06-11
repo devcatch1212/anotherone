@@ -40,6 +40,14 @@ export class UpdateProfileDto {
   @IsArray({ message: '근무 요일을 선택해주세요.' })
   @IsNotEmpty({ message: '근무 요일을 선택해주세요.' })
   workDaysOfWeek!: number[];
+
+  @IsNumber({}, { message: '위도를 숫자로 입력해주세요.' })
+  @IsOptional()
+  latitude?: number;
+
+  @IsNumber({}, { message: '경도를 숫자로 입력해주세요.' })
+  @IsOptional()
+  longitude?: number;
 }
 
 export class UpdatePasswordDto {
