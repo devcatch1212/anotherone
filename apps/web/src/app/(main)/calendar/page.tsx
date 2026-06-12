@@ -560,7 +560,7 @@ export default function CalendarPage() {
                 onMouseUp={e => e.currentTarget.style.transform = 'none'}
               >근무시간 수정</button>
             )}
-            {!selLeave && (
+            {!selLeave && !selWork && (
               <button
                 onClick={() => { setSheetOpen(false); setApplyOpen(true); setApplyStart(selKey ?? ''); }}
                 className="glass-btn-primary transition-all duration-100"
