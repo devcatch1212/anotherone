@@ -53,6 +53,11 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!employment?.id) return;
+    // 근무지 변경 시 이전 데이터 즉시 초기화 (stale 데이터 화면 노출 방지)
+    setRecords([]);
+    setTodayRecord(null);
+    setState('before');
+
     const year = new Date().getFullYear();
     const month = new Date().getMonth() + 1;
     

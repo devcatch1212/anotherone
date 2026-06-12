@@ -58,6 +58,7 @@ export const useAuthStore = create<AuthState>()(
         token: null,
         user: null,
         isAuthenticated: false,
+        onboardingCompleted: false,
         currentCompanyId: null,
         currentEmploymentId: null,
       }),

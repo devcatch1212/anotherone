@@ -20,7 +20,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setAuth } = useAuthStore();
+  const { setAuth, clearAuth } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState('');
 
@@ -46,6 +46,11 @@ export default function LoginPage() {
         window.localStorage.setItem('remember-me', 'false');
       }
       
+      // 이전 계정의 잔존 상태 완전 초기화 (스토리지 오염 방지)
+      clearAuth();
+      localStorage.removeItem('auth-storage');
+      sessionStorage.removeItem('auth-storage');
+
       setAuth(resData.access_token, resData.user);
       if (!resData.user.onboardingCompleted) {
         router.replace('/onboarding/wage-type');

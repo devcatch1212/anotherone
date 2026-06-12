@@ -11,10 +11,14 @@ export default function PayrollDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { toast } = useToast();
-  const { user, currentCompanyId } = useAuthStore();
+  const { user } = useAuthStore();
   const [record, setRecord] = useState<PayrollRecord | null>(null);
   const [confirmed, setConfirmed] = useState(false);
-  const employment = user?.employments?.find(e => e.companyId === currentCompanyId) || user?.employments?.[0];
+  // record가 로드된 후 record.companyId 기준으로 employment를 찾아 wageType 결정
+  // currentCompanyId 기준이면 다른 회사 명세서를 볼 때 wageType이 틀림
+  const employment = record
+    ? user?.employments?.find(e => e.companyId === record.companyId)
+    : undefined;
   const wageType = employment?.wageType ?? 'hourly';
 
   useEffect(() => {
