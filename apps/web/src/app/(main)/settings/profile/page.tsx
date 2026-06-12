@@ -96,6 +96,70 @@ function ProfilePageContent() {
   const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
   const [pwError, setPwError] = useState('');
 
+  const mapRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!companyAddress) {
+      mapRef.current = null;
+      markerRef.current = null;
+      return;
+    }
+    
+    const hasKakaoMaps = window.kakao && window.kakao.maps;
+    if (!hasKakaoMaps) return;
+
+    window.kakao.maps.load(() => {
+      try {
+        const container = document.getElementById('kakao-map');
+        if (!container) return;
+
+        if (mapRef.current && markerRef.current) {
+          const moveLatLng = new window.kakao.maps.LatLng(lat, lng);
+          const currentMarkerPos = markerRef.current.getPosition();
+          if (Math.abs(currentMarkerPos.getLat() - lat) > 0.00001 || Math.abs(currentMarkerPos.getLng() - lng) > 0.00001) {
+            markerRef.current.setPosition(moveLatLng);
+            mapRef.current.setCenter(moveLatLng);
+          }
+          return;
+        }
+
+        console.log('[Kakao Map] Initializing map...');
+        const options = {
+          center: new window.kakao.maps.LatLng(lat, lng),
+          level: 3
+        };
+
+        const map = new window.kakao.maps.Map(container, options);
+        mapRef.current = map;
+
+        const markerPosition = new window.kakao.maps.LatLng(lat, lng);
+        const marker = new window.kakao.maps.Marker({
+          position: markerPosition,
+          draggable: true
+        });
+
+        marker.setMap(map);
+        markerRef.current = marker;
+
+        window.kakao.maps.event.addListener(marker, 'dragend', () => {
+          const latlng = marker.getPosition();
+          setLat(latlng.getLat());
+          setLng(latlng.getLng());
+        });
+
+        setTimeout(() => {
+          map.relayout();
+          map.setCenter(markerPosition);
+        }, 100);
+
+      } catch (err) {
+        console.error('[Kakao Map] 지도 로드 중 에러:', err);
+      }
+    });
+  }, [companyAddress, lat, lng]);
+
   const openAddressSearch = () => {
     if (typeof window === 'undefined') return;
 
@@ -468,6 +532,25 @@ function ProfilePageContent() {
                     e.target.style.boxShadow = 'none';
                   }}
                 />
+                {companyAddress && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)' }}>
+                      📍 출퇴근 위치 미세 조정 (핀을 드래그하여 정확히 맞춰주세요)
+                    </label>
+                    <div 
+                      id="kakao-map" 
+                      style={{ 
+                        width: '100%', 
+                        height: 180, 
+                        borderRadius: 16, 
+                        border: '1px solid rgba(255, 255, 255, 0.4)',
+                        background: 'rgba(255, 255, 255, 0.15)',
+                        backdropFilter: 'blur(8px)',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
