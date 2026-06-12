@@ -37,7 +37,7 @@ export default function LeaveApplyPage() {
   const [remainingLeave, setRemainingLeave] = useState<number | null>(null);
 
   const employment = user?.employments?.find(e => e.id === currentEmploymentId || e.companyId === currentCompanyId);
-  const weeklyWorkDays = employment?.weeklyWorkDays ?? 0;
+  const weeklyWorkDays = employment?.workDaysOfWeek?.length ?? employment?.weeklyWorkDays ?? 0;
   const dailyWorkHours = employment?.dailyWorkHours ?? 8;
   const weeklyWorkHours = weeklyWorkDays * dailyWorkHours;
   

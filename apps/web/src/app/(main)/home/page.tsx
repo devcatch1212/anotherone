@@ -34,7 +34,7 @@ export default function HomePage() {
 
   // 1. 목표 근무 시간 계산 (주당 근무시간 * 4주)
   const monthlyTarget = employment 
-    ? (employment.weeklyWorkDays * employment.dailyWorkHours * 4) 
+    ? ((employment.workDaysOfWeek?.length ?? employment.weeklyWorkDays) * employment.dailyWorkHours * 4) 
     : 0;
 
   // 2. 실제 이번 달 일한 시간 합산 (분 -> 시간 단위 변환)
@@ -143,7 +143,7 @@ export default function HomePage() {
       setLeaveRemaining(0);
       return;
     }
-    const weeklyWorkDays = employment.weeklyWorkDays ?? 0;
+    const weeklyWorkDays = employment.workDaysOfWeek?.length ?? employment.weeklyWorkDays ?? 0;
     const dailyWorkHours = employment.dailyWorkHours ?? 8;
     const weeklyWorkHours = weeklyWorkDays * dailyWorkHours;
     
@@ -173,7 +173,7 @@ export default function HomePage() {
         console.error('Failed to fetch leaves', e);
         setLeaveRemaining(totalLeaveDays);
       });
-  }, [employment?.id, employment?.weeklyWorkDays, employment?.dailyWorkHours]);
+  }, [employment?.id, employment?.weeklyWorkDays, employment?.dailyWorkHours, employment?.workDaysOfWeek]);
 
   const startGps = useCallback(() => {
     if (!navigator.geolocation) { 

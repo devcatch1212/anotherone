@@ -79,7 +79,7 @@ export default function CalendarPage() {
   const hireDate = (employment as any)?.createdAt ? new Date((employment as any).createdAt) : new Date(2025, 4, 23);
   const daysWorked  = differenceInDays(new Date(), hireDate);
 
-  const weeklyWorkDays = employment?.weeklyWorkDays ?? 0;
+  const weeklyWorkDays = employment?.workDaysOfWeek?.length ?? employment?.weeklyWorkDays ?? 0;
   const dailyWorkHours = employment?.dailyWorkHours ?? 8;
   const weeklyWorkHours = weeklyWorkDays * dailyWorkHours;
   
@@ -126,7 +126,7 @@ export default function CalendarPage() {
       setBalance({ total: 0, used: 0, remaining: 0 });
       return;
     }
-    const weeklyWorkDays = employment.weeklyWorkDays ?? 0;
+    const weeklyWorkDays = employment.workDaysOfWeek?.length ?? employment.weeklyWorkDays ?? 0;
     const dailyWorkHours = employment.dailyWorkHours ?? 8;
     const weeklyWorkHours = weeklyWorkDays * dailyWorkHours;
     

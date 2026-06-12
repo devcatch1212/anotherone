@@ -16,11 +16,10 @@ const STATUS_CONFIG: Record<string, { label: string; variant: string; color: str
 
 export default function LeavePage() {
   const { user, currentEmploymentId } = useAuthStore();
-  const [balance, setBalance] = useState<LeaveBalance>({ total: 15, used: 0, remaining: 15 });
   const [records, setRecords] = useState<LeaveRecord[]>([]);
 
   const employment = user?.employments?.find(e => e.id === currentEmploymentId);
-  const weeklyWorkDays = employment?.weeklyWorkDays ?? 0;
+  const weeklyWorkDays = employment?.workDaysOfWeek?.length ?? employment?.weeklyWorkDays ?? 0;
   const dailyWorkHours = employment?.dailyWorkHours ?? 8;
   const weeklyWorkHours = weeklyWorkDays * dailyWorkHours;
   
@@ -36,6 +35,8 @@ export default function LeavePage() {
       totalLeaveDays = Math.round((totalLeaveHours / dailyWorkHours) * 10) / 10;
     }
   }
+
+  const [balance, setBalance] = useState<LeaveBalance>({ total: totalLeaveDays, used: 0, remaining: totalLeaveDays });
 
   useEffect(() => {
     if (!currentEmploymentId) return;
