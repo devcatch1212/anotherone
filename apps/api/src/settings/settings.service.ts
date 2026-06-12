@@ -39,6 +39,7 @@ export class SettingsService {
         workEndTime: data.workEndTime,
         breakMinutes: data.breakMinutes,
         workDaysOfWeek: data.workDaysOfWeek,
+        weeklyWorkDays: data.workDaysOfWeek.length,
       },
       include: { company: true },
     });
