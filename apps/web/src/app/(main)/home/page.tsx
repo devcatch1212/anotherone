@@ -46,6 +46,60 @@ export default function HomePage() {
     ? Math.min(100, Math.round((monthlyWorked / monthlyTarget) * 100))
     : 0;
 
+  // 실시간 타이머 계산 (출근 상태에 맞춰 누적 근무 시간 표시)
+  const getTimerText = () => {
+    if (workState === 'before') {
+      return '00:00:00';
+    }
+    
+    if (workState === 'working' && todayRecord?.checkIn) {
+      try {
+        const checkInTime = new Date(todayRecord.checkIn);
+        const diffMs = now.getTime() - checkInTime.getTime();
+        
+        if (diffMs < 0) return '00:00:00';
+        
+        const diffSecs = Math.floor(diffMs / 1000);
+        const hours = Math.floor(diffSecs / 3600);
+        const minutes = Math.floor((diffSecs % 3600) / 60);
+        const seconds = diffSecs % 60;
+        
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+      } catch (e) {
+        return '00:00:00';
+      }
+    }
+    
+    if (workState === 'done' && todayRecord) {
+      if (todayRecord.checkIn && todayRecord.checkOut) {
+        try {
+          const diffMs = new Date(todayRecord.checkOut).getTime() - new Date(todayRecord.checkIn).getTime();
+          const diffSecs = Math.floor(diffMs / 1000);
+          const hours = Math.floor(diffSecs / 3600);
+          const minutes = Math.floor((diffSecs % 3600) / 60);
+          const seconds = diffSecs % 60;
+          
+          const pad = (n: number) => String(n).padStart(2, '0');
+          return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        } catch (e) {
+          const mins = todayRecord.workedMinutes ?? 0;
+          const hours = Math.floor(mins / 60);
+          const minutes = mins % 60;
+          const pad = (n: number) => String(n).padStart(2, '0');
+          return `${pad(hours)}:${pad(minutes)}:00`;
+        }
+      }
+      const mins = todayRecord.workedMinutes ?? 0;
+      const hours = Math.floor(mins / 60);
+      const minutes = mins % 60;
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return `${pad(hours)}:${pad(minutes)}:00`;
+    }
+    
+    return '00:00:00';
+  };
+
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
@@ -335,13 +389,18 @@ export default function HomePage() {
               </div>
 
               {/* 시계 */}
-              <p style={{
-                fontSize: 46, fontWeight: 700, color: '#111827',
-                letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums',
-                lineHeight: 1.1, margin: 0,
-              }}>
-                {format(now, 'HH:mm:ss')}
-              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', letterSpacing: '-0.2px' }}>
+                  {workState === 'working' ? '⏱️ 오늘 누적 근무 시간' : workState === 'done' ? '✅ 오늘 총 근무 시간' : '⏳ 오늘 근무 시간'}
+                </span>
+                <p style={{
+                  fontSize: 46, fontWeight: 700, color: '#111827',
+                  letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums',
+                  lineHeight: 1.1, margin: 0,
+                }}>
+                  {getTimerText()}
+                </p>
+              </div>
 
               {/* GPS 알림 */}
               <div style={{
