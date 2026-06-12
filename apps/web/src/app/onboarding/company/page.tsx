@@ -24,13 +24,15 @@ export default function CompanyPage() {
     setCompanyInfo,
     companyName: savedName,
     companyAddress: savedAddr,
+    companyLat: savedLat,
+    companyLng: savedLng,
   } = useOnboardingStore();
   const [companyName, setCompanyName] = useState(savedName);
   const parsedAddr = splitAddress(savedAddr);
   const [companyAddress, setCompanyAddress] = useState(parsedAddr.address);
   const [companyAddressDetail, setCompanyAddressDetail] = useState(parsedAddr.detail);
-  const [lat, setLat] = useState(37.5004); // Default to Gangnam Mock coordinate
-  const [lng, setLng] = useState(127.0368);
+  const [lat, setLat] = useState(savedLat && savedLat !== 0 ? savedLat : 37.5004);
+  const [lng, setLng] = useState(savedLng && savedLng !== 0 ? savedLng : 127.0368);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [error, setError] = useState('');
 
@@ -329,7 +331,7 @@ export default function CompanyPage() {
             <input 
               value={companyAddressDetail} 
               onChange={e => setCompanyAddressDetail(e.target.value)}
-              placeholder="상세 주소를 입력하세요 (예: 101동 202호)"
+              placeholder="상세 주소를 입력하세요"
               style={{
                 width: '100%', height: 46, borderRadius: 14,
                 border: '1px solid rgba(255, 255, 255, 0.5)',

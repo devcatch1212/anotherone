@@ -543,7 +543,7 @@ function ProfilePageContent() {
                 <input 
                   value={companyAddressDetail} 
                   onChange={e => setCompanyAddressDetail(e.target.value)}
-                  placeholder="상세 주소를 입력하세요 (예: 101동 202호)"
+                  placeholder="상세 주소를 입력하세요"
                   style={{
                     width: '100%', height: 46, borderRadius: 14,
                     border: '1px solid rgba(255, 255, 255, 0.5)',
