@@ -136,7 +136,7 @@ function ProfilePageContent() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (!companyAddress || !isSdkLoaded) {
+    if (!companyAddress || !isSdkLoaded || isGeocoding) {
       mapRef.current = null;
       markerRef.current = null;
       return;
@@ -193,7 +193,7 @@ function ProfilePageContent() {
         console.error('[Kakao Map] 지도 로드 중 에러:', err);
       }
     });
-  }, [companyAddress, lat, lng, isSdkLoaded]);
+  }, [companyAddress, lat, lng, isSdkLoaded, isGeocoding]);
 
   const openAddressSearch = () => {
     if (typeof window === 'undefined') return;
@@ -567,7 +567,7 @@ function ProfilePageContent() {
                     e.target.style.boxShadow = 'none';
                   }}
                 />
-                <div style={{ display: companyAddress ? 'flex' : 'none', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+                <div style={{ display: (companyAddress && !isGeocoding) ? 'flex' : 'none', flexDirection: 'column', gap: 6, marginTop: 10 }}>
                   <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)' }}>
                     📍 출퇴근 위치 미세 조정 (핀을 드래그하여 정확히 맞춰주세요)
                   </label>
