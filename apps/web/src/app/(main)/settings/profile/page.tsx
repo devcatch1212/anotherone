@@ -593,7 +593,7 @@ export default function ProfilePage() {
       />
       {process.env.NEXT_PUBLIC_KAKAO_APP_KEY && (
         <Script
-          src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=services&autoload=false`}
+          src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=services&autoload=false`}
           strategy="afterInteractive"
         />
       )}
