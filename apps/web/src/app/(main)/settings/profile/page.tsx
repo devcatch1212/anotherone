@@ -6,6 +6,19 @@ import { useToast } from '@/components/ui/Toast';
 import { fetchApi } from '@/lib/api';
 import Script from 'next/script';
 
+function splitAddress(fullAddress: string) {
+  if (!fullAddress) return { address: '', detail: '' };
+  const regex = /^(.*?[로길동읍면]\s+\d+(-\d+)?)(.*)$/;
+  const match = fullAddress.match(regex);
+  if (match) {
+    return {
+      address: match[1].trim(),
+      detail: match[3].trim()
+    };
+  }
+  return { address: fullAddress, detail: '' };
+}
+
 const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 
 function ProfilePageContent() {
@@ -60,7 +73,10 @@ function ProfilePageContent() {
   const [hourlyWage, setHourlyWage] = useState(employment?.hourlyWage ?? 12000);
   const [dailyWage, setDailyWage] = useState(employment?.dailyWage ?? 100000);
   const [companyName, setCompanyName] = useState(employment?.company?.name ?? '');
-  const [companyAddress, setCompanyAddress] = useState(employment?.company?.address ?? '');
+  const initialAddr = employment?.company?.address ?? '';
+  const parsedAddr = splitAddress(initialAddr);
+  const [companyAddress, setCompanyAddress] = useState(parsedAddr.address);
+  const [companyAddressDetail, setCompanyAddressDetail] = useState(parsedAddr.detail);
   const [lat, setLat] = useState(employment?.company?.latitude ?? 37.5004);
   const [lng, setLng] = useState(employment?.company?.longitude ?? 127.0368);
 
@@ -93,7 +109,7 @@ function ProfilePageContent() {
       oncomplete: (data: any) => {
         const fullAddress = data.address;
         setCompanyAddress(fullAddress);
-
+        setCompanyAddressDetail('');
         setIsGeocoding(true);
         // 카카오 맵 SDK가 로드되어 있는지 확인 (autoload=false이므로 services는 load 콜백 이후에 접근 가능)
         const hasKakaoMaps = window.kakao && window.kakao.maps;
@@ -148,7 +164,9 @@ function ProfilePageContent() {
           hourlyWage: wageType === 'hourly' ? hourlyWage : undefined,
           dailyWage: wageType === 'daily' ? dailyWage : undefined,
           companyName,
-          companyAddress,
+          companyAddress: companyAddressDetail.trim() 
+            ? `${companyAddress} ${companyAddressDetail.trim()}` 
+            : companyAddress,
           latitude: lat,
           longitude: lng,
           workStartTime,
@@ -405,7 +423,7 @@ function ProfilePageContent() {
                     style={{
                       height: 46, padding: '0 16px',
                       background: 'linear-gradient(135deg, var(--color-primary) 0%, #6366F1 100%)',
-                      color: '#fff', fontSize: 13, fontWeight: 700,
+                      color: '#fff', fontSize: 13, fontStyle: 'normal',
                       borderRadius: 14, border: 'none', cursor: 'pointer',
                       boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
                       flexShrink: 0, whiteSpace: 'nowrap',
@@ -423,6 +441,33 @@ function ProfilePageContent() {
                     주소 검색
                   </button>
                 </div>
+                <input 
+                  value={companyAddressDetail} 
+                  onChange={e => setCompanyAddressDetail(e.target.value)}
+                  placeholder="상세 주소를 입력하세요 (예: 101동 202호)"
+                  style={{
+                    width: '100%', height: 46, borderRadius: 14,
+                    border: '1px solid rgba(255, 255, 255, 0.5)',
+                    background: 'rgba(255, 255, 255, 0.3)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    padding: '0 14px', fontSize: 14, fontWeight: 600,
+                    color: 'var(--color-text-primary)', outline: 'none',
+                    boxSizing: 'border-box',
+                    marginTop: 6,
+                    transition: 'all 0.2s',
+                  }}
+                  onFocus={e => {
+                    e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                    e.target.style.border = '1px solid var(--color-primary)';
+                    e.target.style.boxShadow = '0 0 12px rgba(59, 130, 246, 0.25)';
+                  }}
+                  onBlur={e => {
+                    e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                    e.target.style.border = '1px solid rgba(255, 255, 255, 0.5)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
               </div>
             </div>
 

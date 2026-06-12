@@ -5,6 +5,19 @@ import { useOnboardingStore } from '@/store/onboarding.store';
 import { StepIndicator } from '@/components/ui';
 import Script from 'next/script';
 
+function splitAddress(fullAddress: string) {
+  if (!fullAddress) return { address: '', detail: '' };
+  const regex = /^(.*?[로길동읍면]\s+\d+(-\d+)?)(.*)$/;
+  const match = fullAddress.match(regex);
+  if (match) {
+    return {
+      address: match[1].trim(),
+      detail: match[3].trim()
+    };
+  }
+  return { address: fullAddress, detail: '' };
+}
+
 export default function CompanyPage() {
   const router = useRouter();
   const {
@@ -13,7 +26,9 @@ export default function CompanyPage() {
     companyAddress: savedAddr,
   } = useOnboardingStore();
   const [companyName, setCompanyName] = useState(savedName);
-  const [companyAddress, setCompanyAddress] = useState(savedAddr);
+  const parsedAddr = splitAddress(savedAddr);
+  const [companyAddress, setCompanyAddress] = useState(parsedAddr.address);
+  const [companyAddressDetail, setCompanyAddressDetail] = useState(parsedAddr.detail);
   const [lat, setLat] = useState(37.5004); // Default to Gangnam Mock coordinate
   const [lng, setLng] = useState(127.0368);
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -56,7 +71,7 @@ export default function CompanyPage() {
       oncomplete: (data: any) => {
         const fullAddress = data.address;
         setCompanyAddress(fullAddress);
-
+        setCompanyAddressDetail('');
         setIsGeocoding(true);
         // 카카오 맵 SDK가 로드되어 있는지 확인 (autoload=false이므로 services는 load 콜백 이후에 접근 가능)
         const hasKakaoMaps = window.kakao && window.kakao.maps;
@@ -111,7 +126,10 @@ export default function CompanyPage() {
       setError('회사 주소를 선택해주세요');
       return;
     }
-    setCompanyInfo({ companyName, companyAddress, companyLat: lat, companyLng: lng });
+    const finalAddress = companyAddressDetail.trim() 
+      ? `${companyAddress} ${companyAddressDetail.trim()}` 
+      : companyAddress;
+    setCompanyInfo({ companyName, companyAddress: finalAddress, companyLat: lat, companyLng: lng });
     router.push('/onboarding/complete');
   };
 
@@ -231,6 +249,33 @@ export default function CompanyPage() {
                 주소 검색
               </button>
             </div>
+            <input 
+              value={companyAddressDetail} 
+              onChange={e => setCompanyAddressDetail(e.target.value)}
+              placeholder="상세 주소를 입력하세요 (예: 101동 202호)"
+              style={{
+                width: '100%', height: 46, borderRadius: 14,
+                border: '1px solid rgba(255, 255, 255, 0.5)',
+                background: 'rgba(255, 255, 255, 0.3)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                padding: '0 14px', fontSize: 14, fontWeight: 600,
+                color: 'var(--color-text-primary)', outline: 'none',
+                boxSizing: 'border-box',
+                marginTop: 6,
+                transition: 'all 0.2s',
+              }}
+              onFocus={e => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                e.target.style.border = '1px solid var(--color-primary)';
+                e.target.style.boxShadow = '0 0 12px rgba(59, 130, 246, 0.25)';
+              }}
+              onBlur={e => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                e.target.style.border = '1px solid rgba(255, 255, 255, 0.5)';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
             {companyAddress && (
               <div 
                 style={{
@@ -241,7 +286,9 @@ export default function CompanyPage() {
                 }}
               >
                 <span style={{ fontSize: 14 }}>📍</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-success)' }}>{companyAddress}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-success)' }}>
+                  {companyAddress} {companyAddressDetail}
+                </span>
               </div>
             )}
             <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4, fontWeight: 500 }}>
