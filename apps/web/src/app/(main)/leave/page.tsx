@@ -15,16 +15,16 @@ const STATUS_CONFIG: Record<string, { label: string; variant: string; color: str
 };
 
 export default function LeavePage() {
-  const { currentCompanyId } = useAuthStore();
+  const { currentEmploymentId } = useAuthStore();
   const [balance, setBalance] = useState<LeaveBalance>(mockLeaveBalance);
   const [records, setRecords] = useState<LeaveRecord[]>([]);
 
   useEffect(() => {
-    if (!currentCompanyId) return;
-    fetchApi(`/api/leave?employmentId=${currentCompanyId}`)
+    if (!currentEmploymentId) return;
+    fetchApi(`/api/leave?employmentId=${currentEmploymentId}`)
       .then(res => { setRecords(res.records); setBalance(mockLeaveBalance); })
       .catch(() => setRecords(mockLeaves));
-  }, [currentCompanyId]);
+  }, [currentEmploymentId]);
 
   const usedPercent = Math.round((balance.used / balance.total) * 100);
 

@@ -1,7 +1,7 @@
 import { Controller, Post, Body, UseGuards, Request, Get, Query } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { CheckInDto, CheckOutDto, GetAttendanceDto } from './dto/attendance.dto';
+import { CheckInDto, CheckOutDto, GetAttendanceDto, OvertimeRequestDto } from './dto/attendance.dto';
 
 @Controller('api/attendance')
 @UseGuards(JwtAuthGuard)
@@ -18,6 +18,11 @@ export class AttendanceController {
     return this.attendanceService.checkOut(req.user.id, body);
   }
 
+  @Post('overtime')
+  async requestOvertime(@Request() req: any, @Body() body: OvertimeRequestDto) {
+    return this.attendanceService.requestOvertime(req.user.id, body);
+  }
+
   @Get()
   async getMonthlyAttendance(@Request() req: any, @Query() query: GetAttendanceDto) {
     return this.attendanceService.getMonthlyAttendance(
@@ -28,3 +33,4 @@ export class AttendanceController {
     );
   }
 }
+

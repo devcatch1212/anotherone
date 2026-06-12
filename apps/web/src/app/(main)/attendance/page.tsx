@@ -26,14 +26,14 @@ export default function AttendancePage() {
   const [selected, setSelected] = useState<AttendanceRecord | null | undefined>(undefined);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [view, setView] = useState<'calendar' | 'list'>('calendar');
-  const { currentCompanyId } = useAuthStore();
+  const { currentEmploymentId } = useAuthStore();
 
   // 현재 월 기록 fetch
   useEffect(() => {
-    if (!currentCompanyId) return;
+    if (!currentEmploymentId) return;
     const fetchAttendance = async () => {
       try {
-        const resData = await fetchApi(`/api/attendance?employmentId=${currentCompanyId}&year=${format(currentMonth, 'yyyy')}&month=${format(currentMonth, 'M')}`);
+        const resData = await fetchApi(`/api/attendance?employmentId=${currentEmploymentId}&year=${format(currentMonth, 'yyyy')}&month=${format(currentMonth, 'M')}`);
         setRecords(resData.records);
       } catch (err) {
         console.error(err);
@@ -41,7 +41,7 @@ export default function AttendancePage() {
       }
     };
     fetchAttendance();
-  }, [currentMonth, currentCompanyId]);
+  }, [currentMonth, currentEmploymentId]);
 
   // 캘린더 날짜 계산
   const monthStart = startOfMonth(currentMonth);

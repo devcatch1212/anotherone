@@ -9,9 +9,10 @@ import { PayrollModule } from './payroll/payroll.module';
 import { LeaveModule } from './leave/leave.module';
 import { SettingsModule } from './settings/settings.module';
 import { SystemModule } from './system/system.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, OnboardingModule, AttendanceModule, PayrollModule, LeaveModule, SettingsModule, SystemModule],
+  imports: [PrismaModule, AuthModule, OnboardingModule, AttendanceModule, PayrollModule, LeaveModule, SettingsModule, SystemModule, NotificationsModule],
   controllers: [AppController],
   providers: [AppService],
 })

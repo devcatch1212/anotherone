@@ -9,8 +9,9 @@
 * **런타임**: Node.js >= 22 (LTS 권장)
 * **패키지 매니저**: npm
 * **모노레포 도구**: Turborepo (빌드 및 병렬 실행 오케스트레이션)
-* **프론트엔드**: Next.js (App Router, Tailwind CSS, TypeScript)
-* **백엔드**: NestJS (TypeScript)
+* **프론트엔드**: Next.js (App Router, TypeScript, Tailwind CSS, Zustand, MSW)
+* **백엔드**: NestJS (TypeScript, Prisma ORM, JWT 인증)
+* **데이터베이스**: PostgreSQL (Render 호스팅)
 
 ---
 
@@ -20,10 +21,12 @@
 anotherone/ (root)
 ├── package.json          # 루트 package.json (workspaces 정의 및 공통 스크립트)
 ├── turbo.json            # Turborepo 파이프라인 빌드 설정
+├── render.yaml           # Render 배포 설정 (API 서버 + PostgreSQL DB)
 ├── apps/                 # 실제 배포/구동되는 독립 어플리케이션
 │   ├── web/              # 프론트엔드 웹앱 (Next.js - Port: 3000)
-│   └── api/              # 백엔드 API 서버 (NestJS - Port: 4000)
+│   └── api/              # 백엔드 API 서버 (NestJS - Port: 3001)
 └── packages/             # 앱 간에 공유하는 공통 모듈 및 설정 패키지
+    ├── db/               # Prisma 스키마 및 DB 클라이언트 패키지 (@anotherone/db)
     ├── tsconfig/         # 공통 TypeScript 설정 패키지 (@anotherone/tsconfig)
     └── types/            # 프론트/백 공통 DTO 및 데이터 타입 정의 패키지 (@anotherone/types)
 ```
@@ -32,17 +35,23 @@ anotherone/ (root)
 
 1. **`apps/web` (Next.js)**
    * 포트 `3000`번에서 실행되는 사용자 웹 서비스 화면입니다.
-   * `packages/types`로부터 백엔드 API 규격 및 도메인 모델 타입을 공유받아 일관성 있는 타입 추론이 가능합니다.
+   * 상태 관리는 **Zustand** + `localStorage`/`sessionStorage` persist를 사용합니다.
+   * 로컬 개발 시 **MSW(Mock Service Worker)**를 사용하여 백엔드 없이 특정 기능을 개발할 수 있습니다.
 
 2. **`apps/api` (NestJS)**
-   * 포트 `4000`번에서 실행되는 백엔드 API 서버입니다. (포트 충돌을 막기 위해 3000 대신 4000을 사용합니다.)
-   * API 설계 과정에서 프론트엔드로 내보낼 Response 및 Entity 스펙을 `packages/types`에 작성하여 공유합니다.
+   * 포트 `3001`번에서 실행되는 백엔드 API 서버입니다.
+   * **JWT** 기반 인증, **Prisma ORM**으로 DB 접근, **class-validator** 기반 요청 유효성 검사를 사용합니다.
+   * 모듈 구조: `auth`, `onboarding`, `attendance`, `payroll`, `leave`, `notifications`, `settings`, `system`
 
-3. **`packages/tsconfig`**
+3. **`packages/db`**
+   * Prisma 스키마(`schema.prisma`)와 생성된 Prisma Client를 관리하는 패키지입니다.
+   * 스키마 변경 후 `npx prisma generate --schema=packages/db/prisma/schema.prisma` 실행이 필요합니다.
+
+4. **`packages/tsconfig`**
    * 프로젝트 전반에서 사용되는 TypeScript 컴파일러 설정을 한 곳에서 관리합니다 (`base.json`, `nextjs.json`, `nestjs.json`).
 
-4. **`packages/types`**
-   * 웹앱과 API 서버가 서로 통신할 때 공유하는 공통 타입을 관리하는 패키지입니다 (`/src/index.ts` 참고).
+5. **`packages/types`**
+   * 웹앱과 API 서버가 서로 통신할 때 공유하는 공통 타입을 관리하는 패키지입니다.
 
 ---
 
@@ -54,22 +63,58 @@ anotherone/ (root)
 npm install
 ```
 
-### 2. 개발 서버 실행 (동시 실행)
+### 2. 환경 변수 설정
+
+**`packages/db/.env`** (DB 연결)
+```env
+DATABASE_URL="postgresql://..."
+```
+
+**`apps/web/.env.local`** (프론트엔드 API 주소)
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_KAKAO_APP_KEY=...
+```
+
+API 서버의 `JWT_SECRET`, `FRONTEND_URL`, `PORT` 환경 변수는 `.env` 파일 또는 배포 플랫폼 대시보드에서 설정합니다.
+
+### 3. 개발 서버 실행 (동시 실행)
 Turborepo를 사용하여 Next.js와 NestJS 개발 서버를 병렬로 즉시 가동합니다.
 ```bash
 npm run dev
 ```
 * **프론트엔드 웹**: [http://localhost:3000](http://localhost:3000)
-* **백엔드 API**: [http://localhost:4000](http://localhost:4000)
+* **백엔드 API**: [http://localhost:3001](http://localhost:3001)
 
-### 3. 전체 프로젝트 빌드
+### 4. 전체 프로젝트 빌드
 프로덕션 배포용으로 모든 하위 모듈 및 애플리케이션을 빌드합니다.
 ```bash
 npm run build
 ```
 
-### 4. 코드 린트 검사
+### 5. 코드 린트 검사
 ESLint를 사용해 모든 프로젝트의 정적 코드 분석을 동시 수행합니다.
 ```bash
 npm run lint
 ```
+
+---
+
+## 🌐 배포 구성
+
+| 서비스 | 플랫폼 | URL |
+|---|---|---|
+| 프론트엔드 (Next.js) | Vercel | - |
+| 백엔드 API (NestJS) | Render | `https://anotherone-tjgi.onrender.com` |
+| PostgreSQL DB | Render | Singapore 리전 |
+
+* **자동 배포**: `main` 브랜치 push 시 Render와 Vercel이 자동으로 빌드 및 배포합니다.
+* **Render 필수 환경 변수**: `JWT_SECRET`, `FRONTEND_URL` (Render 대시보드에서 수동 입력)
+
+---
+
+## 📚 문서
+
+* [DB 스키마](./docs/database_schema.md) — 전체 테이블 명세
+* [API 명세서](./docs/api-specification.md) — 전체 엔드포인트 목록
+* [급여 계산 로직](./docs/payroll-calculation.md) — 급여 정산 방식 설명

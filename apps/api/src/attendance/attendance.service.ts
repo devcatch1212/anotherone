@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CheckInDto, CheckOutDto } from './dto/attendance.dto';
+import { CheckInDto, CheckOutDto, OvertimeRequestDto } from './dto/attendance.dto';
 import { differenceInMinutes, format } from 'date-fns';
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -189,5 +189,26 @@ export class AttendanceService {
     });
 
     return { records };
+  }
+
+  async requestOvertime(userId: string, data: OvertimeRequestDto) {
+    const employment = await this.prisma.employment.findFirst({
+      where: { id: data.employmentId, userId },
+    });
+    if (!employment) throw new NotFoundException('유효하지 않은 근로계약입니다.');
+
+    const overtimeRequest = await this.prisma.overtimeRequest.create({
+      data: {
+        userId,
+        companyId: employment.companyId,
+        date: data.date,
+        startTime: data.start,
+        endTime: data.end,
+        reason: data.reason,
+        status: 'pending',
+      },
+    });
+
+    return { message: '초과근무 신청이 완료되었습니다.', overtimeRequest };
   }
 }
