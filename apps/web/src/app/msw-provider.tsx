@@ -13,3 +13,4 @@ export function MSWProvider({ children }: { children: React.ReactNode }) {
   if (!ready) return null;
   return <>{children}</>;
 }
+

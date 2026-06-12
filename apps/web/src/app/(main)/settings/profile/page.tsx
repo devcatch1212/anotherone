@@ -582,6 +582,27 @@ function ProfilePageContent() {
 }
 
 export default function ProfilePage() {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const appKey = process.env.NEXT_PUBLIC_KAKAO_APP_KEY;
+    if (!appKey) return;
+
+    const id = 'kakao-maps-sdk';
+    if (document.getElementById(id)) {
+      console.log('[Kakao SDK Diagnostics] Script already exists, skipping load.');
+      return;
+    }
+
+    console.log('[Kakao SDK Diagnostics] Inserting Kakao Maps SDK script...');
+    const script = document.createElement('script');
+    script.id = id;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&libraries=services&autoload=false`;
+    script.async = true;
+    script.onload = () => console.log('[Kakao SDK Diagnostics] Script onLoad triggered successfully');
+    script.onerror = (e) => console.error('[Kakao SDK Diagnostics] Script load error:', e);
+    document.head.appendChild(script);
+  }, []);
+
   return (
     <>
       <Suspense fallback={
@@ -595,14 +616,6 @@ export default function ProfilePage() {
         src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" 
         strategy="afterInteractive"
       />
-      {process.env.NEXT_PUBLIC_KAKAO_APP_KEY && (
-        <Script
-          src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=services&autoload=false`}
-          strategy="afterInteractive"
-          onLoad={() => console.log('[Kakao SDK Diagnostics] Script onLoad triggered successfully')}
-          onError={(e) => console.error('[Kakao SDK Diagnostics] Script load error:', e)}
-        />
-      )}
     </>
   );
 }
