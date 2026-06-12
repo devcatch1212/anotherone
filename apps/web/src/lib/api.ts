@@ -23,6 +23,15 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   });
 
   if (!response.ok) {
+    if (response.status === 401 && !endpoint.includes('/api/auth/login')) {
+      try {
+        const { handleGlobalLogout } = await import('@/utils/logout');
+        await handleGlobalLogout();
+      } catch (err) {
+        console.error('Failed to handle global logout on 401:', err);
+      }
+    }
+
     let message = 'An error occurred';
     try {
       const errorData = await response.json();

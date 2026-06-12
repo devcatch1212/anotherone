@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { fetchApi } from '@/lib/api';
 
 const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
-const CURRENT_MIN_WAGE = 10030;
+const CURRENT_MIN_WAGE = 10320;
 
 export default function WageTypePage() {
   const router = useRouter();
@@ -330,7 +330,7 @@ export default function WageTypePage() {
           </div>
           <p style={{ fontSize: 11, color: 'var(--color-text-muted)', margin: '4px 0 0', fontWeight: 500 }}>
             {wageType === 'hourly'
-              ? `💡 2025년 최저시급은 ${CURRENT_MIN_WAGE.toLocaleString()}원입니다`
+              ? `💡 2026년 최저시급은 ${CURRENT_MIN_WAGE.toLocaleString()}원입니다`
               : '💡 세전 월 급여 기준으로 입력해주세요'}
           </p>
         </div>
