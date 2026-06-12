@@ -31,8 +31,43 @@ function ProfilePageContent() {
   const [saving, setSaving] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
 
+  const [isSdkLoaded, setIsSdkLoaded] = useState(false);
+
   useEffect(() => {
     console.log(`[Kakao SDK Diagnostics] Profile Page App Key 존재 여부: ${!!process.env.NEXT_PUBLIC_KAKAO_APP_KEY}`);
+    
+    if (typeof window === 'undefined') return;
+    const appKey = process.env.NEXT_PUBLIC_KAKAO_APP_KEY;
+    if (!appKey) return;
+
+    const id = 'kakao-maps-sdk';
+    const existingScript = document.getElementById(id);
+    
+    if (existingScript) {
+      console.log('[Kakao SDK Diagnostics] Script already exists, skipping load.');
+      if (window.kakao && window.kakao.maps) {
+        setIsSdkLoaded(true);
+      } else {
+        existingScript.addEventListener('load', () => {
+          setIsSdkLoaded(true);
+        });
+      }
+      return;
+    }
+
+    console.log('[Kakao SDK Diagnostics] Inserting Kakao Maps SDK script...');
+    const script = document.createElement('script');
+    script.id = id;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&libraries=services&autoload=false`;
+    script.async = true;
+    script.onload = () => {
+      console.log('[Kakao SDK Diagnostics] Script onLoad triggered successfully');
+      setIsSdkLoaded(true);
+    };
+    script.onerror = (e) => {
+      console.error('[Kakao SDK Diagnostics] Script load error:', e);
+    };
+    document.head.appendChild(script);
   }, []);
 
   const wageTypeRef = useRef<HTMLDivElement>(null);
@@ -101,7 +136,7 @@ function ProfilePageContent() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (!companyAddress) {
+    if (!companyAddress || !isSdkLoaded) {
       mapRef.current = null;
       markerRef.current = null;
       return;
@@ -158,7 +193,7 @@ function ProfilePageContent() {
         console.error('[Kakao Map] 지도 로드 중 에러:', err);
       }
     });
-  }, [companyAddress, lat, lng]);
+  }, [companyAddress, lat, lng, isSdkLoaded]);
 
   const openAddressSearch = () => {
     if (typeof window === 'undefined') return;
@@ -710,27 +745,6 @@ function ProfilePageContent() {
 }
 
 export default function ProfilePage() {
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const appKey = process.env.NEXT_PUBLIC_KAKAO_APP_KEY;
-    if (!appKey) return;
-
-    const id = 'kakao-maps-sdk';
-    if (document.getElementById(id)) {
-      console.log('[Kakao SDK Diagnostics] Script already exists, skipping load.');
-      return;
-    }
-
-    console.log('[Kakao SDK Diagnostics] Inserting Kakao Maps SDK script...');
-    const script = document.createElement('script');
-    script.id = id;
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&libraries=services&autoload=false`;
-    script.async = true;
-    script.onload = () => console.log('[Kakao SDK Diagnostics] Script onLoad triggered successfully');
-    script.onerror = (e) => console.error('[Kakao SDK Diagnostics] Script load error:', e);
-    document.head.appendChild(script);
-  }, []);
-
   return (
     <>
       <Suspense fallback={

@@ -34,6 +34,8 @@ export default function CompanyPage() {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [error, setError] = useState('');
 
+  const [isSdkLoaded, setIsSdkLoaded] = useState(false);
+
   useEffect(() => {
     console.log(`[Kakao SDK Diagnostics] Onboarding Page App Key 존재 여부: ${!!process.env.NEXT_PUBLIC_KAKAO_APP_KEY}`);
 
@@ -42,8 +44,16 @@ export default function CompanyPage() {
     if (!appKey) return;
 
     const id = 'kakao-maps-sdk';
-    if (document.getElementById(id)) {
+    const existingScript = document.getElementById(id);
+    if (existingScript) {
       console.log('[Kakao SDK Diagnostics] Script already exists, skipping load.');
+      if (window.kakao && window.kakao.maps) {
+        setIsSdkLoaded(true);
+      } else {
+        existingScript.addEventListener('load', () => {
+          setIsSdkLoaded(true);
+        });
+      }
       return;
     }
 
@@ -52,7 +62,10 @@ export default function CompanyPage() {
     script.id = id;
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&libraries=services&autoload=false`;
     script.async = true;
-    script.onload = () => console.log('[Kakao SDK Diagnostics] Script onLoad triggered successfully');
+    script.onload = () => {
+      console.log('[Kakao SDK Diagnostics] Script onLoad triggered successfully');
+      setIsSdkLoaded(true);
+    };
     script.onerror = (e) => console.error('[Kakao SDK Diagnostics] Script load error:', e);
     document.head.appendChild(script);
   }, []);
@@ -62,7 +75,7 @@ export default function CompanyPage() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (!companyAddress) {
+    if (!companyAddress || !isSdkLoaded) {
       mapRef.current = null;
       markerRef.current = null;
       return;
@@ -119,7 +132,7 @@ export default function CompanyPage() {
         console.error('[Kakao Map] 지도 로드 중 에러:', err);
       }
     });
-  }, [companyAddress, lat, lng]);
+  }, [companyAddress, lat, lng, isSdkLoaded]);
 
   // 카카오 주소 검색 실행
   const openAddressSearch = () => {
