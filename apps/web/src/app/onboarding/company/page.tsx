@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { StepIndicator } from '@/components/ui';
