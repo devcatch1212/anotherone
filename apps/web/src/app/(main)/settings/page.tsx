@@ -32,7 +32,7 @@ export default function SettingsPage() {
     }
   };
 
-  const employment = user?.employments?.find(e => e.companyId === currentCompanyId) || user?.employments?.[0];
+  const employment = user?.employments?.find(e => e.companyId === currentCompanyId && e.isActive) || user?.employments?.find(e => e.isActive);
 
   const wageTypeLabel = employment
     ? WAGE_TYPE_LABEL[employment.wageType]

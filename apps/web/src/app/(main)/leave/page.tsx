@@ -15,18 +15,43 @@ const STATUS_CONFIG: Record<string, { label: string; variant: string; color: str
 };
 
 export default function LeavePage() {
-  const { currentEmploymentId } = useAuthStore();
-  const [balance, setBalance] = useState<LeaveBalance>(mockLeaveBalance);
+  const { user, currentEmploymentId } = useAuthStore();
+  const [balance, setBalance] = useState<LeaveBalance>({ total: 15, used: 0, remaining: 15 });
   const [records, setRecords] = useState<LeaveRecord[]>([]);
+
+  const employment = user?.employments?.find(e => e.id === currentEmploymentId);
+  const weeklyWorkDays = employment?.weeklyWorkDays ?? 0;
+  const dailyWorkHours = employment?.dailyWorkHours ?? 8;
+  const weeklyWorkHours = weeklyWorkDays * dailyWorkHours;
+  const isEligibleForLeave = weeklyWorkHours >= 15;
+  const totalLeaveDays = isEligibleForLeave ? 15 : 0;
 
   useEffect(() => {
     if (!currentEmploymentId) return;
     fetchApi(`/api/leave?employmentId=${currentEmploymentId}`)
-      .then(res => { setRecords(res.records); setBalance(mockLeaveBalance); })
-      .catch(() => setRecords(mockLeaves));
-  }, [currentEmploymentId]);
+      .then(res => {
+        if (res && res.records) {
+          setRecords(res.records);
+          const approvedDays = res.records
+            .filter((l: any) => l.status === 'approved' && (l.type === 'annual' || l.type === 'half'))
+            .reduce((sum: number, l: any) => sum + l.days, 0);
+          const remaining = Math.max(0, totalLeaveDays - approvedDays);
+          setBalance({ total: totalLeaveDays, used: approvedDays, remaining });
+        } else {
+          setBalance({ total: totalLeaveDays, used: 0, remaining: totalLeaveDays });
+        }
+      })
+      .catch(() => {
+        setRecords(mockLeaves);
+        const approvedDays = mockLeaves
+          .filter((l: any) => l.status === 'approved' && (l.type === 'annual' || l.type === 'half'))
+          .reduce((sum: number, l: any) => sum + l.days, 0);
+        const remaining = Math.max(0, totalLeaveDays - approvedDays);
+        setBalance({ total: totalLeaveDays, used: approvedDays, remaining });
+      });
+  }, [currentEmploymentId, totalLeaveDays]);
 
-  const usedPercent = Math.round((balance.used / balance.total) * 100);
+  const usedPercent = balance.total > 0 ? Math.round((balance.used / balance.total) * 100) : 0;
 
   return (
     <div className="flex flex-col min-h-dvh bg-gray-50">
@@ -44,20 +69,21 @@ export default function LeavePage() {
           <h2 className="font-bold text-gray-900 mb-4">연차 현황</h2>
           <div className="grid grid-cols-3 gap-3 mb-4">
             {[
-              { label: '총 연차', value: balance.total, color: '#3B82F6' },
-              { label: '사용', value: balance.used, color: '#F59E0B' },
-              { label: '잔여', value: balance.remaining, color: '#22C55E' },
+              { label: '총 연차', value: `${balance.total}일`, hours: `${balance.total * dailyWorkHours}h`, color: '#3B82F6' },
+              { label: '사용', value: `${balance.used}일`, hours: `${balance.used * dailyWorkHours}h`, color: '#F59E0B' },
+              { label: '잔여', value: `${balance.remaining}일`, hours: `${balance.remaining * dailyWorkHours}h`, color: '#22C55E' },
             ].map(s => (
-              <div key={s.label} className="text-center rounded-xl py-3 border border-gray-100">
-                <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+              <div key={s.label} className="text-center rounded-xl py-3 border border-gray-100 flex flex-col justify-center items-center">
+                <p className="text-xl font-bold" style={{ color: s.color }}>{s.value}</p>
+                <p className="text-[10px] text-gray-400 font-medium">{s.hours}</p>
+                <p className="text-xs text-gray-500 mt-1">{s.label}</p>
               </div>
             ))}
           </div>
           <div className="w-full bg-gray-100 rounded-full h-2.5 mb-1.5">
             <div className="bg-blue-500 h-2.5 rounded-full transition-all duration-700" style={{ width: `${usedPercent}%` }} />
           </div>
-          <p className="text-xs text-gray-400">{usedPercent}% 사용 ({balance.remaining}일 남음)</p>
+          <p className="text-xs text-gray-400">{usedPercent}% 사용 ({balance.remaining}일 ({balance.remaining * dailyWorkHours}h) 남음)</p>
         </div>
 
         {/* 신청 내역 */}

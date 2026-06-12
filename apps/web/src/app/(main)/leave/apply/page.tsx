@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { useToast } from '@/components/ui/Toast';
 import { fetchApi } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
+import { mockLeaves } from '@/mocks/data/leave';
 
 const schema = z.object({
   type: z.enum(['annual', 'half', 'sick', 'official']),
@@ -25,7 +26,7 @@ const TYPE_OPTIONS = [
 
 export default function LeaveApplyPage() {
   const router = useRouter();
-  const { currentCompanyId } = useAuthStore();
+  const { user, currentCompanyId, currentEmploymentId } = useAuthStore();
   const { toast } = useToast();
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -33,16 +34,58 @@ export default function LeaveApplyPage() {
   });
   const selectedType = watch('type');
 
+  const [remainingLeave, setRemainingLeave] = useState<number | null>(null);
+
+  const employment = user?.employments?.find(e => e.id === currentEmploymentId || e.companyId === currentCompanyId);
+  const weeklyWorkDays = employment?.weeklyWorkDays ?? 0;
+  const dailyWorkHours = employment?.dailyWorkHours ?? 8;
+  const weeklyWorkHours = weeklyWorkDays * dailyWorkHours;
+  const isEligibleForLeave = weeklyWorkHours >= 15;
+  const totalLeaveDays = isEligibleForLeave ? 15 : 0;
+
+  useEffect(() => {
+    if (!currentEmploymentId) return;
+    fetchApi(`/api/leave?employmentId=${currentEmploymentId}`)
+      .then(res => {
+        if (res && res.records) {
+          const approvedDays = res.records
+            .filter((l: any) => l.status === 'approved' && (l.type === 'annual' || l.type === 'half'))
+            .reduce((sum: number, l: any) => sum + l.days, 0);
+          setRemainingLeave(Math.max(0, totalLeaveDays - approvedDays));
+        } else {
+          setRemainingLeave(totalLeaveDays);
+        }
+      })
+      .catch(() => {
+        const approvedDays = mockLeaves
+          .filter((l: any) => l.status === 'approved' && (l.type === 'annual' || l.type === 'half'))
+          .reduce((sum: number, l: any) => sum + l.days, 0);
+        setRemainingLeave(Math.max(0, totalLeaveDays - approvedDays));
+      });
+  }, [currentEmploymentId, totalLeaveDays]);
+
   const onSubmit = async (data: FormData) => {
     if (!currentCompanyId) return;
     const start = new Date(data.startDate);
     const end = new Date(data.endDate);
     const days = data.type === 'half' ? 0.5 : Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+    // 2026년 기준 연차 잔여일 검증 (연차/반차 대상)
+    if ((data.type === 'annual' || data.type === 'half') && remainingLeave !== null) {
+      if (remainingLeave <= 0) {
+        toast('법적으로 부여된 연차가 없습니다. (초단시간 근로자 또는 연차 모두 소진)', 'error');
+        return;
+      }
+      if (days > remainingLeave) {
+        toast(`잔여 연차(${remainingLeave}일)를 초과하여 신청할 수 없습니다.`, 'error');
+        return;
+      }
+    }
     
     try {
       await fetchApi('/api/leave', {
         method: 'POST',
-        body: JSON.stringify({ ...data, days, employmentId: currentCompanyId }),
+        body: JSON.stringify({ ...data, days, employmentId: currentEmploymentId || currentCompanyId }),
       });
       toast('휴가 신청이 완료되었습니다 ✅', 'success');
       router.replace('/leave');

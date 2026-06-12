@@ -143,20 +143,26 @@ export default function HomePage() {
       setLeaveRemaining(0);
       return;
     }
+    const weeklyWorkDays = employment.weeklyWorkDays ?? 0;
+    const dailyWorkHours = employment.dailyWorkHours ?? 0;
+    const weeklyWorkHours = weeklyWorkDays * dailyWorkHours;
+    const isEligibleForLeave = weeklyWorkHours >= 15;
+    const totalLeaveDays = isEligibleForLeave ? 15 : 0;
+
     fetchApi(`/api/leave?employmentId=${employment.id}`)
       .then(res => {
         if (res && res.records) {
           const approvedDays = res.records
-            .filter((l: any) => l.status === 'approved')
+            .filter((l: any) => l.status === 'approved' && (l.type === 'annual' || l.type === 'half'))
             .reduce((sum: number, l: any) => sum + l.days, 0);
-          setLeaveRemaining(Math.max(0, 15 - approvedDays));
+          setLeaveRemaining(Math.max(0, totalLeaveDays - approvedDays));
         }
       })
       .catch(e => {
         console.error('Failed to fetch leaves', e);
-        setLeaveRemaining(15);
+        setLeaveRemaining(totalLeaveDays);
       });
-  }, [employment?.id]);
+  }, [employment?.id, employment?.weeklyWorkDays, employment?.dailyWorkHours]);
 
   const startGps = useCallback(() => {
     if (!navigator.geolocation) { 
@@ -335,7 +341,10 @@ export default function HomePage() {
               <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 500, marginBottom: 4 }}>남은 연차</p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, justifyContent: 'flex-end' }}>
                 <span style={{ fontSize: 28, fontWeight: 700, color: '#fff' }}>{leaveRemaining}</span>
-                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>일</span>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginRight: 2 }}>일</span>
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
+                  ({leaveRemaining * (employment?.dailyWorkHours ?? 8)}h)
+                </span>
               </div>
             </div>
           </div>
