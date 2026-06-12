@@ -191,6 +191,14 @@ export default function CompanyPage() {
     }).open();
   };
 
+  const handleBack = () => {
+    const finalAddress = companyAddressDetail.trim() 
+      ? `${companyAddress} ${companyAddressDetail.trim()}` 
+      : companyAddress;
+    setCompanyInfo({ companyName, companyAddress: finalAddress, companyLat: lat, companyLng: lng });
+    router.back();
+  };
+
   const handleNext = () => {
     setError('');
     if (isGeocoding) {
@@ -409,7 +417,7 @@ export default function CompanyPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10, marginTop: 8 }}>
             <button
               type="button"
-              onClick={() => router.back()}
+              onClick={handleBack}
               style={{
                 height: 50, borderRadius: 16, border: 'none',
                 background: 'rgba(0, 0, 0, 0.05)',
