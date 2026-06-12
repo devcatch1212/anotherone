@@ -27,7 +27,7 @@ export class AuthService {
     const payload = { sub: user.id, email: user.email };
     return {
       access_token: this.jwtService.sign(payload),
-      user: { id: user.id, name: user.name, email: user.email },
+      user: { id: user.id, name: user.name, email: user.email, onboardingCompleted: false, employments: [] },
     };
   }
 
@@ -48,9 +48,23 @@ export class AuthService {
     }
 
     const payload = { sub: user.id, email: user.email };
+
+    // login 응답에 employments/onboardingCompleted 포함 → setAuth가 currentEmploymentId를 정확히 설정할 수 있도록
+    const fullUser = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      include: { employments: { include: { company: true } } },
+    });
+
     return {
       access_token: this.jwtService.sign(payload),
-      user: { id: user.id, name: user.name, email: user.email },
+      user: {
+        id: fullUser!.id,
+        name: fullUser!.name,
+        email: fullUser!.email,
+        onboardingCompleted: fullUser!.onboardingCompleted,
+        status: fullUser!.status,
+        employments: fullUser!.employments,
+      },
     };
   }
 

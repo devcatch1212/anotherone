@@ -24,6 +24,7 @@ export class AttendanceService {
       include: { company: true },
     });
     if (!employment) throw new NotFoundException('유효하지 않은 근로계약입니다.');
+    if (!employment.isActive) throw new BadRequestException('이미 근무가 종료된 근무지입니다. 출근 체크를 할 수 없습니다.');
 
     const company = employment.company;
     const distance = getDistance(data.latitude, data.longitude, company.latitude, company.longitude);
@@ -83,6 +84,7 @@ export class AttendanceService {
       include: { company: true },
     });
     if (!employment) throw new NotFoundException('유효하지 않은 근로계약입니다.');
+    if (!employment.isActive) throw new BadRequestException('이미 근무가 종료된 근무지입니다. 퇴근 체크를 할 수 없습니다.');
 
     const company = employment.company;
     const distance = getDistance(data.latitude, data.longitude, company.latitude, company.longitude);
