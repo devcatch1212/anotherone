@@ -18,6 +18,10 @@ function ProfilePageContent() {
   const [saving, setSaving] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
 
+  useEffect(() => {
+    console.log(`[Kakao SDK Diagnostics] Profile Page App Key 존재 여부: ${!!process.env.NEXT_PUBLIC_KAKAO_APP_KEY}`);
+  }, []);
+
   const wageTypeRef = useRef<HTMLDivElement>(null);
   const wageInputRef = useRef<HTMLInputElement>(null);
   const companyNameRef = useRef<HTMLInputElement>(null);

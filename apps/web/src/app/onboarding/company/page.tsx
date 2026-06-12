@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { StepIndicator } from '@/components/ui';
@@ -18,6 +18,10 @@ export default function CompanyPage() {
   const [lng, setLng] = useState(127.0368);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    console.log(`[Kakao SDK Diagnostics] Onboarding Page App Key 존재 여부: ${!!process.env.NEXT_PUBLIC_KAKAO_APP_KEY}`);
+  }, []);
 
   // 카카오 주소 검색 실행
   const openAddressSearch = () => {
