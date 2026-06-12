@@ -40,8 +40,19 @@ export default function LeaveApplyPage() {
   const weeklyWorkDays = employment?.weeklyWorkDays ?? 0;
   const dailyWorkHours = employment?.dailyWorkHours ?? 8;
   const weeklyWorkHours = weeklyWorkDays * dailyWorkHours;
-  const isEligibleForLeave = weeklyWorkHours >= 15;
-  const totalLeaveDays = isEligibleForLeave ? 15 : 0;
+  
+  let totalLeaveHours = 0;
+  let totalLeaveDays = 0;
+  
+  if (weeklyWorkHours >= 15) {
+    if (weeklyWorkHours >= 40) {
+      totalLeaveHours = 120;
+      totalLeaveDays = 15;
+    } else {
+      totalLeaveHours = Math.round(15 * (weeklyWorkHours / 40) * 8 * 10) / 10;
+      totalLeaveDays = Math.round((totalLeaveHours / dailyWorkHours) * 10) / 10;
+    }
+  }
 
   useEffect(() => {
     if (!currentEmploymentId) return;

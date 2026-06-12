@@ -66,7 +66,7 @@ export default function CalendarPage() {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [leaveRecords, setLeaveRecords] = useState<LeaveRecord[]>([]);
-  const [balance, setBalance] = useState({ total: 15, used: 0, remaining: 15 });
+  const [balance, setBalance] = useState({ total: 0, used: 0, remaining: 0 });
   const [workRecords, setWorkRecords] = useState<WorkDay[]>([]);
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyType, setApplyType] = useState('annual');
@@ -78,6 +78,23 @@ export default function CalendarPage() {
   const companyName = employment?.company?.name ?? '근무지 없음';
   const hireDate = (employment as any)?.createdAt ? new Date((employment as any).createdAt) : new Date(2025, 4, 23);
   const daysWorked  = differenceInDays(new Date(), hireDate);
+
+  const weeklyWorkDays = employment?.weeklyWorkDays ?? 0;
+  const dailyWorkHours = employment?.dailyWorkHours ?? 8;
+  const weeklyWorkHours = weeklyWorkDays * dailyWorkHours;
+  
+  let totalLeaveHours = 0;
+  let totalLeaveDays = 0;
+  
+  if (weeklyWorkHours >= 15) {
+    if (weeklyWorkHours >= 40) {
+      totalLeaveHours = 120;
+      totalLeaveDays = 15;
+    } else {
+      totalLeaveHours = Math.round(15 * (weeklyWorkHours / 40) * 8 * 10) / 10;
+      totalLeaveDays = Math.round((totalLeaveHours / dailyWorkHours) * 10) / 10;
+    }
+  }
 
   useEffect(() => {
     if (!employment?.id) {
@@ -106,20 +123,37 @@ export default function CalendarPage() {
   useEffect(() => {
     if (!employment?.id) {
       setLeaveRecords([]);
-      setBalance({ total: 15, used: 0, remaining: 15 });
+      setBalance({ total: 0, used: 0, remaining: 0 });
       return;
     }
+    const weeklyWorkDays = employment.weeklyWorkDays ?? 0;
+    const dailyWorkHours = employment.dailyWorkHours ?? 8;
+    const weeklyWorkHours = weeklyWorkDays * dailyWorkHours;
+    
+    let totalLeaveHours = 0;
+    let totalLeaveDays = 0;
+    
+    if (weeklyWorkHours >= 15) {
+      if (weeklyWorkHours >= 40) {
+        totalLeaveHours = 120;
+        totalLeaveDays = 15;
+      } else {
+        totalLeaveHours = Math.round(15 * (weeklyWorkHours / 40) * 8 * 10) / 10;
+        totalLeaveDays = Math.round((totalLeaveHours / dailyWorkHours) * 10) / 10;
+      }
+    }
+
     fetchApi(`/api/leave?employmentId=${employment.id}`)
       .then(res => {
         if (res && res.records) {
           setLeaveRecords(res.records);
           const approvedDays = res.records
-            .filter((l: any) => l.status === 'approved')
+            .filter((l: any) => l.status === 'approved' && (l.type === 'annual' || l.type === 'half'))
             .reduce((sum: number, l: any) => sum + l.days, 0);
           setBalance({
-            total: 15,
+            total: totalLeaveDays,
             used: approvedDays,
-            remaining: Math.max(0, 15 - approvedDays),
+            remaining: Math.max(0, totalLeaveDays - approvedDays),
           });
         }
       })
@@ -127,7 +161,7 @@ export default function CalendarPage() {
         console.error('Failed to fetch leaves', e);
         toast('휴가 내역을 불러오는 데 실패했습니다.', 'error');
       });
-  }, [employment?.id, toast]);
+  }, [employment?.id, totalLeaveDays, toast]);
   const monthKey    = format(currentMonth, 'yyyy-MM');
   const monthStart  = startOfMonth(currentMonth);
   const monthEnd    = endOfMonth(currentMonth);
@@ -172,12 +206,12 @@ export default function CalendarPage() {
       if (leavesRes && leavesRes.records) {
         setLeaveRecords(leavesRes.records);
         const approvedDays = leavesRes.records
-          .filter((l: any) => l.status === 'approved')
+          .filter((l: any) => l.status === 'approved' && (l.type === 'annual' || l.type === 'half'))
           .reduce((sum: number, l: any) => sum + l.days, 0);
         setBalance({
-          total: 15,
+          total: totalLeaveDays,
           used: approvedDays,
-          remaining: Math.max(0, 15 - approvedDays),
+          remaining: Math.max(0, totalLeaveDays - approvedDays),
         });
       }
     } catch (e: any) {
@@ -430,15 +464,17 @@ export default function CalendarPage() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
                 {[
-                  { label: '총 연차', value: balance.total,     color: 'var(--color-primary)', bg: 'rgba(59, 130, 246, 0.08)' },
-                  { label: '사용',    value: balance.used,      color: 'var(--color-warning)', bg: 'rgba(245, 158, 11, 0.08)' },
-                  { label: '잔여',    value: balance.remaining, color: 'var(--color-success)', bg: 'rgba(16, 185, 129, 0.08)' },
+                  { label: '총 연차', value: `${balance.total}일`, hours: `${balance.total * dailyWorkHours}h`, color: 'var(--color-primary)', bg: 'rgba(59, 130, 246, 0.08)' },
+                  { label: '사용',    value: `${balance.used}일`, hours: `${balance.used * dailyWorkHours}h`, color: 'var(--color-warning)', bg: 'rgba(245, 158, 11, 0.08)' },
+                  { label: '잔여',    value: `${balance.remaining}일`, hours: `${balance.remaining * dailyWorkHours}h`, color: 'var(--color-success)', bg: 'rgba(16, 185, 129, 0.08)' },
                 ].map(s => (
                   <div key={s.label} style={{
                     background: s.bg, borderRadius: 14,
-                    padding: '14px 8px', textAlign: 'center',
+                    padding: '12px 6px', textAlign: 'center' as const,
+                    display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center'
                   }}>
-                    <p style={{ fontSize: 24, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.value}</p>
+                    <p style={{ fontSize: 20, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.value}</p>
+                    <p style={{ fontSize: 10, color: 'var(--color-text-muted)', fontWeight: 500, marginTop: 4 }}>{s.hours}</p>
                     <p style={{ fontSize: 11, color: s.color, marginTop: 4, opacity: 0.8 }}>{s.label}</p>
                   </div>
                 ))}
@@ -447,12 +483,12 @@ export default function CalendarPage() {
               <div style={{ background: 'rgba(0, 0, 0, 0.05)', borderRadius: 99, height: 6, marginBottom: 6 }}>
                 <div style={{
                   height: 6, borderRadius: 99, background: 'var(--color-primary)',
-                  width: `${Math.round((balance.used / balance.total) * 100)}%`,
+                  width: `${balance.total > 0 ? Math.round((balance.used / balance.total) * 100) : 0}%`,
                   transition: 'width 0.7s',
                 }} />
               </div>
               <p style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
-                {Math.round((balance.used / balance.total) * 100)}% 사용 · {balance.remaining}일 남음
+                {balance.total > 0 ? Math.round((balance.used / balance.total) * 100) : 0}% 사용 · {balance.remaining}일 ({balance.remaining * dailyWorkHours}h) 남음
               </p>
             </div>
 
