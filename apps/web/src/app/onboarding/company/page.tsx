@@ -368,25 +368,23 @@ export default function CompanyPage() {
                 </span>
               </div>
             )}
-            {companyAddress && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)' }}>
-                  📍 출퇴근 위치 미세 조정 (핀을 드래그하여 정확히 맞춰주세요)
-                </label>
-                <div 
-                  id="kakao-map" 
-                  style={{ 
-                    width: '100%', 
-                    height: 180, 
-                    borderRadius: 16, 
-                    border: '1px solid rgba(255, 255, 255, 0.4)',
-                    background: 'rgba(255, 255, 255, 0.15)',
-                    backdropFilter: 'blur(8px)',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-            )}
+            <div style={{ display: companyAddress ? 'flex' : 'none', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)' }}>
+                📍 출퇴근 위치 미세 조정 (핀을 드래그하여 정확히 맞춰주세요)
+              </label>
+              <div 
+                id="kakao-map" 
+                style={{ 
+                  width: '100%', 
+                  height: 180, 
+                  borderRadius: 16, 
+                  border: '1px solid rgba(255, 255, 255, 0.4)',
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  backdropFilter: 'blur(8px)',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
             <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4, fontWeight: 500 }}>
               💡 등록된 주소 기준 반경 100m 이내에서 출퇴근이 가능합니다
             </p>
