@@ -298,6 +298,8 @@ export default function CompanyPage() {
         <Script
           src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=services&autoload=false`}
           strategy="afterInteractive"
+          onLoad={() => console.log('[Kakao SDK Diagnostics] Script onLoad triggered successfully')}
+          onError={(e) => console.error('[Kakao SDK Diagnostics] Script load error:', e)}
         />
       )}
     </div>
