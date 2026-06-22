@@ -121,7 +121,7 @@ export default function CalendarPage() {
         console.error('attendance fetch error', e);
         toast('출퇴근 기록을 불러오는 데 실패했습니다.', 'error');
       });
-  }, [employment?.id, currentMonth, toast]);
+  }, [employment?.id, currentMonth]);
 
   useEffect(() => {
     if (!employment?.id) {
@@ -148,7 +148,7 @@ export default function CalendarPage() {
         console.error('Failed to fetch leaves', e);
         toast('휴가 내역을 불러오는 데 실패했습니다.', 'error');
       });
-  }, [employment?.id, totalLeaveDays, toast]);
+  }, [employment?.id, totalLeaveDays]);
   const monthKey    = format(currentMonth, 'yyyy-MM');
   const monthStart  = startOfMonth(currentMonth);
   const monthEnd    = endOfMonth(currentMonth);
