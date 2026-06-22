@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -47,8 +47,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     info: 'text-sky-600 bg-sky-100/60',
   };
 
+  const contextValue = useMemo(() => ({ toast }), [toast]);
+
   return (
-    <ToastContext.Provider value={{ toast }}>
+    <ToastContext.Provider value={contextValue}>
       {children}
       <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2.5 w-[calc(100%-32px)] max-w-[340px] pointer-events-none">
         {toasts.map(t => (

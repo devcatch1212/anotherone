@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval, getDay,
@@ -79,22 +79,25 @@ export default function CalendarPage() {
   const hireDate = (employment as any)?.createdAt ? new Date((employment as any).createdAt) : new Date(2025, 4, 23);
   const daysWorked  = differenceInDays(new Date(), hireDate);
 
-  const weeklyWorkDays = employment?.workDaysOfWeek?.length ?? employment?.weeklyWorkDays ?? 0;
-  const dailyWorkHours = employment?.dailyWorkHours ?? 8;
-  const weeklyWorkHours = weeklyWorkDays * dailyWorkHours;
-  
-  let totalLeaveHours = 0;
-  let totalLeaveDays = 0;
-  
-  if (weeklyWorkHours >= 15) {
-    if (weeklyWorkHours >= 40) {
-      totalLeaveHours = 120;
-      totalLeaveDays = 15;
-    } else {
-      totalLeaveHours = Math.round(15 * (weeklyWorkHours / 40) * 8 * 10) / 10;
-      totalLeaveDays = Math.round((totalLeaveHours / dailyWorkHours) * 10) / 10;
+  const { totalLeaveDays, dailyWorkHours } = useMemo(() => {
+    const weeklyWorkDays = employment?.workDaysOfWeek?.length ?? employment?.weeklyWorkDays ?? 0;
+    const dailyWorkHours = employment?.dailyWorkHours ?? 8;
+    const weeklyWorkHours = weeklyWorkDays * dailyWorkHours;
+    
+    let totalLeaveHours = 0;
+    let totalLeaveDays = 0;
+    
+    if (weeklyWorkHours >= 15) {
+      if (weeklyWorkHours >= 40) {
+        totalLeaveHours = 120;
+        totalLeaveDays = 15;
+      } else {
+        totalLeaveHours = Math.round(15 * (weeklyWorkHours / 40) * 8 * 10) / 10;
+        totalLeaveDays = Math.round((totalLeaveHours / dailyWorkHours) * 10) / 10;
+      }
     }
-  }
+    return { totalLeaveDays, totalLeaveHours, dailyWorkHours };
+  }, [employment?.workDaysOfWeek, employment?.weeklyWorkDays, employment?.dailyWorkHours]);
 
   useEffect(() => {
     if (!employment?.id) {
@@ -125,22 +128,6 @@ export default function CalendarPage() {
       setLeaveRecords([]);
       setBalance({ total: 0, used: 0, remaining: 0 });
       return;
-    }
-    const weeklyWorkDays = employment.workDaysOfWeek?.length ?? employment.weeklyWorkDays ?? 0;
-    const dailyWorkHours = employment.dailyWorkHours ?? 8;
-    const weeklyWorkHours = weeklyWorkDays * dailyWorkHours;
-    
-    let totalLeaveHours = 0;
-    let totalLeaveDays = 0;
-    
-    if (weeklyWorkHours >= 15) {
-      if (weeklyWorkHours >= 40) {
-        totalLeaveHours = 120;
-        totalLeaveDays = 15;
-      } else {
-        totalLeaveHours = Math.round(15 * (weeklyWorkHours / 40) * 8 * 10) / 10;
-        totalLeaveDays = Math.round((totalLeaveHours / dailyWorkHours) * 10) / 10;
-      }
     }
 
     fetchApi(`/api/leave?employmentId=${employment.id}`)
