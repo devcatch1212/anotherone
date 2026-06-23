@@ -56,10 +56,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: Stack(
-        children: [
-          Positioned.fill(child: CustomPaint(painter: AuroraPainter())),
-          SafeArea(
+      body: SizedBox.expand(
+        child: Stack(
+          children: [
+            Positioned.fill(child: CustomPaint(painter: AuroraPainter())),
+            SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Form(
@@ -223,12 +224,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         foregroundColor: AppColors.textSecondary,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                      child: const Text(
-                        '게스트로 둘러보기 👤',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          decoration: TextDecoration.underline,
+                      child: IntrinsicWidth(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              '게스트로 둘러보기 👤',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Container(
+                              height: 1.2,
+                              color: AppColors.textSecondary.withOpacity(0.5),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -262,8 +275,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _label(String text) => Align(
         alignment: Alignment.centerLeft,

@@ -63,10 +63,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: Stack(
-        children: [
-          Positioned.fill(child: CustomPaint(painter: AuroraPainter())),
-          SafeArea(
+      body: SizedBox.expand(
+        child: Stack(
+          children: [
+            Positioned.fill(child: CustomPaint(painter: AuroraPainter())),
+            SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Form(
@@ -303,8 +304,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _label(String text) => Align(
         alignment: Alignment.centerLeft,

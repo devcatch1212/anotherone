@@ -1,10 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/auth/auth_provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../shared/models/models.dart';
+import 'address_search_screen.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -23,6 +26,62 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // Step 2
   final _companyNameCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
+  double _latitude = 37.5004;
+  double _longitude = 127.0368;
+  WebViewController? _mapController;
+
+  @override
+  void initState() {
+    super.initState();
+    _initMapController();
+  }
+
+  void _initMapController() {
+    _mapController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.white)
+      ..addJavaScriptChannel(
+        'ToonMapChannel',
+        onMessageReceived: (JavaScriptMessage message) {
+          try {
+            final data = jsonDecode(message.message);
+            setState(() {
+              _latitude = (data['lat'] as num).toDouble();
+              _longitude = (data['lng'] as num).toDouble();
+            });
+            debugPrint('좌표 갱신: $_latitude, $_longitude');
+          } catch (e) {
+            debugPrint('좌표 파싱 에러: $e');
+          }
+        },
+      )
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (String url) {
+            if (_addressCtrl.text.isNotEmpty) {
+              _mapController?.runJavaScript("searchAddress('${_addressCtrl.text}')");
+            }
+          },
+          onWebResourceError: (WebResourceError error) {
+            debugPrint('웹뷰 리소스 에러: ${error.description}, ${error.errorCode}, ${error.errorType}');
+          },
+        ),
+      )
+      ..loadHtmlString(_kakaoMapHtml, baseUrl: 'https://anotherone-tjgi.onrender.com');
+  }
+
+  Future<void> _showAddressSearch() async {
+    final address = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (context) => const AddressSearchScreen()),
+    );
+    if (address != null && address.isNotEmpty) {
+      setState(() {
+        _addressCtrl.text = address;
+      });
+      _mapController?.runJavaScript("searchAddress('$address')");
+    }
+  }
 
   // Step 3
   final _wageCtrl = TextEditingController();
@@ -51,12 +110,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     try {
       final api = ref.read(apiClientProvider);
       await api.post<Map<String, dynamic>>(
-        '/api/onboarding',
+        '/api/onboarding/company',
         data: {
           'companyName': _companyNameCtrl.text.trim(),
           'address': _addressCtrl.text.trim(),
-          'latitude': 37.5004,
-          'longitude': 127.0368,
+          'latitude': _latitude,
+          'longitude': _longitude,
           'radiusMeters': 100,
           'wageType': _wageType == WageType.hourly ? 'hourly' : 'daily',
           'hourlyWage':
@@ -302,14 +361,63 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         const SizedBox(height: 16),
         _label('주소'),
         const SizedBox(height: 6),
-        TextFormField(
-          controller: _addressCtrl,
-          textInputAction: TextInputAction.done,
-          decoration: const InputDecoration(
-            hintText: '서울시 강남구 역삼동 ...',
-            prefixIcon: Icon(Icons.location_on_outlined, size: 20),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _addressCtrl,
+                readOnly: true,
+                onTap: _showAddressSearch,
+                decoration: const InputDecoration(
+                  hintText: '주소 검색 버튼을 눌러주세요',
+                  prefixIcon: Icon(Icons.location_on_outlined, size: 20),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: _showAddressSearch,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                '주소 검색',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
         ),
+        if (_addressCtrl.text.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _label('📍 출퇴근 위치 미세 조정 (핀을 드래그하여 맞추기)'),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 200,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: _mapController != null
+                    ? WebViewWidget(controller: _mapController!)
+                    : const Center(child: CircularProgressIndicator()),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            '💡 등록된 주소 기준 반경 100m 이내에서 출퇴근이 가능합니다.',
+            style: TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w500),
+          ),
+        ],
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(14),
@@ -535,4 +643,79 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           color: AppColors.textSecondary,
         ),
       );
+
+  static const String _kakaoMapHtml = '''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <style>
+    html, body { width: 100%; height: 100%; margin: 0; padding: 0; }
+    #map { width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b266405199d6c10bc598d2d53a52bce2&libraries=services"></script>
+  <script>
+    let map, marker, geocoder;
+
+    function initMap(lat, lng) {
+      const container = document.getElementById('map');
+      const options = {
+        center: new kakao.maps.LatLng(lat, lng),
+        level: 3
+      };
+      map = new kakao.maps.Map(container, options);
+
+      const markerPosition = new kakao.maps.LatLng(lat, lng);
+      marker = new kakao.maps.Marker({
+        position: markerPosition,
+        draggable: true
+      });
+      marker.setMap(map);
+
+      // 드래그 종료 이벤트
+      kakao.maps.event.addListener(marker, 'dragend', function() {
+        const latlng = marker.getPosition();
+        if (window.ToonMapChannel) {
+          window.ToonMapChannel.postMessage(JSON.stringify({
+            lat: latlng.getLat(),
+            lng: latlng.getLng()
+          }));
+        }
+      });
+    }
+
+    function searchAddress(address) {
+      if (!geocoder) {
+        geocoder = new kakao.maps.services.Geocoder();
+      }
+      geocoder.addressSearch(address, function(result, status) {
+        if (status === kakao.maps.services.Status.OK && result[0]) {
+          const lat = parseFloat(result[0].y);
+          const lng = parseFloat(result[0].x);
+          const moveLatLng = new kakao.maps.LatLng(lat, lng);
+          
+          if (!map) {
+            initMap(lat, lng);
+          } else {
+            map.setCenter(moveLatLng);
+            marker.setPosition(moveLatLng);
+          }
+          
+          if (window.ToonMapChannel) {
+            window.ToonMapChannel.postMessage(JSON.stringify({
+              lat: lat,
+              lng: lng
+            }));
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
+''';
 }

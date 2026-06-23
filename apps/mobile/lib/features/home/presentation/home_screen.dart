@@ -72,6 +72,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           _records = [
             AttendanceRecord(
               id: 'guest_rec_1',
+              companyId: 'guest_company',
               date: yesterdayKstStr,
               checkIn: '${yesterdayKstStr}T08:55:00Z',
               checkOut: '${yesterdayKstStr}T18:05:00Z',
@@ -80,6 +81,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             AttendanceRecord(
               id: 'guest_rec_2',
+              companyId: 'guest_company',
               date: twoDaysAgoKstStr,
               checkIn: '${twoDaysAgoKstStr}T09:12:00Z',
               checkOut: '${twoDaysAgoKstStr}T18:02:00Z',

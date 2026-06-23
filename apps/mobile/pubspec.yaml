@@ -49,6 +49,9 @@ dependencies:
   package_info_plus: ^8.2.0
   url_launcher: ^6.3.1
 
+  # 웹뷰 (주소 및 지도)
+  webview_flutter: ^4.10.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
