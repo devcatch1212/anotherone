@@ -38,11 +38,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       _error = '';
     });
     try {
-      await ref.read(authProvider.notifier).register(
-            _nameCtrl.text.trim(),
-            _emailCtrl.text.trim(),
-            _passwordCtrl.text,
-          );
+      final authState = ref.read(authProvider).value;
+      final isGuest = authState?.isGuest ?? false;
+
+      if (isGuest) {
+        await ref.read(authProvider.notifier).convertToRealUser(
+              email: _emailCtrl.text.trim(),
+              password: _passwordCtrl.text,
+              name: _nameCtrl.text.trim(),
+            );
+        if (mounted) {
+          context.go('/home');
+        }
+      } else {
+        await ref.read(authProvider.notifier).register(
+              _nameCtrl.text.trim(),
+              _emailCtrl.text.trim(),
+              _passwordCtrl.text,
+            );
+      }
     } catch (e) {
       if (mounted) setState(() => _error = parseApiError(e));
     } finally {

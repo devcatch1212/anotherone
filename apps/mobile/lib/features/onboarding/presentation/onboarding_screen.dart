@@ -33,7 +33,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    _initMapController();
+    _addressCtrl.text = "경기도 군포시 번영로 504";
   }
 
   void _initMapController() {
@@ -471,7 +471,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           keyboardType: TextInputType.number,
           textInputAction: TextInputAction.next,
           decoration: InputDecoration(
-            hintText: _wageType == WageType.hourly ? '예: 9860' : '예: 80000',
+            hintText: _wageType == WageType.hourly ? '예: 10320' : '예: 80000',
             prefixIcon: const Icon(Icons.payments_outlined, size: 20),
           ),
         ),
@@ -620,6 +620,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   void _handleNext() {
     if (_step == 0) {
+      if (_mapController == null) {
+        _initMapController();
+      }
       setState(() => _step = 1);
     } else if (_step == 1) {
       if (_companyNameCtrl.text.trim().isEmpty) {

@@ -87,4 +87,77 @@ export class AuthService {
   async logout() {
     return { success: true, message: '로그아웃되었습니다.' };
   }
+
+  async anonymousRegister() {
+    const uuid = Math.random().toString(36).substring(2, 10);
+    const email = `anon_${uuid}@example.com`;
+    const name = `게스트_${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        name,
+        isAnonymous: true,
+      },
+    });
+
+    const payload = { sub: user.id, email: user.email };
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        onboardingCompleted: false,
+        isAnonymous: true,
+        status: user.status,
+        employments: [],
+      },
+    };
+  }
+
+  async convertAnonymous(userId: string, data: any) {
+    const { email, password, name } = data;
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) throw new BadRequestException('존재하지 않는 사용자입니다.');
+    if (!user.isAnonymous) throw new BadRequestException('이미 정식 회원인 계정입니다.');
+
+    // 이메일 중복 체크
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) throw new BadRequestException('이미 가입된 이메일 주소입니다.');
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        email,
+        password: hashedPassword,
+        name,
+        isAnonymous: false,
+      },
+      include: {
+        employments: {
+          include: { company: true },
+        },
+      },
+    });
+
+    const payload = { sub: updatedUser.id, email: updatedUser.email };
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        onboardingCompleted: updatedUser.onboardingCompleted,
+        isAnonymous: false,
+        status: updatedUser.status,
+        employments: updatedUser.employments,
+      },
+    };
+  }
 }

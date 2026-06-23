@@ -16,6 +16,7 @@ model User {
   image               String?
   onboardingCompleted Boolean  @default(false)
   status              String   @default("active") // 'active' | 'withdrawn'
+  isAnonymous         Boolean  @default(false)
 
   // Relations
   employments         Employment[]

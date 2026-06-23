@@ -27,4 +27,15 @@ export class AuthController {
   async logout() {
     return this.authService.logout();
   }
+
+  @Post('anonymous')
+  async registerAnonymous() {
+    return this.authService.anonymousRegister();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('convert')
+  async convertAnonymous(@Request() req: any, @Body() body: RegisterDto) {
+    return this.authService.convertAnonymous(req.user.id, body);
+  }
 }

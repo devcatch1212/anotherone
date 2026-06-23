@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../storage/auth_storage.dart';
 
-const String kBaseUrl = 'https://anotherone-tjgi.onrender.com';
+const String kBaseUrl = 'http://10.0.2.2:3001';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   final storage = ref.watch(authStorageProvider);
