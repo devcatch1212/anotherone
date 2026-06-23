@@ -13,7 +13,6 @@ const schema = z.object({
   password: z
     .string()
     .min(1, '비밀번호를 입력해주세요'),
-  remember: z.boolean().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -40,11 +39,8 @@ export default function LoginPage() {
         body: JSON.stringify({ email: data.email, password: data.password }),
       });
       
-      if (data.remember) {
-        window.localStorage.setItem('remember-me', 'true');
-      } else {
-        window.localStorage.setItem('remember-me', 'false');
-      }
+      // remember-me 수동 지정 없이 무조건 localStorage 기반 세션 유지를 스토어에서 처리하므로 해당 로직 제거
+      window.localStorage.removeItem('remember-me');
       
       // 이전 계정의 잔존 상태 완전 초기화 (스토리지 오염 방지)
       clearAuth();
@@ -194,16 +190,8 @@ export default function LoginPage() {
               )}
             </div>
 
-            {/* 체크박스 & 비밀번호 찾기 */}
-            <div className="flex items-center justify-between" style={{ marginTop: 4 }}>
-              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-                <input
-                  {...register('remember')}
-                  type="checkbox"
-                  className="w-4 h-4 rounded accent-blue-500"
-                />
-                로그인 상태 유지
-              </label>
+            {/* 비밀번호 찾기 */}
+            <div className="flex justify-end" style={{ marginTop: 4 }}>
               <Link href="/login/forgot" style={{ fontSize: 13, color: 'var(--color-primary)', fontWeight: 700, textDecoration: 'none' }}>
                 비밀번호 찾기
               </Link>

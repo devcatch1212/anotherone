@@ -101,20 +101,12 @@ export const useAuthStore = create<AuthState>()(
       storage: createJSONStorage(() => ({
         getItem: (name: string) => {
           if (typeof window === 'undefined') return null;
-          if (window.localStorage.getItem('remember-me') === 'true') {
-            return window.localStorage.getItem(name);
-          }
-          return window.sessionStorage.getItem(name);
+          return window.localStorage.getItem(name);
         },
         setItem: (name: string, value: string) => {
           if (typeof window === 'undefined') return;
-          if (window.localStorage.getItem('remember-me') === 'true') {
-            window.localStorage.setItem(name, value);
-            window.sessionStorage.removeItem(name);
-          } else {
-            window.sessionStorage.setItem(name, value);
-            window.localStorage.removeItem(name);
-          }
+          window.localStorage.setItem(name, value);
+          window.sessionStorage.removeItem(name);
         },
         removeItem: (name: string) => {
           if (typeof window === 'undefined') return;
