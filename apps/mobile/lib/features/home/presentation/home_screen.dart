@@ -9,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/api/api_client.dart';
 import '../../../features/auth/auth_provider.dart';
 import '../../../shared/models/models.dart';
+import '../../../core/widgets/guest_guard.dart';
 
 enum GpsStatus { loading, ok, far, denied }
 
@@ -57,7 +58,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _loadData() async {
-    final emp = _employment;
+    final auth = ref.read(authProvider).value;
+    if (auth == null) return;
+
+    if (auth.isGuest) {
+      final todayKstStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final yesterdayKstStr = DateFormat('yyyy-MM-dd').format(DateTime.now().subtract(const Duration(days: 1)));
+      final twoDaysAgoKstStr = DateFormat('yyyy-MM-dd').format(DateTime.now().subtract(const Duration(days: 2)));
+
+      if (mounted) {
+        setState(() {
+          _leaveRemaining = 12.5;
+          _records = [
+            AttendanceRecord(
+              id: 'guest_rec_1',
+              date: yesterdayKstStr,
+              checkIn: '${yesterdayKstStr}T08:55:00Z',
+              checkOut: '${yesterdayKstStr}T18:05:00Z',
+              status: AttendanceStatus.normal,
+              workedMinutes: 480,
+            ),
+            AttendanceRecord(
+              id: 'guest_rec_2',
+              date: twoDaysAgoKstStr,
+              checkIn: '${twoDaysAgoKstStr}T09:12:00Z',
+              checkOut: '${twoDaysAgoKstStr}T18:02:00Z',
+              status: AttendanceStatus.late,
+              workedMinutes: 480,
+            ),
+          ];
+          _todayRecord = null;
+          _workState = AttendanceState.before;
+        });
+      }
+      return;
+    }
+
+    final emp = auth.currentEmployment;
     if (emp == null) return;
     final api = ref.read(apiClientProvider);
     final year = DateTime.now().year;
@@ -213,18 +250,58 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _handleCheckIn() async {
-    if (_gpsStatus != GpsStatus.ok || _workState != AttendanceState.before) return;
+    final isGuest = ref.read(authProvider).value?.isGuest ?? false;
+    if (isGuest) {
+      showDialog(
+        context: context,
+        builder: (context) => const GuestAlert(),
+      );
+      return;
+    }
+    if (_workState != AttendanceState.before) return;
     final emp = _employment;
     if (emp == null) return;
     setState(() => _checkingIn = true);
     try {
+      // 1. 터치 시점 실시간 위치 조회 (5초 타임아웃)
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 5),
+      );
+
+      // 2. 거리 재계산 및 교차 검증
+      final d = _calcDistance(
+        pos.latitude,
+        pos.longitude,
+        emp.company.latitude,
+        emp.company.longitude,
+      );
+
+      if (mounted) {
+        setState(() {
+          _distance = d;
+          _userLat = pos.latitude;
+          _userLon = pos.longitude;
+          _gpsStatus = d <= emp.company.radiusMeters ? GpsStatus.ok : GpsStatus.far;
+        });
+      }
+
+      if (d > emp.company.radiusMeters) {
+        _showSnackBar(
+          '📍 근무지 인증 실패! 반경 ${emp.company.radiusMeters}m 밖입니다. (현재 거리: ${d.round()}m)',
+          AppColors.danger,
+        );
+        return;
+      }
+
+      // 3. API 호출
       final api = ref.read(apiClientProvider);
       final res = await api.post<Map<String, dynamic>>(
         '/api/attendance/check-in',
         data: {
           'employmentId': emp.id,
-          'latitude': _userLat ?? emp.company.latitude,
-          'longitude': _userLon ?? emp.company.longitude,
+          'latitude': pos.latitude,
+          'longitude': pos.longitude,
         },
       );
       final record = AttendanceRecord.fromJson(
@@ -245,18 +322,58 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _handleCheckOut() async {
-    if (_gpsStatus != GpsStatus.ok || _workState != AttendanceState.working) return;
+    final isGuest = ref.read(authProvider).value?.isGuest ?? false;
+    if (isGuest) {
+      showDialog(
+        context: context,
+        builder: (context) => const GuestAlert(),
+      );
+      return;
+    }
+    if (_workState != AttendanceState.working) return;
     final emp = _employment;
     if (emp == null) return;
     setState(() => _checkingIn = true);
     try {
+      // 1. 터치 시점 실시간 위치 조회 (5초 타임아웃)
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 5),
+      );
+
+      // 2. 거리 재계산 및 교차 검증
+      final d = _calcDistance(
+        pos.latitude,
+        pos.longitude,
+        emp.company.latitude,
+        emp.company.longitude,
+      );
+
+      if (mounted) {
+        setState(() {
+          _distance = d;
+          _userLat = pos.latitude;
+          _userLon = pos.longitude;
+          _gpsStatus = d <= emp.company.radiusMeters ? GpsStatus.ok : GpsStatus.far;
+        });
+      }
+
+      if (d > emp.company.radiusMeters) {
+        _showSnackBar(
+          '📍 근무지 인증 실패! 반경 ${emp.company.radiusMeters}m 밖입니다. (현재 거리: ${d.round()}m)',
+          AppColors.danger,
+        );
+        return;
+      }
+
+      // 3. API 호출
       final api = ref.read(apiClientProvider);
       final res = await api.post<Map<String, dynamic>>(
         '/api/attendance/check-out',
         data: {
           'employmentId': emp.id,
-          'latitude': _userLat ?? emp.company.latitude,
-          'longitude': _userLon ?? emp.company.longitude,
+          'latitude': pos.latitude,
+          'longitude': pos.longitude,
         },
       );
       final updated = AttendanceRecord.fromJson(
@@ -289,6 +406,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _showOvertimeSheet() {
+    final isGuest = ref.read(authProvider).value?.isGuest ?? false;
+    if (isGuest) {
+      showDialog(
+        context: context,
+        builder: (context) => const GuestAlert(),
+      );
+      return;
+    }
     final startCtrl = TextEditingController();
     final endCtrl = TextEditingController();
     final reasonCtrl = TextEditingController();

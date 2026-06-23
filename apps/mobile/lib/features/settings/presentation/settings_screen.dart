@@ -12,6 +12,7 @@ class SettingsScreen extends ConsumerWidget {
     final auth = ref.watch(authProvider).value;
     final user = auth?.user;
     final employments = user?.employments ?? [];
+    final isGuest = auth?.isGuest ?? false;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -58,9 +59,9 @@ class SettingsScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(user?.name ?? '사용자',
+                                Text(isGuest ? '게스트 체험 중 👤' : (user?.name ?? '사용자'),
                                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
-                                Text(user?.email ?? '',
+                                Text(isGuest ? '정식 회원가입 후 전체 서비스를 이용해보세요!' : (user?.email ?? ''),
                                     style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.8))),
                               ],
                             ),
@@ -145,9 +146,15 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 20),
 
-                    // 로그아웃
+                    // 로그아웃 또는 가입하기
                     GestureDetector(
                       onTap: () async {
+                        if (isGuest) {
+                          await ref.read(authProvider.notifier).logout();
+                          if (context.mounted) context.go('/login');
+                          return;
+                        }
+
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (ctx) => AlertDialog(
@@ -171,15 +178,15 @@ class SettingsScreen extends ConsumerWidget {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.dangerLight,
+                          color: isGuest ? AppColors.primaryLight : AppColors.dangerLight,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.danger.withOpacity(0.2)),
+                          border: Border.all(color: (isGuest ? AppColors.primary : AppColors.danger).withOpacity(0.2)),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
-                            Icon(Icons.logout_rounded, color: AppColors.danger, size: 20),
-                            SizedBox(width: 12),
-                            Text('로그아웃', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.danger)),
+                            Icon(isGuest ? Icons.login_rounded : Icons.logout_rounded, color: isGuest ? AppColors.primary : AppColors.danger, size: 20),
+                            const SizedBox(width: 12),
+                            Text(isGuest ? '정식 회원가입 / 로그인하기' : '로그아웃', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: isGuest ? AppColors.primary : AppColors.danger)),
                           ],
                         ),
                       ),

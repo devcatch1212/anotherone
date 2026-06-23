@@ -14,6 +14,20 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): nu
   return R * c; // 미터 단위 거리 반환
 }
 
+function getKSTDateString(date: Date = new Date()): string {
+  const formatter = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const parts = formatter.formatToParts(date);
+  const year = parts.find(p => p.type === 'year')?.value;
+  const month = parts.find(p => p.type === 'month')?.value;
+  const day = parts.find(p => p.type === 'day')?.value;
+  return `${year}-${month}-${day}`;
+}
+
 @Injectable()
 export class AttendanceService {
   constructor(private readonly prisma: PrismaService) {}
@@ -37,7 +51,7 @@ export class AttendanceService {
     }
 
     const now = new Date();
-    const dateStr = format(now, 'yyyy-MM-dd');
+    const dateStr = getKSTDateString(now);
 
     const existing = await this.prisma.attendanceRecord.findFirst({
       where: {
@@ -96,28 +110,34 @@ export class AttendanceService {
       );
     }
 
-    const dateStr = format(new Date(), 'yyyy-MM-dd');
-
+    // 야근/자정 퇴근 대응: 최근 24시간 내 출근하고 퇴근 기록이 없는 기록 우선 조회
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const existing = await this.prisma.attendanceRecord.findFirst({
       where: {
         userId,
         companyId: employment.companyId,
-        date: dateStr,
+        checkIn: { gte: oneDayAgo },
+        checkOut: null,
       },
+      orderBy: { checkIn: 'desc' },
     });
 
     if (!existing || !existing.checkIn) {
-      throw new BadRequestException('오늘의 출근 기록이 없습니다.');
-    }
-
-    if (existing.checkOut) {
-      throw new BadRequestException('이미 퇴근 처리가 완료되었습니다.');
+      throw new BadRequestException('최근 24시간 내의 출근 기록이 없거나 이미 퇴근 처리되었습니다.');
     }
 
     const checkOutTime = new Date();
     const checkInTime = existing.checkIn;
     const workMinutes = differenceInMinutes(checkOutTime, checkInTime);
-    const breakTime = employment.breakMinutes ?? 60;
+
+    // 동적 휴게 시간 책정 (4시간당 30분 기준)
+    let breakTime = 0;
+    if (workMinutes >= 8 * 60) {
+      breakTime = employment.breakMinutes ?? 60;
+    } else if (workMinutes >= 4 * 60) {
+      breakTime = 30;
+    }
+
     let actualWorkMinutes = Math.max(0, workMinutes - breakTime);
 
     // 30분 단위 내림 정산 (예: 14분 -> 0분, 44분 -> 30분)
@@ -133,7 +153,10 @@ export class AttendanceService {
     }
     nightMinutes = Math.floor(nightMinutes / 30) * 30;
     nightMinutes = Math.min(nightMinutes, actualWorkMinutes);
-    const overtimeMinutes = Math.max(0, actualWorkMinutes - (8 * 60)); // 8시간 초과시
+
+    // 계약된 일일 소정 근로 시간을 기준으로 연장 근로 계산 (기본값 8시간)
+    const contractWorkMinutes = (employment.dailyWorkHours || 8) * 60;
+    const overtimeMinutes = Math.max(0, actualWorkMinutes - contractWorkMinutes);
 
     // 시급 산출 (일급제인 경우에도 추가 수당 계산을 위해 역산)
     let hourlyWage = employment.hourlyWage ?? 0;

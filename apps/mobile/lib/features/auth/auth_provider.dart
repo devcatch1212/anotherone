@@ -14,6 +14,7 @@ class AuthState {
   final String? currentEmploymentId;
   final bool isAuthenticated;
   final bool onboardingCompleted;
+  final bool isGuest;
 
   const AuthState({
     this.token,
@@ -22,6 +23,7 @@ class AuthState {
     this.currentEmploymentId,
     this.isAuthenticated = false,
     this.onboardingCompleted = false,
+    this.isGuest = false,
   });
 
   Employment? get currentEmployment {
@@ -40,6 +42,7 @@ class AuthState {
     String? currentEmploymentId,
     bool? isAuthenticated,
     bool? onboardingCompleted,
+    bool? isGuest,
   }) =>
       AuthState(
         token: token ?? this.token,
@@ -48,6 +51,7 @@ class AuthState {
         currentEmploymentId: currentEmploymentId ?? this.currentEmploymentId,
         isAuthenticated: isAuthenticated ?? this.isAuthenticated,
         onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+        isGuest: isGuest ?? this.isGuest,
       );
 }
 
@@ -144,6 +148,57 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   Future<void> logout() async {
     await _storage.clearAll();
     state = const AsyncValue.data(AuthState());
+  }
+
+  Future<void> loginAsGuest() async {
+    state = const AsyncValue.loading();
+    
+    // 가상 유저 및 근무지 정보
+    final mockUser = User(
+      id: 'guest_user',
+      name: '게스트 체험',
+      email: 'guest@example.com',
+      image: null,
+      onboardingCompleted: true,
+      employments: [
+        Employment(
+          id: 'guest_employment',
+          position: '체험 사원',
+          wageType: WageType.hourly,
+          hourlyWage: 10000,
+          dailyWage: null,
+          dailyWorkHours: 8,
+          weeklyWorkDays: 5,
+          workStartTime: '09:00',
+          workEndTime: '18:00',
+          workDaysOfWeek: const [0, 1, 2, 3, 4],
+          breakMinutes: 60,
+          isPrimary: true,
+          isActive: true,
+          endedAt: null,
+          userId: 'guest_user',
+          companyId: 'guest_company',
+          company: Company(
+            id: 'guest_company',
+            name: '가상 주식회사',
+            address: '서울특별시 강남구 테헤란로 1',
+            latitude: 37.4979,
+            longitude: 127.0276,
+            radiusMeters: 100,
+          ),
+        ),
+      ],
+    );
+
+    state = AsyncValue.data(AuthState(
+      token: 'guest_token',
+      user: mockUser,
+      isAuthenticated: true,
+      onboardingCompleted: true,
+      isGuest: true,
+      currentCompanyId: 'guest_company',
+      currentEmploymentId: 'guest_employment',
+    ));
   }
 
   Future<void> completeOnboarding() async {
