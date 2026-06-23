@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/auth_provider.dart';
+import '../../../core/api/version_service.dart';
+import '../../../core/widgets/update_dialog.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -30,6 +32,30 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   Future<void> _navigate() async {
     await Future.delayed(const Duration(milliseconds: 1600));
     if (!mounted) return;
+
+    // 버전 체크 수행
+    final versionService = ref.read(versionServiceProvider);
+    final versionInfo = await versionService.checkVersion();
+    if (!mounted) return;
+
+    if (versionInfo.state == UpdateState.force) {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => UpdateDialog(versionInfo: versionInfo),
+      );
+      return; // 강제 업데이트는 다음 화면으로 못 가도록 차단
+    } else if (versionInfo.state == UpdateState.optional) {
+      final updateSelected = await showDialog<bool>(
+        context: context,
+        barrierDismissible: true,
+        builder: (context) => UpdateDialog(versionInfo: versionInfo),
+      );
+      if (updateSelected == true) {
+        return; // 스토어 이동 시 앱 진입 중단
+      }
+    }
+
     final auth = await ref.read(authProvider.future);
     if (!mounted) return;
     final isAuth = auth.isAuthenticated;

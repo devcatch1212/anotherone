@@ -11,8 +11,10 @@ export class SystemService implements OnModuleInit {
     if (!existingConfig) {
       await this.prisma.appConfig.create({
         data: {
-          latestVersion: '1.0.0',
-          minVersion: '1.0.0',
+          latestVersionAndroid: '1.0.0',
+          minVersionAndroid: '1.0.0',
+          latestVersionIos: '1.0.0',
+          minVersionIos: '1.0.0',
           forceUpdate: false,
           maintenanceMode: false,
         },
@@ -81,21 +83,35 @@ export class SystemService implements OnModuleInit {
   }
 
   async getAppConfig() {
-    let config = await this.prisma.appConfig.findFirst({
+    const config = await this.prisma.appConfig.findFirst({
       orderBy: { createdAt: 'desc' },
     });
     if (!config) {
-      config = {
-        id: 'mock',
-        latestVersion: '1.0.0',
-        minVersion: '1.0.0',
+      return {
+        android: {
+          latestVersion: '1.0.0',
+          minVersion: '1.0.0',
+        },
+        ios: {
+          latestVersion: '1.0.0',
+          minVersion: '1.0.0',
+        },
         forceUpdate: false,
         maintenanceMode: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       };
     }
-    return config;
+    return {
+      android: {
+        latestVersion: config.latestVersionAndroid,
+        minVersion: config.minVersionAndroid,
+      },
+      ios: {
+        latestVersion: config.latestVersionIos,
+        minVersion: config.minVersionIos,
+      },
+      forceUpdate: config.forceUpdate,
+      maintenanceMode: config.maintenanceMode,
+    };
   }
 
   async getLegalDocument(type: string) {
