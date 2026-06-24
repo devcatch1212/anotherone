@@ -43,7 +43,9 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
     setState(() {
       if (isStart) {
         _startDate = picked;
-        if (_endDate.isBefore(_startDate)) _endDate = _startDate;
+        if (_endDate.isBefore(_startDate) || _type == LeaveType.half) {
+          _endDate = _startDate;
+        }
       } else {
         _endDate = picked;
       }
@@ -99,7 +101,9 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
   @override
   Widget build(BuildContext context) {
     final fmt = DateFormat('yyyy년 M월 d일 (E)', 'ko');
-    final diffDays = _endDate.difference(_startDate).inDays + 1;
+    final diffDays = _type == LeaveType.half
+        ? 0.5
+        : _endDate.difference(_startDate).inDays + 1.0;
     final typeLabel = {
       LeaveType.annual: '연차',
       LeaveType.half: '반차',
@@ -140,7 +144,14 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
                           children: LeaveType.values.map((t) {
                             final isSelected = _type == t;
                             return GestureDetector(
-                              onTap: () => setState(() => _type = t),
+                              onTap: () {
+                                setState(() {
+                                  _type = t;
+                                  if (_type == LeaveType.half) {
+                                    _endDate = _startDate;
+                                  }
+                                });
+                              },
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 150),
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -193,20 +204,20 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
                             ),
                             Expanded(
                               child: GestureDetector(
-                                onTap: () => _pickDate(false),
+                                onTap: _type == LeaveType.half ? null : () => _pickDate(false),
                                 child: Container(
                                   padding: const EdgeInsets.all(14),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: _type == LeaveType.half ? AppColors.bg : Colors.white,
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(color: AppColors.border),
                                   ),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text('종료일', style: TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+                                      const Text('종료일', style: TextStyle(fontSize: 11, color: _type == LeaveType.half ? AppColors.textMuted.withOpacity(0.5) : AppColors.textMuted, fontWeight: FontWeight.w600)),
                                       const SizedBox(height: 4),
-                                      Text(fmt.format(_endDate), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                                      Text(fmt.format(_endDate), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _type == LeaveType.half ? AppColors.textMuted : AppColors.textPrimary)),
                                     ],
                                   ),
                                 ),

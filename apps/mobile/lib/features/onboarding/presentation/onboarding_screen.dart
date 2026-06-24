@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/kakao_map_utils.dart';
 import '../../../features/auth/auth_provider.dart';
 import '../../../core/api/api_client.dart';
 import '../../../shared/models/models.dart';
@@ -26,6 +27,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // Step 2
   final _companyNameCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
+  final _departmentCtrl = TextEditingController();
+  final _positionCtrl = TextEditingController();
   double _latitude = 37.5004;
   double _longitude = 127.0368;
   WebViewController? _mapController;
@@ -33,7 +36,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    _addressCtrl.text = "경기도 군포시 번영로 504";
   }
 
   void _initMapController() {
@@ -67,7 +69,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           },
         ),
       )
-      ..loadHtmlString(_kakaoMapHtml, baseUrl: 'https://anotherone-tjgi.onrender.com');
+      ..loadHtmlString(KakaoMapUtils.mapHtml, baseUrl: KakaoMapUtils.baseUrl);
   }
 
   Future<void> _showAddressSearch() async {
@@ -94,6 +96,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void dispose() {
     _companyNameCtrl.dispose();
     _addressCtrl.dispose();
+    _departmentCtrl.dispose();
+    _positionCtrl.dispose();
     _wageCtrl.dispose();
     _workHoursCtrl.dispose();
     _workDaysCtrl.dispose();
@@ -117,6 +121,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           'latitude': _latitude,
           'longitude': _longitude,
           'radiusMeters': 100,
+          'position': _positionCtrl.text.trim().isNotEmpty ? _positionCtrl.text.trim() : '직원',
+          'department': _departmentCtrl.text.trim().isNotEmpty ? _departmentCtrl.text.trim() : null,
           'wageType': _wageType == WageType.hourly ? 'hourly' : 'daily',
           'hourlyWage':
               _wageType == WageType.hourly ? double.tryParse(_wageCtrl.text) : null,
@@ -126,7 +132,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           'weeklyWorkDays': int.tryParse(_workDaysCtrl.text) ?? 5,
           'workStartTime': _startTimeCtrl.text,
           'workEndTime': _endTimeCtrl.text,
-          'position': '직원',
         },
       );
       await ref.read(authProvider.notifier).completeOnboarding();
@@ -357,6 +362,46 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             hintText: '(주)예시회사',
             prefixIcon: Icon(Icons.business_rounded, size: 20),
           ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _label('부서 (선택)'),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    controller: _departmentCtrl,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      hintText: '예: 개발팀',
+                      prefixIcon: Icon(Icons.group_work_rounded, size: 20),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _label('직책/직급 (선택)'),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    controller: _positionCtrl,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      hintText: '예: 대리',
+                      prefixIcon: Icon(Icons.badge_rounded, size: 20),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         _label('주소'),
@@ -647,78 +692,4 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
       );
 
-  static const String _kakaoMapHtml = '''
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
-  <style>
-    html, body { width: 100%; height: 100%; margin: 0; padding: 0; }
-    #map { width: 100%; height: 100%; }
-  </style>
-</head>
-<body>
-  <div id="map"></div>
-  <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b266405199d6c10bc598d2d53a52bce2&libraries=services"></script>
-  <script>
-    let map, marker, geocoder;
-
-    function initMap(lat, lng) {
-      const container = document.getElementById('map');
-      const options = {
-        center: new kakao.maps.LatLng(lat, lng),
-        level: 3
-      };
-      map = new kakao.maps.Map(container, options);
-
-      const markerPosition = new kakao.maps.LatLng(lat, lng);
-      marker = new kakao.maps.Marker({
-        position: markerPosition,
-        draggable: true
-      });
-      marker.setMap(map);
-
-      // 드래그 종료 이벤트
-      kakao.maps.event.addListener(marker, 'dragend', function() {
-        const latlng = marker.getPosition();
-        if (window.ToonMapChannel) {
-          window.ToonMapChannel.postMessage(JSON.stringify({
-            lat: latlng.getLat(),
-            lng: latlng.getLng()
-          }));
-        }
-      });
-    }
-
-    function searchAddress(address) {
-      if (!geocoder) {
-        geocoder = new kakao.maps.services.Geocoder();
-      }
-      geocoder.addressSearch(address, function(result, status) {
-        if (status === kakao.maps.services.Status.OK && result[0]) {
-          const lat = parseFloat(result[0].y);
-          const lng = parseFloat(result[0].x);
-          const moveLatLng = new kakao.maps.LatLng(lat, lng);
-          
-          if (!map) {
-            initMap(lat, lng);
-          } else {
-            map.setCenter(moveLatLng);
-            marker.setPosition(moveLatLng);
-          }
-          
-          if (window.ToonMapChannel) {
-            window.ToonMapChannel.postMessage(JSON.stringify({
-              lat: lat,
-              lng: lng
-            }));
-          }
-        }
-      });
-    }
-  </script>
-</body>
-</html>
-''';
 }

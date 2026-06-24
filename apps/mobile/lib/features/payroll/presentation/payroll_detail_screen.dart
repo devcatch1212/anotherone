@@ -15,6 +15,7 @@ class PayrollDetailScreen extends ConsumerStatefulWidget {
 class _PayrollDetailScreenState extends ConsumerState<PayrollDetailScreen> {
   PayrollRecord? _record;
   bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -28,8 +29,11 @@ class _PayrollDetailScreenState extends ConsumerState<PayrollDetailScreen> {
       setState(() {
         _record = PayrollRecord.fromJson(res['payroll'] as Map<String, dynamic>? ?? res);
         _loading = false;
+        _error = null;
       });
-    } catch (_) { setState(() => _loading = false); }
+    } catch (e) {
+      if (mounted) setState(() { _loading = false; _error = parseApiError(e); });
+    }
   }
 
   @override
@@ -64,7 +68,24 @@ class _PayrollDetailScreenState extends ConsumerState<PayrollDetailScreen> {
                   child: _loading
                       ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
                       : r == null
-                          ? const Center(child: Text('데이터를 불러올 수 없습니다'))
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.error_outline, color: AppColors.danger, size: 40),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    _error ?? '데이터를 불러올 수 없습니다',
+                                    style: const TextStyle(color: AppColors.textSecondary),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  TextButton(
+                                    onPressed: _load,
+                                    child: const Text('다시 시도', style: TextStyle(color: AppColors.primary)),
+                                  ),
+                                ],
+                              ),
+                            )
                           : SingleChildScrollView(
                               padding: const EdgeInsets.all(16),
                               child: Column(

@@ -16,6 +16,7 @@ class PayrollScreen extends ConsumerStatefulWidget {
 class _PayrollScreenState extends ConsumerState<PayrollScreen> {
   List<PayrollRecord> _records = [];
   bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -40,8 +41,10 @@ class _PayrollScreenState extends ConsumerState<PayrollScreen> {
           final bDate = b.year * 100 + b.month;
           return bDate.compareTo(aDate);
         });
-      setState(() { _records = list; _loading = false; });
-    } catch (_) { setState(() => _loading = false); }
+      setState(() { _records = list; _loading = false; _error = null; });
+    } catch (e) {
+      if (mounted) setState(() { _loading = false; _error = parseApiError(e); });
+    }
   }
 
   @override
@@ -66,8 +69,24 @@ class _PayrollScreenState extends ConsumerState<PayrollScreen> {
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                  : _records.isEmpty
-                      ? const Center(child: Text('급여 내역이 없습니다', style: TextStyle(color: AppColors.textMuted)))
+                  : _error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.error_outline, color: AppColors.danger, size: 40),
+                              const SizedBox(height: 12),
+                              Text(_error!, style: const TextStyle(color: AppColors.textSecondary)),
+                              const SizedBox(height: 16),
+                              TextButton(
+                                onPressed: _load,
+                                child: const Text('다시 시도', style: TextStyle(color: AppColors.primary)),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _records.isEmpty
+                          ? const Center(child: Text('급여 내역이 없습니다', style: TextStyle(color: AppColors.textMuted)))
                       : ListView.builder(
                           padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
                           itemCount: _records.length,

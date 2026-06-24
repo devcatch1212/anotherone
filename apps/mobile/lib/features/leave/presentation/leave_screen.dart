@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/api/api_client.dart';
 import '../../../features/auth/auth_provider.dart';
@@ -18,6 +17,7 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
   double _remaining = 0;
   double _total = 0;
   bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -52,8 +52,11 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
         _total = totalDays;
         _remaining = (totalDays - used).clamp(0, double.infinity);
         _loading = false;
+        _error = null;
       });
-    } catch (_) { setState(() { _total = totalDays; _remaining = totalDays; _loading = false; }); }
+    } catch (e) {
+      if (mounted) setState(() { _loading = false; _error = parseApiError(e); });
+    }
   }
 
   @override
@@ -101,10 +104,26 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
-                      child: Column(
-                        children: [
+                  : _error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.error_outline, color: AppColors.danger, size: 40),
+                              const SizedBox(height: 12),
+                              Text(_error!, style: const TextStyle(color: AppColors.textSecondary)),
+                              const SizedBox(height: 16),
+                              TextButton(
+                                onPressed: _load,
+                                child: const Text('다시 시도', style: TextStyle(color: AppColors.primary)),
+                              ),
+                            ],
+                          ),
+                        )
+                      : SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+                          child: Column(
+                            children: [
                           // 연차 현황 카드
                           Container(
                             width: double.infinity,

@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/api/api_client.dart';
 import '../../../features/auth/auth_provider.dart';
 import '../../../shared/models/models.dart';
+import '../../../shared/utils/attendance_utils.dart';
 
 class AttendanceScreen extends ConsumerStatefulWidget {
   const AttendanceScreen({super.key});
@@ -17,6 +18,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
   int _month = DateTime.now().month;
   List<AttendanceRecord> _records = [];
   bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -37,8 +39,10 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
           .map((e) => AttendanceRecord.fromJson(e as Map<String, dynamic>))
           .toList()
         ..sort((a, b) => b.date.compareTo(a.date));
-      setState(() { _records = list; _loading = false; });
-    } catch (_) { setState(() => _loading = false); }
+      setState(() { _records = list; _loading = false; _error = null; });
+    } catch (e) {
+      if (mounted) setState(() { _loading = false; _error = parseApiError(e); });
+    }
   }
 
   void _prevMonth() {
@@ -64,13 +68,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
     final lateCount = _records.where((r) => r.status == AttendanceStatus.late).length;
     final absentCount = _records.where((r) => r.status == AttendanceStatus.absent).length;
 
-    final statusMap = {
-      AttendanceStatus.normal: (label: '정상', color: AppColors.accentDark, bg: AppColors.accentLight),
-      AttendanceStatus.late: (label: '지각', color: const Color(0xFFD97706), bg: const Color(0xFFFFFBEB)),
-      AttendanceStatus.absent: (label: '결근', color: const Color(0xFFDC2626), bg: const Color(0xFFFEF2F2)),
-      AttendanceStatus.vacation: (label: '휴가', color: const Color(0xFF7C3AED), bg: const Color(0xFFF5F3FF)),
-      AttendanceStatus.holiday: (label: '공휴일', color: AppColors.textMuted, bg: AppColors.bg),
-    };
+
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -123,14 +121,30 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                  : _records.isEmpty
+                  : _error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.error_outline, color: AppColors.danger, size: 40),
+                              const SizedBox(height: 12),
+                              Text(_error!, style: const TextStyle(color: AppColors.textSecondary)),
+                              const SizedBox(height: 16),
+                              TextButton(
+                                onPressed: _load,
+                                child: const Text('다시 시도', style: TextStyle(color: AppColors.primary)),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _records.isEmpty
                       ? const Center(child: Text('출퇴근 기록이 없습니다', style: TextStyle(color: AppColors.textMuted)))
                       : ListView.builder(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                           itemCount: _records.length,
                           itemBuilder: (_, i) {
                             final r = _records[i];
-                            final s = statusMap[r.status] ?? statusMap[AttendanceStatus.normal]!;
+                            final s = AttendanceUtils.getStyle(r.status);
                             return Container(
                               margin: const EdgeInsets.only(bottom: 8),
                               padding: const EdgeInsets.all(16),

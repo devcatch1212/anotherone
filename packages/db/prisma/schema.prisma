@@ -56,6 +56,7 @@ model Company {
 model Employment {
   id              String   @id @default(uuid())
   position        String
+  department      String?
   wageType        String   // 'hourly' | 'daily'
   hourlyWage      Int?
   dailyWage       Int?

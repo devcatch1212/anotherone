@@ -25,6 +25,10 @@ export class CompanyOnboardingDto {
   @IsOptional()
   position?: string;
 
+  @IsString({ message: '부서는 문자열이어야 합니다.' })
+  @IsOptional()
+  department?: string;
+
   @IsString({ message: '급여 유형은 문자열이어야 합니다.' })
   @IsNotEmpty({ message: '급여 유형(시급/일급)을 선택해주세요.' })
   wageType!: string;

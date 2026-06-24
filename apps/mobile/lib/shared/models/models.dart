@@ -98,6 +98,7 @@ class Employment {
   final String companyId;
   final Company company;
   final String position;
+  final String? department;
   final WageType wageType;
   final double? hourlyWage;
   final double? dailyWage;
@@ -117,6 +118,7 @@ class Employment {
     required this.companyId,
     required this.company,
     required this.position,
+    this.department,
     required this.wageType,
     this.hourlyWage,
     this.dailyWage,
@@ -137,6 +139,7 @@ class Employment {
         companyId: json['companyId'] as String,
         company: Company.fromJson(json['company'] as Map<String, dynamic>),
         position: json['position'] as String? ?? '',
+        department: json['department'] as String?,
         wageType: json['wageType'] == 'hourly' ? WageType.hourly : WageType.daily,
         hourlyWage: (json['hourlyWage'] as num?)?.toDouble(),
         dailyWage: (json['dailyWage'] as num?)?.toDouble(),

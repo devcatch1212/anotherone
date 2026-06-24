@@ -13,7 +13,6 @@ class AuthStorage {
   static const _tokenKey = 'auth_token';
   static const _userKey = 'auth_user';
   static const _rememberMeKey = 'remember_me';
-  static const _onboardingKey = 'onboarding_completed';
   static const _currentCompanyKey = 'current_company_id';
   static const _currentEmploymentKey = 'current_employment_id';
 
@@ -31,7 +30,6 @@ class AuthStorage {
 
   // ── 유저 ──
   Future<void> saveUser(User user) async {
-    final prefs = await SharedPreferences.getInstance();
     final json = {
       'id': user.id,
       'name': user.name,
@@ -40,12 +38,11 @@ class AuthStorage {
       'onboardingCompleted': user.onboardingCompleted,
       'employments': user.employments.map((e) => _employmentToJson(e)).toList(),
     };
-    await prefs.setString(_userKey, jsonEncode(json));
+    await _secure.write(key: _userKey, value: jsonEncode(json));
   }
 
   Future<User?> getUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    final str = prefs.getString(_userKey);
+    final str = await _secure.read(key: _userKey);
     if (str == null) return null;
     try {
       return User.fromJson(jsonDecode(str) as Map<String, dynamic>);
@@ -55,8 +52,7 @@ class AuthStorage {
   }
 
   Future<void> deleteUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_userKey);
+    await _secure.delete(key: _userKey);
   }
 
   // ── 기타 설정 ──

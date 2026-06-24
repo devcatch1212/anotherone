@@ -75,14 +75,16 @@ class SettingsScreen extends ConsumerWidget {
                     if (employments.isNotEmpty) ...[
                       const Text('근무지', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
                       const SizedBox(height: 10),
-                      ...employments.map((emp) => Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.7),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Colors.white.withOpacity(0.5)),
-                            ),
+                      ...employments.map((emp) => GestureDetector(
+                            onTap: () => context.go('/settings/workplace/edit', extra: emp),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: Colors.white.withOpacity(0.5)),
+                              ),
                             child: Row(
                               children: [
                                 Container(
@@ -123,7 +125,7 @@ class SettingsScreen extends ConsumerWidget {
                                 ),
                               ],
                             ),
-                          )),
+                          ))),
                       const SizedBox(height: 20),
                     ],
 

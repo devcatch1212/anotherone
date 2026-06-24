@@ -32,6 +32,8 @@ export class SettingsService {
     const updatedEmployment = await this.prisma.employment.update({
       where: { id: employment.id },
       data: {
+        position: data.position || '직원',
+        department: data.department || null,
         wageType: data.wageType,
         hourlyWage: data.wageType === 'hourly' ? data.hourlyWage : null,
         dailyWage: data.wageType === 'daily' ? data.dailyWage : null,

@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../shared/models/models.dart';
 import '../../features/auth/auth_provider.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
@@ -16,6 +17,7 @@ import '../../features/leave/presentation/leave_screen.dart';
 import '../../features/leave/presentation/leave_apply_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
+import '../../features/settings/presentation/workplace_edit_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import '../widgets/main_shell.dart';
@@ -109,6 +111,20 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/settings',
             builder: (_, __) => const SettingsScreen(),
+          ),
+          GoRoute(
+            path: '/settings/workplace/edit',
+            builder: (_, state) {
+              final employment = state.extra as Employment?;
+              if (employment == null) {
+                return const Scaffold(
+                  body: Center(
+                    child: Text('근무지 고용 정보가 없습니다.'),
+                  ),
+                );
+              }
+              return WorkplaceEditScreen(employment: employment);
+            },
           ),
         ],
       ),

@@ -10,6 +10,7 @@ import '../../../core/api/api_client.dart';
 import '../../../features/auth/auth_provider.dart';
 import '../../../shared/models/models.dart';
 import '../../../core/widgets/guest_guard.dart';
+import '../../../shared/utils/attendance_utils.dart';
 
 enum GpsStatus { loading, ok, far, denied }
 
@@ -27,17 +28,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<AttendanceRecord> _records = [];
   double _leaveRemaining = 0;
   bool _checkingIn = false;
+  String? _loadError;
   Timer? _timer;
   DateTime _now = DateTime.now();
   StreamSubscription<Position>? _positionSub;
-  double? _userLat;
-  double? _userLon;
+
 
   @override
   void initState() {
     super.initState();
+    // 근무 중일 때만 1초마다 리빌드되도록 최적화
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _now = DateTime.now());
+      if (mounted && _workState == AttendanceState.working) {
+        setState(() => _now = DateTime.now());
+      }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
@@ -53,7 +57,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Employment? get _employment {
-    final auth = ref.read(authProvider).value;
+    final auth = ref.watch(authProvider).value;
     return auth?.currentEmployment;
   }
 
@@ -62,7 +66,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (auth == null) return;
 
     if (auth.isGuest) {
-      final todayKstStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
       final yesterdayKstStr = DateFormat('yyyy-MM-dd').format(DateTime.now().subtract(const Duration(days: 1)));
       final twoDaysAgoKstStr = DateFormat('yyyy-MM-dd').format(DateTime.now().subtract(const Duration(days: 2)));
 
@@ -134,7 +137,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           }
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('출퇴근 기록 조회 실패: $e');
+      if (mounted) setState(() => _loadError = parseApiError(e));
+    }
 
     try {
       final leaveRes = await api.get<Map<String, dynamic>>(
@@ -161,7 +167,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           _leaveRemaining = (totalLeaveDays - usedDays).clamp(0, double.infinity);
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('연차 조회 실패: $e');
+      // 연차 조회 실패는 치명적이지 않으므로 UI는 유지하고 로그만 남김
+    }
   }
 
   Future<void> _startGps() async {
@@ -194,8 +203,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     ).listen(
       (pos) {
-        _userLat = pos.latitude;
-        _userLon = pos.longitude;
         final d = _calcDistance(
           pos.latitude,
           pos.longitude,
@@ -282,8 +289,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (mounted) {
         setState(() {
           _distance = d;
-          _userLat = pos.latitude;
-          _userLon = pos.longitude;
           _gpsStatus = d <= emp.company.radiusMeters ? GpsStatus.ok : GpsStatus.far;
         });
       }
@@ -312,9 +317,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _todayRecord = record;
         _workState = AttendanceState.working;
       });
+      // 지각 여부는 서버가 workStartTime 기준으로 판단한 status 사용
+      final isLate = record.status == AttendanceStatus.late;
       _showSnackBar(
-        _now.hour > 9 ? '⚠️ 지각 처리되었습니다' : '✅ 출근이 기록되었습니다',
-        _now.hour > 9 ? AppColors.warning : AppColors.success,
+        isLate ? '⚠️ 지각 처리되었습니다' : '✅ 출근이 기록되었습니다',
+        isLate ? AppColors.warning : AppColors.success,
       );
     } catch (e) {
       _showSnackBar('오류: ${parseApiError(e)}', AppColors.danger);
@@ -555,7 +562,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
       ),
-    );
+    ).then((_) {
+      // 바텀시트가 닫힌 후 컨트롤러를 안전하게 dispose
+      startCtrl.dispose();
+      endCtrl.dispose();
+      reasonCtrl.dispose();
+    });
   }
 
   @override
@@ -652,12 +664,59 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
 
-            // 본문
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
                 child: Column(
                   children: [
+                    if (_loadError != null)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 14),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.dangerLight,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.danger.withOpacity(0.2)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Text('⚠️', style: TextStyle(fontSize: 16)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _loadError!,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.danger,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _loadError = null;
+                                });
+                                _loadData();
+                                _startGps();
+                              },
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: const Text(
+                                '재시도',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.danger,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     // 근무 현황 카드
                     Container(
                       padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
@@ -1112,18 +1171,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildRecentRecords() {
     final recent = _records.take(3).toList();
-    final statusMap = {
-      AttendanceStatus.normal:
-          (label: '정상', color: AppColors.accentDark, bg: AppColors.accentLight),
-      AttendanceStatus.late:
-          (label: '지각', color: const Color(0xFFD97706), bg: const Color(0xFFFFFBEB)),
-      AttendanceStatus.absent:
-          (label: '결근', color: const Color(0xFFDC2626), bg: const Color(0xFFFEF2F2)),
-      AttendanceStatus.vacation:
-          (label: '휴가', color: const Color(0xFF7C3AED), bg: const Color(0xFFF5F3FF)),
-      AttendanceStatus.holiday:
-          (label: '공휴일', color: AppColors.textMuted, bg: AppColors.bg),
-    };
+
 
     return Column(
       children: [
@@ -1183,7 +1231,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       height: 1, color: Color(0xFFF3F4F6)),
                   itemBuilder: (_, i) {
                     final r = recent[i];
-                    final s = statusMap[r.status] ?? statusMap[AttendanceStatus.normal]!;
+                    final s = AttendanceUtils.getStyle(r.status);
                     final isWorking = r.checkOut == null && r.checkIn != null;
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),

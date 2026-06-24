@@ -5,18 +5,23 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../storage/auth_storage.dart';
 
-const String kBaseUrl = 'http://10.0.2.2:3001';
+const String kBaseUrl = 'https://anotherone-tjgi.onrender.com';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   final storage = ref.watch(authStorageProvider);
+  // 주의: 401 자동 로그아웃 onUnauthorized는 auth_provider.dart의
+  //       AuthNotifier.build()에서 ApiClient를 직접 인스턴스화하여 주입됩니다.
+  //       이 Provider는 auth가 필요없는 화면(ex: 오늘링 전)에서 사용됩니다.
   return ApiClient(storage);
 });
 
 class ApiClient {
   final AuthStorage _storage;
+  final Future<void> Function()? _onUnauthorized;
   late final Dio _dio;
 
-  ApiClient(this._storage) {
+  ApiClient(this._storage, {Future<void> Function()? onUnauthorized})
+      : _onUnauthorized = onUnauthorized {
     _dio = Dio(
       BaseOptions(
         baseUrl: kBaseUrl,
@@ -38,7 +43,11 @@ class ApiClient {
           }
           handler.next(options);
         },
-        onError: (error, handler) {
+        onError: (error, handler) async {
+          // 401 Unauthorized: 토큰 만료 → 자동 로그아웃
+          if (error.response?.statusCode == 401) {
+            await _onUnauthorized?.call();
+          }
           handler.next(error);
         },
       ),
@@ -60,6 +69,15 @@ class ApiClient {
     T Function(dynamic)? fromJson,
   }) async {
     final response = await _dio.post(path, data: data);
+    return fromJson != null ? fromJson(response.data) : response.data as T;
+  }
+
+  Future<T> put<T>(
+    String path, {
+    dynamic data,
+    T Function(dynamic)? fromJson,
+  }) async {
+    final response = await _dio.put(path, data: data);
     return fromJson != null ? fromJson(response.data) : response.data as T;
   }
 

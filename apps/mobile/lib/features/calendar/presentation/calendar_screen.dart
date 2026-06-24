@@ -68,10 +68,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             Container(
               color: Colors.white.withOpacity(0.65),
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
-              child: const Align(
-                alignment: Alignment.centerLeft,
-                child: Text('근무 캘린더',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+              child: Row(
+                children: [
+                  const Text('근무 캘린더',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                  const SizedBox(width: 8),
+                  if (_loading)
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      ),
+                    ),
+                ],
               ),
             ),
             Expanded(

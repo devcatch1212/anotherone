@@ -1,6 +1,7 @@
 // lib/features/auth/auth_provider.dart
 // 인증 상태관리 Riverpod Provider
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../shared/models/models.dart';
 import '../../core/storage/auth_storage.dart';
@@ -72,7 +73,11 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   @override
   Future<AuthState> build() async {
     _storage = ref.read(authStorageProvider);
-    _api = ref.read(apiClientProvider);
+    // 401 자동 로그아웃: logout 콜백을 ApiClient에 직접 주입
+    _api = ApiClient(
+      _storage,
+      onUnauthorized: () async => logout(),
+    );
     return _loadFromStorage();
   }
 
@@ -195,7 +200,10 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       await _storage.saveUser(user);
       final current = state.value ?? const AuthState();
       state = AsyncValue.data(current.copyWith(user: user));
-    } catch (_) {}
+    } catch (e) {
+      // 사용자 정보 갱신 실패는 치명적이지 않으므로 로그만 남김
+      debugPrint('refreshUser 실패: $e');
+    }
   }
 
   void setCurrentCompany(String companyId) {

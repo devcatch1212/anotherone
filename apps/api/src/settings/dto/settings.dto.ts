@@ -48,6 +48,14 @@ export class UpdateProfileDto {
   @IsNumber({}, { message: '경도를 숫자로 입력해주세요.' })
   @IsOptional()
   longitude?: number;
+
+  @IsString({ message: '직책은 문자열이어야 합니다.' })
+  @IsOptional()
+  position?: string;
+
+  @IsString({ message: '부서는 문자열이어야 합니다.' })
+  @IsOptional()
+  department?: string;
 }
 
 export class UpdatePasswordDto {
