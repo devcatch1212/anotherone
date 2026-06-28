@@ -5,9 +5,11 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  // Frontend 연동을 위한 CORS 허용 설정
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000', // 프론트엔드 주소만 허용
+    origin: [
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+      'http://localhost:3002', // 신규 관리자(Admin) 웹 포트 허용
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true, // 쿠키나 인증 헤더를 허용
   });
