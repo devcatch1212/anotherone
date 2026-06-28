@@ -132,6 +132,13 @@ export default function Sidebar() {
           <span>근태 관리</span>
         </Link>
 
+      </nav>
+
+      {/* 하단 설정 & 로그아웃 */}
+      <div 
+        className="p-4 border-t border-slate-100 flex flex-col gap-2"
+        style={{ padding: '16px', borderTop: '1px solid #F1F5F9', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '8px' }}
+      >
         <Link
           href="/dashboard/settings"
           className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition ${
@@ -153,13 +160,7 @@ export default function Sidebar() {
           <span style={{ fontSize: '16px' }}>⚙️</span>
           <span>설정</span>
         </Link>
-      </nav>
 
-      {/* 하단 로그아웃 */}
-      <div 
-        className="p-4 border-t border-slate-100"
-        style={{ padding: '16px', borderTop: '1px solid #F1F5F9', boxSizing: 'border-box' }}
-      >
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 transition cursor-pointer"
