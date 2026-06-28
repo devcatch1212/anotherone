@@ -177,4 +177,197 @@ export class AdminService {
       records,
     };
   }
+
+  // 연차 신청 목록 조회
+  async getLeaves() {
+    return this.prisma.leaveRecord.findMany({
+      include: {
+        user: { select: { name: true, email: true } },
+        company: { select: { name: true } },
+      },
+      orderBy: { appliedAt: 'desc' },
+    });
+  }
+
+  // 연차 승인
+  async approveLeave(id: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const leave = await tx.leaveRecord.findUnique({ where: { id } });
+      if (!leave) throw new NotFoundException('연차 신청 기록을 찾을 수 없습니다.');
+      if (leave.status !== 'pending') throw new Error('대기 중인 신청만 승인할 수 있습니다.');
+
+      // 1. 상태 변경
+      const updatedLeave = await tx.leaveRecord.update({
+        where: { id },
+        data: { status: 'approved' },
+      });
+
+      // 2. 근로계약의 연차 잔액 차감
+      const employment = await tx.employment.findFirst({
+        where: { userId: leave.userId, companyId: leave.companyId, isActive: true },
+      });
+      if (employment) {
+        await tx.employment.update({
+          where: { id: employment.id },
+          data: { annualLeaveBalance: { decrement: leave.days } },
+        });
+      }
+
+      // 3. 출퇴근 기록(AttendanceRecord)에 휴가(vacation) 상태의 레코드 생성/갱신
+      // 휴가 기간 동안 매일의 기록을 생성
+      const start = new Date(leave.startDate);
+      const end = new Date(leave.endDate);
+      const dates: string[] = [];
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        dates.push(d.toISOString().split('T')[0]);
+      }
+
+      for (const date of dates) {
+        await tx.attendanceRecord.upsert({
+          where: { userId_companyId_date: { userId: leave.userId, companyId: leave.companyId, date } },
+          update: { status: 'vacation', workedMinutes: 0 },
+          create: {
+            userId: leave.userId,
+            companyId: leave.companyId,
+            date,
+            status: 'vacation',
+            workedMinutes: 0,
+          },
+        });
+      }
+
+      // 4. 알림 발송
+      await tx.notification.create({
+        data: {
+          userId: leave.userId,
+          companyId: leave.companyId,
+          type: 'leave_approved',
+          title: '연차 신청 승인',
+          body: `[${leave.startDate} ~ ${leave.endDate}] 연차 신청이 승인되었습니다. (${leave.days}일 차감)`,
+        },
+      });
+
+      return updatedLeave;
+    });
+  }
+
+  // 연차 반려
+  async rejectLeave(id: string) {
+    const leave = await this.prisma.leaveRecord.findUnique({ where: { id } });
+    if (!leave) throw new NotFoundException('연차 신청 기록을 찾을 수 없습니다.');
+    if (leave.status !== 'pending') throw new Error('대기 중인 신청만 반려할 수 있습니다.');
+
+    const updatedLeave = await this.prisma.leaveRecord.update({
+      where: { id },
+      data: { status: 'rejected' },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        userId: leave.userId,
+        companyId: leave.companyId,
+        type: 'leave_rejected',
+        title: '연차 신청 반려',
+        body: `[${leave.startDate} ~ ${leave.endDate}] 연차 신청이 반려되었습니다.`,
+      },
+    });
+
+    return updatedLeave;
+  }
+
+  // 출퇴근 수정 요청 목록 조회
+  async getAttendanceCorrections() {
+    return this.prisma.attendanceCorrection.findMany({
+      include: {
+        user: { select: { name: true, email: true } },
+        company: { select: { name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // 출퇴근 수정 요청 승인
+  async approveAttendanceCorrection(id: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const correction = await tx.attendanceCorrection.findUnique({ where: { id } });
+      if (!correction) throw new NotFoundException('수정 요청을 찾을 수 없습니다.');
+      if (correction.status !== 'pending') throw new Error('대기 중인 요청만 승인할 수 있습니다.');
+
+      // 1. 상태 변경
+      const updatedCorrection = await tx.attendanceCorrection.update({
+        where: { id },
+        data: { status: 'approved' },
+      });
+
+      // 2. 근무 시간(분) 계산
+      let workedMinutes = null;
+      if (correction.proposedCheckIn && correction.proposedCheckOut) {
+        const diffMs = new Date(correction.proposedCheckOut).getTime() - new Date(correction.proposedCheckIn).getTime();
+        workedMinutes = Math.max(0, Math.floor(diffMs / 1000 / 60));
+      }
+
+      // 3. 실제 출퇴근 레코드(AttendanceRecord) 생성/갱신
+      await tx.attendanceRecord.upsert({
+        where: {
+          userId_companyId_date: {
+            userId: correction.userId,
+            companyId: correction.companyId,
+            date: correction.date,
+          },
+        },
+        update: {
+          checkIn: correction.proposedCheckIn,
+          checkOut: correction.proposedCheckOut,
+          workedMinutes,
+          status: 'normal', // 승인 시 정상 근태로 인정
+        },
+        create: {
+          userId: correction.userId,
+          companyId: correction.companyId,
+          date: correction.date,
+          checkIn: correction.proposedCheckIn,
+          checkOut: correction.proposedCheckOut,
+          workedMinutes,
+          status: 'normal',
+        },
+      });
+
+      // 4. 알림 발송
+      await tx.notification.create({
+        data: {
+          userId: correction.userId,
+          companyId: correction.companyId,
+          type: 'overtime_approved', // 기존 양식 재활용 혹은 임의지정
+          title: '출퇴근 수정 요청 승인',
+          body: `[${correction.date}] 출퇴근 정보 수정 요청이 승인되었습니다.`,
+        },
+      });
+
+      return updatedCorrection;
+    });
+  }
+
+  // 출퇴근 수정 요청 반려
+  async rejectAttendanceCorrection(id: string) {
+    const correction = await this.prisma.attendanceCorrection.findUnique({ where: { id } });
+    if (!correction) throw new NotFoundException('수정 요청을 찾을 수 없습니다.');
+    if (correction.status !== 'pending') throw new Error('대기 중인 요청만 반려할 수 있습니다.');
+
+    const updatedCorrection = await this.prisma.attendanceCorrection.update({
+      where: { id },
+      data: { status: 'rejected' },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        userId: correction.userId,
+        companyId: correction.companyId,
+        type: 'overtime_rejected',
+        title: '출퇴근 수정 요청 반려',
+        body: `[${correction.date}] 출퇴근 정보 수정 요청이 반려되었습니다.`,
+      },
+    });
+
+    return updatedCorrection;
+  }
 }

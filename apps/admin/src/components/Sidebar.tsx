@@ -20,51 +20,144 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="glass-sidebar fixed bottom-0 top-0 left-0 w-64 flex flex-col z-20 border-r border-slate-200/50 bg-white/40">
+    <aside 
+      className="glass-sidebar fixed bottom-0 top-0 left-0 flex flex-col z-20 bg-white border-r border-slate-200"
+      style={{ 
+        width: '256px', 
+        minWidth: '256px', 
+        maxWidth: '256px', 
+        boxSizing: 'border-box' 
+      }}
+    >
       {/* 로고 영역 */}
-      <div className="h-16 flex items-center px-6 border-b border-slate-200/50">
+      <div 
+        className="h-20 flex items-center px-6 border-b border-slate-100"
+        style={{ height: '80px', borderBottom: '1px solid #F1F5F9', boxSizing: 'border-box' }}
+      >
         <Link href="/dashboard" className="flex items-center gap-2">
-          <span className="text-xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <span 
+            className="text-xl font-extrabold text-[#1E3A8A] tracking-tight"
+            style={{ fontSize: '20px', fontWeight: '800', color: '#1E3A8A' }}
+          >
             AnotherOne Admin
           </span>
         </Link>
       </div>
 
       {/* 관리자 프로필 */}
-      <div className="p-6 border-b border-slate-200/50 bg-white/10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">
+      <div 
+        className="p-6 border-b border-slate-100 bg-slate-50/30"
+        style={{ padding: '24px', borderBottom: '1px solid #F1F5F9', boxSizing: 'border-box' }}
+      >
+        <div className="flex items-center gap-3" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div 
+            className="w-10 h-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm shrink-0"
+            style={{ 
+              width: '40px', 
+              height: '40px', 
+              borderRadius: '9999px', 
+              backgroundColor: '#EFF6FF', 
+              border: '1px solid #DBEAFE', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              color: '#2563EB', 
+              fontWeight: '700', 
+              fontSize: '14px',
+              flexShrink: 0
+            }}
+          >
             {admin?.name?.substring(0, 2) || '관리'}
           </div>
-          <div className="overflow-hidden">
-            <h4 className="text-sm font-bold text-slate-800 truncate">{admin?.name || '관리자'}</h4>
-            <p className="text-xs text-slate-400 truncate">{admin?.email || 'admin@anotherone.kr'}</p>
+          <div className="overflow-hidden" style={{ overflow: 'hidden' }}>
+            <h4 
+              className="text-sm font-bold text-slate-800 truncate" 
+              style={{ fontSize: '14px', fontWeight: '700', color: '#1E293B', margin: 0 }}
+            >
+              {admin?.name || '관리자'}
+            </h4>
+            <p 
+              className="text-xs text-slate-400 truncate" 
+              style={{ fontSize: '12px', color: '#94A3B8', margin: '2px 0 0 0' }}
+            >
+              {admin?.email || 'admin@anotherone.kr'}
+            </p>
           </div>
         </div>
       </div>
 
       {/* 메뉴 링크 */}
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1" style={{ flex: 1, padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <Link
           href="/dashboard"
           className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition ${
-            pathname === '/dashboard' || pathname.startsWith('/dashboard/companies')
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/10'
-              : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'
+            pathname === '/dashboard' || (pathname.startsWith('/dashboard/companies') && !pathname.includes('requests'))
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10'
+              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
           }`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            fontSize: '14px',
+            fontWeight: '600',
+            textDecoration: 'none'
+          }}
         >
-          <span>🏢</span>
+          <span style={{ fontSize: '16px' }}>🏢</span>
           <span>근무지 목록</span>
+        </Link>
+
+        <Link
+          href="/dashboard/requests"
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition ${
+            pathname.startsWith('/dashboard/requests')
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10'
+              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+          }`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            fontSize: '14px',
+            fontWeight: '600',
+            textDecoration: 'none'
+          }}
+        >
+          <span style={{ fontSize: '16px' }}>⏰</span>
+          <span>근태 관리</span>
         </Link>
       </nav>
 
       {/* 하단 로그아웃 */}
-      <div className="p-4 border-t border-slate-200/50">
+      <div 
+        className="p-4 border-t border-slate-100"
+        style={{ padding: '16px', borderTop: '1px solid #F1F5F9', boxSizing: 'border-box' }}
+      >
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50/50 transition cursor-pointer"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 transition cursor-pointer"
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            fontSize: '14px',
+            fontWeight: '600',
+            border: 'none',
+            backgroundColor: 'transparent',
+            color: '#EF4444',
+            cursor: 'pointer',
+            textAlign: 'left'
+          }}
         >
-          <span>🚪</span>
+          <span style={{ fontSize: '16px' }}>🚪</span>
           <span>로그아웃</span>
         </button>
       </div>

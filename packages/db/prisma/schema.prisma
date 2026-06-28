@@ -29,6 +29,7 @@ model User {
   leaveRecords        LeaveRecord[]
   notifications       Notification[]
   overtimeRequests    OvertimeRequest[]
+  attendanceCorrections AttendanceCorrection[]
 
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
@@ -49,6 +50,7 @@ model Company {
   leaveRecords        LeaveRecord[]
   notifications       Notification[]
   overtimeRequests    OvertimeRequest[]
+  attendanceCorrections AttendanceCorrection[]
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -70,6 +72,7 @@ model Employment {
   isPrimary       Boolean  @default(false)
   isActive        Boolean  @default(true)
   endedAt         DateTime?
+  annualLeaveBalance Float @default(15.0)
 
   userId          String
   user            User     @relation(fields: [userId], references: [id])
@@ -247,4 +250,22 @@ model LegalDocument {
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model AttendanceCorrection {
+  id                  String   @id @default(uuid())
+  date                String   // YYYY-MM-DD
+  proposedCheckIn     DateTime?
+  proposedCheckOut    DateTime?
+  reason              String
+  status              String   @default("pending") // pending, approved, rejected
+  
+  userId              String
+  user                User     @relation(fields: [userId], references: [id])
+  companyId           String
+  company             Company  @relation(fields: [companyId], references: [id])
+  attendanceRecordId  String?  // 기존 출퇴근 기록 연동용
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }

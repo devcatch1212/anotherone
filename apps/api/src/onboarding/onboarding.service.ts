@@ -25,16 +25,26 @@ export class OnboardingService {
       breakMinutes,
     } = data;
 
-    // 1. 회사 생성 (이 데모에서는 항상 새로 생성한다고 가정)
-    const company = await this.prisma.company.create({
-      data: {
+    // 1. 동일한 회사명과 주소를 가진 근무지(Company)가 이미 존재하는지 검증
+    let company = await this.prisma.company.findFirst({
+      where: {
         name: companyName,
-        address,
-        latitude,
-        longitude,
-        radiusMeters: radiusMeters || 100,
+        address: address,
       },
     });
+
+    // 존재하지 않는 신규 근무지일 경우에만 새로 생성
+    if (!company) {
+      company = await this.prisma.company.create({
+        data: {
+          name: companyName,
+          address,
+          latitude,
+          longitude,
+          radiusMeters: radiusMeters || 100,
+        },
+      });
+    }
 
     // 2. 근로 계약(Employment) 생성
     // 기존에 isPrimary인 계약이 있으면 해제하고 새 계약을 Primary로 설정

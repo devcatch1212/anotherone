@@ -31,10 +31,10 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50">
+    <div className="min-h-screen bg-slate-50/50" style={{ minHeight: '100vh', backgroundColor: '#F0F2F5' }}>
       <Sidebar />
-      <div className="pl-64">
-        <main className="p-8 max-w-7xl mx-auto">
+      <div style={{ paddingLeft: '256px', minHeight: '100vh', boxSizing: 'border-box' }}>
+        <main className="p-8 max-w-7xl mx-auto" style={{ padding: '32px', maxWidth: '1280px', margin: '0 auto', boxSizing: 'border-box' }}>
           {children}
         </main>
       </div>

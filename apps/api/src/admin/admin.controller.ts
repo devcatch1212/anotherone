@@ -56,4 +56,46 @@ export class AdminController {
       parseInt(month) || now.getMonth() + 1,
     );
   }
+
+  // 연차 신청 목록
+  @UseGuards(AdminAuthGuard)
+  @Get('leaves')
+  getLeaves() {
+    return this.adminService.getLeaves();
+  }
+
+  // 연차 승인
+  @UseGuards(AdminAuthGuard)
+  @Post('leaves/:id/approve')
+  approveLeave(@Param('id') id: string) {
+    return this.adminService.approveLeave(id);
+  }
+
+  // 연차 반려
+  @UseGuards(AdminAuthGuard)
+  @Post('leaves/:id/reject')
+  rejectLeave(@Param('id') id: string) {
+    return this.adminService.rejectLeave(id);
+  }
+
+  // 출퇴근 수정 요청 목록
+  @UseGuards(AdminAuthGuard)
+  @Get('attendance-corrections')
+  getAttendanceCorrections() {
+    return this.adminService.getAttendanceCorrections();
+  }
+
+  // 출퇴근 수정 요청 승인
+  @UseGuards(AdminAuthGuard)
+  @Post('attendance-corrections/:id/approve')
+  approveAttendanceCorrection(@Param('id') id: string) {
+    return this.adminService.approveAttendanceCorrection(id);
+  }
+
+  // 출퇴근 수정 요청 반려
+  @UseGuards(AdminAuthGuard)
+  @Post('attendance-corrections/:id/reject')
+  rejectAttendanceCorrection(@Param('id') id: string) {
+    return this.adminService.rejectAttendanceCorrection(id);
+  }
 }
