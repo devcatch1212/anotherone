@@ -120,4 +120,25 @@ export class AdminController {
   updateEmploymentStatus(@Param('id') id: string, @Body() body: { isActive: boolean }) {
     return this.adminService.updateEmploymentStatus(id, body.isActive);
   }
+
+  // 연장 근무 신청 목록
+  @UseGuards(AdminAuthGuard)
+  @Get('overtimes')
+  getOvertimes() {
+    return this.adminService.getOvertimes();
+  }
+
+  // 연장 근무 승인
+  @UseGuards(AdminAuthGuard)
+  @Post('overtimes/:id/approve')
+  approveOvertime(@Param('id') id: string) {
+    return this.adminService.approveOvertime(id);
+  }
+
+  // 연장 근무 반려
+  @UseGuards(AdminAuthGuard)
+  @Post('overtimes/:id/reject')
+  rejectOvertime(@Param('id') id: string) {
+    return this.adminService.rejectOvertime(id);
+  }
 }

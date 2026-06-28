@@ -38,12 +38,30 @@ interface AttendanceCorrection {
   };
 }
 
+interface OvertimeRequest {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  user: {
+    name: string;
+    email: string;
+  };
+  company: {
+    name: string;
+  };
+}
+
 export default function RequestsPage() {
-  const [activeTab, setActiveTab] = useState<'leave' | 'attendance'>('leave');
+  const [activeTab, setActiveTab] = useState<'leave' | 'attendance' | 'overtime'>('leave');
   
   // 데이터 상태
   const [leaves, setLeaves] = useState<LeaveRecord[]>([]);
   const [corrections, setCorrections] = useState<AttendanceCorrection[]>([]);
+  const [overtimes, setOvertimes] = useState<OvertimeRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -55,9 +73,12 @@ export default function RequestsPage() {
       if (activeTab === 'leave') {
         const data = await apiFetch<LeaveRecord[]>('/api/admin/leaves');
         setLeaves(data);
-      } else {
+      } else if (activeTab === 'attendance') {
         const data = await apiFetch<AttendanceCorrection[]>('/api/admin/attendance-corrections');
         setCorrections(data);
+      } else {
+        const data = await apiFetch<OvertimeRequest[]>('/api/admin/overtimes');
+        setOvertimes(data);
       }
     } catch (err: any) {
       setError(err.message || '요청 목록을 불러오지 못했습니다.');
@@ -75,7 +96,6 @@ export default function RequestsPage() {
     try {
       setActionLoading(`${id}-${action}`);
       await apiFetch(`/api/admin/leaves/${id}/${action}`, { method: 'POST' });
-      // 상태 갱신
       setLeaves((prev) =>
         prev.map((item) =>
           item.id === id ? { ...item, status: action === 'approve' ? 'approved' : 'rejected' } : item
@@ -93,8 +113,24 @@ export default function RequestsPage() {
     try {
       setActionLoading(`${id}-${action}`);
       await apiFetch(`/api/admin/attendance-corrections/${id}/${action}`, { method: 'POST' });
-      // 상태 갱신
       setCorrections((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, status: action === 'approve' ? 'approved' : 'rejected' } : item
+        )
+      );
+    } catch (err: any) {
+      alert(err.message || '작업 처리 중 오류가 발생했습니다.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // 연장 근무 승인/반려 액션
+  const handleOvertimeAction = async (id: string, action: 'approve' | 'reject') => {
+    try {
+      setActionLoading(`${id}-${action}`);
+      await apiFetch(`/api/admin/overtimes/${id}/${action}`, { method: 'POST' });
+      setOvertimes((prev) =>
         prev.map((item) =>
           item.id === id ? { ...item, status: action === 'approve' ? 'approved' : 'rejected' } : item
         )
@@ -118,6 +154,20 @@ export default function RequestsPage() {
         minute: '2-digit',
         hour12: false,
       });
+    } catch {
+      return '-';
+    }
+  };
+
+  const calculateDuration = (start: string, end: string) => {
+    try {
+      const [sh, sm] = start.split(':').map(Number);
+      const [eh, em] = end.split(':').map(Number);
+      let diff = (eh * 60 + em) - (sh * 60 + sm);
+      if (diff < 0) diff += 24 * 60;
+      const h = Math.floor(diff / 60);
+      const m = diff % 60;
+      return `${h > 0 ? `${h}시간 ` : ''}${m > 0 ? `${m}분` : h === 0 ? '0분' : ''}`;
     } catch {
       return '-';
     }
@@ -161,7 +211,7 @@ export default function RequestsPage() {
           ⏰ 근태 관리
         </h1>
         <p className="text-sm text-slate-500 mt-2 font-medium" style={{ fontSize: '14px', color: '#64748B', marginTop: '6px' }}>
-          근로자의 연차 신청 및 출퇴근 기록 수정 요청을 검토하고 처리할 수 있습니다.
+          근로자의 연차 신청, 출퇴근 수정 요청, 연장 근무 결재를 검토하고 승인/반려할 수 있습니다.
         </p>
       </div>
 
@@ -209,6 +259,26 @@ export default function RequestsPage() {
           }}
         >
           ⏰ 출퇴근 수정 요청
+        </button>
+        <button
+          onClick={() => setActiveTab('overtime')}
+          className={`pb-3 text-sm font-bold transition cursor-pointer border-b-2 ${
+            activeTab === 'overtime'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-400 hover:text-slate-600'
+          }`}
+          style={{
+            paddingBottom: '12px',
+            fontSize: '14px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            backgroundColor: 'transparent',
+            border: 'none',
+            borderBottom: activeTab === 'overtime' ? '2px solid #2563EB' : '2px solid transparent',
+            color: activeTab === 'overtime' ? '#2563EB' : '#94A3B8'
+          }}
+        >
+          💼 연장 근무 신청
         </button>
       </div>
 
@@ -309,7 +379,7 @@ export default function RequestsPage() {
               </table>
             </div>
           )
-        ) : (
+        ) : activeTab === 'attendance' ? (
           /* ========================================================
              2. 출퇴근 수정 요청 목록 탭
              ======================================================== */
@@ -328,7 +398,7 @@ export default function RequestsPage() {
                     <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>요청 출근 / 퇴근시각</th>
                     <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>신청 사유</th>
                     <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>상태</th>
-                    <th className="px-6 py-4 text-center" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0', textAlign: 'center' }}>결재 처리</th>
+                    <th className="px-6 py-4 text-center" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9', textAlign: 'center' }}>결재 처리</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100" style={{ backgroundColor: '#FFFFFF' }}>
@@ -376,6 +446,85 @@ export default function RequestsPage() {
                               style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer' }}
                             >
                               {actionLoading === `${c.id}-reject` ? '반려중...' : '반려'}
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400" style={{ fontSize: '12px', color: '#94A3B8' }}>처리 완료</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        ) : (
+          /* ========================================================
+             3. 연장 근무 신청 목록 탭
+             ======================================================== */
+          overtimes.length === 0 ? (
+            <div className="p-12 text-center text-slate-400 text-sm" style={{ padding: '48px', textAlign: 'center', color: '#94A3B8' }}>
+              연장 근무 신청 내역이 존재하지 않습니다.
+            </div>
+          ) : (
+            <div className="w-full overflow-x-auto" style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table className="w-full border-collapse text-left text-sm text-slate-600" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
+                <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase border-b border-slate-100" style={{ backgroundColor: '#F8FAFC', fontSize: '11px', color: '#64748B' }}>
+                  <tr>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>근로자 (이메일)</th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>근무지</th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>대상 일자</th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>신청 시간 / 총 시간</th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>신청 사유</th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>상태</th>
+                    <th className="px-6 py-4 text-center" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0', textAlign: 'center' }}>결재 처리</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100" style={{ backgroundColor: '#FFFFFF' }}>
+                  {overtimes.map((o) => (
+                    <tr key={o.id} className="hover:bg-slate-50/50 transition">
+                      <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
+                        <div className="font-bold text-slate-800" style={{ fontSize: '14px', fontWeight: '700', color: '#1E293B' }}>{o.user.name}</div>
+                        <div className="text-xs text-slate-400 mt-1" style={{ fontSize: '11px', color: '#94A3B8' }}>{o.user.email}</div>
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-slate-700" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
+                        {o.company.name}
+                      </td>
+                      <td className="px-6 py-4 font-bold text-slate-800" style={{ padding: '16px 24px', fontSize: '13px', color: '#1E293B', borderBottom: '1px solid #F1F5F9' }}>
+                        📍 {o.date}
+                      </td>
+                      <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
+                        <div className="font-semibold text-slate-700" style={{ fontSize: '13px', color: '#475569' }}>
+                          💼 {o.startTime} ~ {o.endTime}
+                        </div>
+                        <div className="text-xs text-indigo-600 font-bold mt-1" style={{ fontSize: '11px', color: '#4F46E5', fontWeight: '700', marginTop: '4px' }}>
+                          ({calculateDuration(o.startTime, o.endTime)})
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-slate-500 max-w-[200px] truncate" style={{ padding: '16px 24px', fontSize: '12px', color: '#64748B', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderBottom: '1px solid #F1F5F9' }} title={o.reason}>
+                        {o.reason || '-'}
+                      </td>
+                      <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
+                        {statusBadge(o.status)}
+                      </td>
+                      <td className="px-6 py-4 text-center" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9', textAlign: 'center' }}>
+                        {o.status === 'pending' ? (
+                          <div className="flex gap-2 justify-center" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                            <button
+                              disabled={actionLoading !== null}
+                              onClick={() => handleOvertimeAction(o.id, 'approve')}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-600 hover:text-white transition cursor-pointer"
+                              style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer' }}
+                            >
+                              {actionLoading === `${o.id}-approve` ? '승인중...' : '승인'}
+                            </button>
+                            <button
+                              disabled={actionLoading !== null}
+                              onClick={() => handleOvertimeAction(o.id, 'reject')}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white transition cursor-pointer"
+                              style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer' }}
+                            >
+                              {actionLoading === `${o.id}-reject` ? '반려중...' : '반려'}
                             </button>
                           </div>
                         ) : (

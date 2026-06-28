@@ -32,9 +32,16 @@ export default function Sidebar() {
       {/* 로고 영역 */}
       <div 
         className="h-20 flex items-center px-6 border-b border-slate-100"
-        style={{ height: '80px', borderBottom: '1px solid #F1F5F9', boxSizing: 'border-box' }}
+        style={{ 
+          height: '80px', 
+          borderBottom: '1px solid #F1F5F9', 
+          boxSizing: 'border-box', 
+          padding: '0 24px',
+          display: 'flex',
+          alignItems: 'center'
+        }}
       >
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/dashboard" className="flex items-center gap-2" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
           <span 
             className="text-xl font-extrabold text-[#1E3A8A] tracking-tight"
             style={{ fontSize: '20px', fontWeight: '800', color: '#1E3A8A' }}

@@ -413,4 +413,109 @@ export class AdminService {
       },
     });
   }
+
+  // 연장 근무 신청 목록 조회
+  async getOvertimes() {
+    return this.prisma.overtimeRequest.findMany({
+      include: {
+        user: { select: { name: true, email: true } },
+        company: { select: { name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // 연장 근무 승인
+  async approveOvertime(id: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const request = await tx.overtimeRequest.findUnique({ where: { id } });
+      if (!request) throw new NotFoundException('연장 근무 신청 기록을 찾을 수 없습니다.');
+      if (request.status !== 'pending') throw new Error('대기 중인 신청만 승인할 수 있습니다.');
+
+      // 1. 상태 변경
+      const updatedRequest = await tx.overtimeRequest.update({
+        where: { id },
+        data: { status: 'approved' },
+      });
+
+      // startTime, endTime (HH:mm) 파싱하여 분 차이 계산
+      const [startH, startM] = request.startTime.split(':').map(Number);
+      const [endH, endM] = request.endTime.split(':').map(Number);
+      
+      let overtimeMinutes = (endH * 60 + endM) - (startH * 60 + startM);
+      if (overtimeMinutes < 0) {
+        overtimeMinutes += 24 * 60; // 자정 넘김 대응
+      }
+
+      // 2. 해당 일자의 출퇴근 기록(AttendanceRecord) 조회 및 갱신
+      const record = await tx.attendanceRecord.findFirst({
+        where: { userId: request.userId, companyId: request.companyId, date: request.date },
+      });
+
+      if (record) {
+        // 근로계약 정보에서 시급 산출
+        const employment = await tx.employment.findFirst({
+          where: { userId: request.userId, companyId: request.companyId, isActive: true },
+        });
+
+        if (employment) {
+          let hourlyWage = employment.hourlyWage ?? 0;
+          if (employment.wageType === 'daily') {
+            const dailyWorkHours = employment.dailyWorkHours || 8;
+            hourlyWage = (employment.dailyWage ?? 0) / dailyWorkHours;
+          }
+
+          // 연장 근무 수당 정산 (통상 시급의 1.5배 기준)
+          const overtimePay = Math.floor((overtimeMinutes / 60) * hourlyWage * 1.5);
+          const earnedPay = (record.basePay ?? 0) + overtimePay + (record.nightPay ?? 0);
+
+          await tx.attendanceRecord.update({
+            where: { id: record.id },
+            data: {
+              overtimeMinutes,
+              overtimePay,
+              earnedPay,
+            },
+          });
+        }
+      }
+
+      // 3. 알림 발송
+      await tx.notification.create({
+        data: {
+          userId: request.userId,
+          companyId: request.companyId,
+          type: 'overtime_approved',
+          title: '연장 근무 승인',
+          body: `[${request.date}] 연장 근무 신청이 승인되었습니다. (${request.startTime} ~ ${request.endTime}, 총 ${overtimeMinutes}분)`,
+        },
+      });
+
+      return updatedRequest;
+    });
+  }
+
+  // 연장 근무 반려
+  async rejectOvertime(id: string) {
+    const request = await this.prisma.overtimeRequest.findUnique({ where: { id } });
+    if (!request) throw new NotFoundException('연장 근무 신청 기록을 찾을 수 없습니다.');
+    if (request.status !== 'pending') throw new Error('대기 중인 신청만 반려할 수 있습니다.');
+
+    const updatedRequest = await this.prisma.overtimeRequest.update({
+      where: { id },
+      data: { status: 'rejected' },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        userId: request.userId,
+        companyId: request.companyId,
+        type: 'overtime_rejected',
+        title: '연장 근무 반려',
+        body: `[${request.date}] 연장 근무 신청이 반려되었습니다.`,
+      },
+    });
+
+    return updatedRequest;
+  }
 }
