@@ -35,6 +35,7 @@ export class AdminService {
   // 전체 근무지 목록 (근로자 수 포함)
   async getCompanies() {
     const companies = await this.prisma.company.findMany({
+      where: { isActive: true },
       include: {
         _count: {
           select: { employments: { where: { isActive: true } } },
@@ -369,5 +370,47 @@ export class AdminService {
     });
 
     return updatedCorrection;
+  }
+
+  // 설정 메뉴용 전체 데이터 (비활성화 대상 포함)
+  async getSettingsData() {
+    const companies = await this.prisma.company.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const employments = await this.prisma.employment.findMany({
+      include: {
+        user: { select: { name: true, email: true } },
+        company: { select: { name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return { companies, employments };
+  }
+
+  // 근무지 활성/비활성 상태 변경
+  async updateCompanyStatus(id: string, isActive: boolean) {
+    const company = await this.prisma.company.findUnique({ where: { id } });
+    if (!company) throw new NotFoundException('근무지를 찾을 수 없습니다.');
+
+    return this.prisma.company.update({
+      where: { id },
+      data: { isActive: isActive as any },
+    });
+  }
+
+  // 근로자 고용계약 재직/퇴사 상태 변경
+  async updateEmploymentStatus(id: string, isActive: boolean) {
+    const employment = await this.prisma.employment.findUnique({ where: { id } });
+    if (!employment) throw new NotFoundException('고용 계약을 찾을 수 없습니다.');
+
+    return this.prisma.employment.update({
+      where: { id },
+      data: {
+        isActive: isActive as any,
+        endedAt: isActive ? null : new Date(),
+      },
+    });
   }
 }

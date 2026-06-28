@@ -42,6 +42,7 @@ model Company {
   latitude     Float
   longitude    Float
   radiusMeters Int
+  isActive     Boolean  @default(true)
   
   employments  Employment[]
   

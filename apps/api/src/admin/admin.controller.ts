@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Body,
   Param,
   Query,
@@ -97,5 +98,26 @@ export class AdminController {
   @Post('attendance-corrections/:id/reject')
   rejectAttendanceCorrection(@Param('id') id: string) {
     return this.adminService.rejectAttendanceCorrection(id);
+  }
+
+  // 설정 화면 통합 데이터 조회
+  @UseGuards(AdminAuthGuard)
+  @Get('settings-data')
+  getSettingsData() {
+    return this.adminService.getSettingsData();
+  }
+
+  // 근무지 활성/비활성 업데이트
+  @UseGuards(AdminAuthGuard)
+  @Patch('companies/:id/status')
+  updateCompanyStatus(@Param('id') id: string, @Body() body: { isActive: boolean }) {
+    return this.adminService.updateCompanyStatus(id, body.isActive);
+  }
+
+  // 근로자 계약 활성/비활성(퇴사) 업데이트
+  @UseGuards(AdminAuthGuard)
+  @Patch('employments/:id/status')
+  updateEmploymentStatus(@Param('id') id: string, @Body() body: { isActive: boolean }) {
+    return this.adminService.updateEmploymentStatus(id, body.isActive);
   }
 }
