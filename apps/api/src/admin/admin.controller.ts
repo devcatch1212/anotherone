@@ -141,4 +141,38 @@ export class AdminController {
   rejectOvertime(@Param('id') id: string) {
     return this.adminService.rejectOvertime(id);
   }
+
+  // 월별 급여 정산 대장 조회
+  @UseGuards(AdminAuthGuard)
+  @Get('payrolls')
+  getPayrolls(
+    @Query('year') year: string,
+    @Query('month') month: string,
+    @Query('companyId') companyId?: string,
+  ) {
+    const now = new Date();
+    return this.adminService.getPayrolls(
+      parseInt(year) || now.getFullYear(),
+      parseInt(month) || now.getMonth() + 1,
+      companyId,
+    );
+  }
+
+  // 급여 명세서 일괄 발행
+  @UseGuards(AdminAuthGuard)
+  @Post('payrolls/issue')
+  issuePayrolls(
+    @Query('year') year: string,
+    @Query('month') month: string,
+    @Query('companyId') companyId: string | undefined,
+    @Body() body: { items: any[] },
+  ) {
+    const now = new Date();
+    return this.adminService.issuePayrolls(
+      parseInt(year) || now.getFullYear(),
+      parseInt(month) || now.getMonth() + 1,
+      companyId,
+      body.items,
+    );
+  }
 }

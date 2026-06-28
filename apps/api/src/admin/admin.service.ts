@@ -518,4 +518,171 @@ export class AdminService {
 
     return updatedRequest;
   }
+
+  // 월별 급여 대장 집계 및 조회
+  async getPayrolls(year: number, month: number, companyId?: string) {
+    // 1. 해당 연월의 시작일과 종료일 계산
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
+
+    // 2. 대상 고용 계약(Employment) 조회
+    const employments = await this.prisma.employment.findMany({
+      where: {
+        isActive: true,
+        ...(companyId ? { companyId } : {}),
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        company: { select: { id: true, name: true } },
+      },
+    });
+
+    const payrolls = [];
+
+    for (const emp of employments) {
+      // 3. 해당 월의 출퇴근 기록 조회
+      const records = await this.prisma.attendanceRecord.findMany({
+        where: {
+          userId: emp.userId,
+          companyId: emp.companyId,
+          date: { gte: startDate, lte: endDate },
+        },
+      });
+
+      // 4. 근태 요약 합산
+      const workedDays = records.filter(r => r.checkIn).length;
+      const basePaySum = records.reduce((sum, r) => sum + (r.basePay ?? 0), 0);
+      const overtimePaySum = records.reduce((sum, r) => sum + (r.overtimePay ?? 0), 0);
+      const nightPaySum = records.reduce((sum, r) => sum + (r.nightPay ?? 0), 0);
+
+      // 주휴수당 간단 산출 (주 15시간 근무 시 1일분 시급 지급)
+      const hourlyWage = emp.hourlyWage ?? 0;
+      const weeklyHours = emp.dailyWorkHours * emp.weeklyWorkDays;
+      let holidayPay = 0;
+      if (weeklyHours >= 15 && workedDays > 0) {
+        // 대략 주당 1일치의 주휴수당 부여 (한 달은 평균 4.34주)
+        holidayPay = Math.floor(hourlyWage * emp.dailyWorkHours * 4.34);
+      }
+
+      const totalGross = basePaySum + overtimePaySum + nightPaySum + holidayPay;
+
+      // 4대보험 공제액 연산 (대한민국 표준 간이 계산)
+      const nationalPension = Math.floor(totalGross * 0.045); // 국민연금 4.5%
+      const healthInsurance = Math.floor(totalGross * 0.0354); // 건강보험 3.54%
+      const employmentInsurance = Math.floor(totalGross * 0.009); // 고용보험 0.9%
+      const incomeTax = Math.floor(totalGross * 0.015); // 근로소득세 대략 1.5%
+      const totalDeduction = nationalPension + healthInsurance + employmentInsurance + incomeTax;
+      const netPay = Math.max(0, totalGross - totalDeduction);
+
+      // 5. 이미 발행 완료된 명세서가 있는지 조회
+      const existingPayroll = await this.prisma.payrollRecord.findUnique({
+        where: {
+          userId_companyId_year_month: {
+            userId: emp.userId,
+            companyId: emp.companyId,
+            year,
+            month,
+          },
+        },
+      });
+
+      payrolls.push({
+        userId: emp.userId,
+        userName: emp.user.name,
+        userEmail: emp.user.email,
+        companyId: emp.companyId,
+        companyName: emp.company.name,
+        position: emp.position,
+        workedDays,
+        basePay: existingPayroll ? existingPayroll.basePay : basePaySum,
+        holidayPay: existingPayroll ? existingPayroll.holidayPay : holidayPay,
+        overtimePay: existingPayroll ? existingPayroll.overtimePay : overtimePaySum,
+        nightPay: existingPayroll ? existingPayroll.nightPay : nightPaySum,
+        totalGross: existingPayroll ? existingPayroll.totalGross : totalGross,
+        nationalPension: existingPayroll ? existingPayroll.nationalPension : nationalPension,
+        healthInsurance: existingPayroll ? existingPayroll.healthInsurance : healthInsurance,
+        employmentInsurance: existingPayroll ? existingPayroll.employmentInsurance : employmentInsurance,
+        incomeTax: existingPayroll ? existingPayroll.incomeTax : incomeTax,
+        totalDeduction: existingPayroll ? existingPayroll.totalDeduction : totalDeduction,
+        netPay: existingPayroll ? existingPayroll.netPay : netPay,
+        confirmed: existingPayroll ? existingPayroll.confirmed : false,
+        paidAt: existingPayroll ? existingPayroll.paidAt : null,
+      });
+    }
+
+    return payrolls;
+  }
+
+  // 월별 급여 명세서 일괄 발행
+  async issuePayrolls(year: number, month: number, companyId: string | undefined, items: any[]) {
+    return this.prisma.$transaction(async (tx) => {
+      const issuedRecords = [];
+
+      for (const item of items) {
+        // 1. PayrollRecord Upsert (발행 데이터 저장)
+        const payroll = await tx.payrollRecord.upsert({
+          where: {
+            userId_companyId_year_month: {
+              userId: item.userId,
+              companyId: item.companyId,
+              year,
+              month,
+            },
+          },
+          update: {
+            basePay: item.basePay,
+            holidayPay: item.holidayPay,
+            overtimePay: item.overtimePay,
+            nightPay: item.nightPay,
+            totalGross: item.totalGross,
+            nationalPension: item.nationalPension,
+            healthInsurance: item.healthInsurance,
+            employmentInsurance: item.employmentInsurance,
+            incomeTax: item.incomeTax,
+            totalDeduction: item.totalDeduction,
+            netPay: item.netPay,
+            confirmed: true,
+            paidAt: new Date(),
+            workedDays: item.workedDays,
+          },
+          create: {
+            userId: item.userId,
+            companyId: item.companyId,
+            year,
+            month,
+            basePay: item.basePay,
+            holidayPay: item.holidayPay,
+            overtimePay: item.overtimePay,
+            nightPay: item.nightPay,
+            totalGross: item.totalGross,
+            nationalPension: item.nationalPension,
+            healthInsurance: item.healthInsurance,
+            employmentInsurance: item.employmentInsurance,
+            incomeTax: item.incomeTax,
+            totalDeduction: item.totalDeduction,
+            netPay: item.netPay,
+            confirmed: true,
+            paidAt: new Date(),
+            workedDays: item.workedDays,
+          },
+        });
+
+        // 2. 모바일 푸시용 알림 발송
+        await tx.notification.create({
+          data: {
+            userId: item.userId,
+            companyId: item.companyId,
+            type: 'payroll_issued',
+            title: '급여 명세서 발행',
+            body: `[${year}년 ${month}월] 급여 명세서가 발행되었습니다. 실수령액: ${item.netPay.toLocaleString()}원`,
+          },
+        });
+
+        issuedRecords.push(payroll);
+      }
+
+      return { success: true, count: issuedRecords.length };
+    });
+  }
 }
