@@ -219,8 +219,13 @@ export class AdminService {
       const start = new Date(leave.startDate);
       const end = new Date(leave.endDate);
       const dates: string[] = [];
-      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        dates.push(d.toISOString().split('T')[0]);
+      const current = new Date(start);
+      while (current <= end) {
+        const year = current.getFullYear();
+        const month = String(current.getMonth() + 1).padStart(2, '0');
+        const date = String(current.getDate()).padStart(2, '0');
+        dates.push(`${year}-${month}-${date}`);
+        current.setDate(current.getDate() + 1);
       }
 
       for (const date of dates) {
@@ -307,7 +312,30 @@ export class AdminService {
         workedMinutes = Math.max(0, Math.floor(diffMs / 1000 / 60));
       }
 
-      // 3. 실제 출퇴근 레코드(AttendanceRecord) 생성/갱신
+      // 3. 임금 재계산 (정정된 시간 비례)
+      let basePay = null;
+      let earnedPay = null;
+
+      const employment = await tx.employment.findFirst({
+        where: { userId: correction.userId, companyId: correction.companyId, isActive: true },
+      });
+
+      if (employment && workedMinutes !== null) {
+        let hourlyWage = employment.hourlyWage ?? 0;
+        if (employment.wageType === 'daily') {
+          const dailyWorkHours = employment.dailyWorkHours || 8;
+          hourlyWage = (employment.dailyWage ?? 0) / dailyWorkHours;
+        }
+
+        if (employment.wageType === 'daily') {
+          basePay = employment.dailyWage ?? 0;
+        } else {
+          basePay = Math.floor((workedMinutes / 60) * hourlyWage);
+        }
+        earnedPay = basePay; // 다른 가산 수당은 연장근무 승인 시 등에 갱신되므로 기본 1배로 시작
+      }
+
+      // 4. 실제 출퇴근 레코드(AttendanceRecord) 생성/갱신
       await tx.attendanceRecord.upsert({
         where: {
           userId_companyId_date: {
@@ -320,6 +348,8 @@ export class AdminService {
           checkIn: correction.proposedCheckIn,
           checkOut: correction.proposedCheckOut,
           workedMinutes,
+          basePay,
+          earnedPay,
           status: 'normal', // 승인 시 정상 근태로 인정
         },
         create: {
@@ -329,6 +359,8 @@ export class AdminService {
           checkIn: correction.proposedCheckIn,
           checkOut: correction.proposedCheckOut,
           workedMinutes,
+          basePay,
+          earnedPay,
           status: 'normal',
         },
       });
@@ -526,11 +558,20 @@ export class AdminService {
     const endDay = new Date(year, month, 0).getDate();
     const endDate = `${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
 
-    // 2. 대상 고용 계약(Employment) 조회
+    // 2. 대상 고용 계약(Employment) 조회 (당월 재직자 + 당월 내 퇴사자 포함)
     const employments = await this.prisma.employment.findMany({
       where: {
-        isActive: true,
         ...(companyId ? { companyId } : {}),
+        OR: [
+          { isActive: true },
+          {
+            isActive: false,
+            endedAt: {
+              gte: new Date(startDate),
+              lte: new Date(endDate + 'T23:59:59.999Z'),
+            },
+          },
+        ],
       },
       include: {
         user: { select: { id: true, name: true, email: true } },
