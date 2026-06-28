@@ -215,7 +215,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text('종료일', style: TextStyle(fontSize: 11, color: _type == LeaveType.half ? AppColors.textMuted.withOpacity(0.5) : AppColors.textMuted, fontWeight: FontWeight.w600)),
+                                      Text('종료일', style: TextStyle(fontSize: 11, color: _type == LeaveType.half ? AppColors.textMuted.withOpacity(0.5) : AppColors.textMuted, fontWeight: FontWeight.w600)),
                                       const SizedBox(height: 4),
                                       Text(fmt.format(_endDate), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _type == LeaveType.half ? AppColors.textMuted : AppColors.textPrimary)),
                                     ],

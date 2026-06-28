@@ -1,0 +1,102 @@
+@import "tailwindcss";
+@source "../**/*.{js,ts,jsx,tsx,mdx}";
+
+@theme {
+  /* Brand - 영롱한 일렉트릭 블루 & 인디고 계열 */
+  --color-primary: #3B82F6;
+  --color-primary-dark: #1D4ED8;
+  --color-primary-light: #EFF6FF;
+
+  /* Accent - Gen Z 저격 사이버 네온 시안/민트 */
+  --color-accent: #00F0FF;
+  --color-accent-dark: #0891B2;
+  --color-accent-light: #ECFEFF;
+
+  /* Neutral */
+  --color-bg: #F0F2F5; /* 옅은 회색 기본 배경 */
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-text-primary: #1E293B;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94A3B8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: 'Inter', 'Pretendard Variable', 'Pretendard', sans-serif;
+  background-color: #F0F2F5;
+}
+
+body {
+  background-color: #F0F2F5; /* 그라디언트 걷어낸 깔끔한 옅은 회색 */
+  color: #1E293B;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+/* 정갈하고 쨍한 순백색 카드 디자인 (글래스모피즘 대신 깔끔함 극대화) */
+.glass-card {
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: 
+    0 10px 25px -5px rgba(0, 0, 0, 0.05),
+    0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Sidebar for Light Mode */
+.glass-sidebar {
+  background: #FFFFFF !important;
+  border-right: 1px solid #E2E8F0 !important;
+}
+
+.glass-btn {
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  color: #334155 !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.glass-btn:hover {
+  background: #F8FAFC !important;
+  border-color: #94A3B8 !important;
+}
+.glass-btn:active {
+  transform: scale(0.98) !important;
+}
+
+.glass-btn-primary {
+  background: #3B82F6 !important; /* 조브칸 레퍼런스 스타일의 밝고 경쾌한 블루 */
+  border: 1px solid #2563EB !important;
+  box-shadow: 0 4px 12px 0 rgba(59, 130, 246, 0.2) !important;
+  color: white !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.glass-btn-primary:hover {
+  background: #2563EB !important;
+  box-shadow: 0 4px 15px 0 rgba(37, 99, 235, 0.3) !important;
+}
+.glass-btn-primary:active {
+  transform: scale(0.98) !important;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.15);
+}

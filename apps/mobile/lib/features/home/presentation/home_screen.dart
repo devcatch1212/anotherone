@@ -361,8 +361,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (mounted) {
         setState(() {
           _distance = d;
-          _userLat = pos.latitude;
-          _userLon = pos.longitude;
           _gpsStatus = d <= emp.company.radiusMeters ? GpsStatus.ok : GpsStatus.far;
         });
       }

@@ -10,9 +10,10 @@ import { LeaveModule } from './leave/leave.module';
 import { SettingsModule } from './settings/settings.module';
 import { SystemModule } from './system/system.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, OnboardingModule, AttendanceModule, PayrollModule, LeaveModule, SettingsModule, SystemModule, NotificationsModule],
+  imports: [PrismaModule, AuthModule, OnboardingModule, AttendanceModule, PayrollModule, LeaveModule, SettingsModule, SystemModule, NotificationsModule, AdminModule],
   controllers: [AppController],
   providers: [AppService],
 })
