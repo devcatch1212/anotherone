@@ -34,6 +34,9 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
     double totalDays = 0;
     if (weeklyWorkHours >= 40) totalDays = 15;
     else if (weeklyWorkHours >= 15) totalDays = (15 * weeklyWorkHours / 40 * 10).round() / 10;
+    if (totalDays <= 0) {
+      totalDays = emp.annualLeaveBalance > 15 ? emp.annualLeaveBalance : 15.0;
+    }
 
     try {
       final res = await ref.read(apiClientProvider).get<Map<String, dynamic>>(
@@ -49,8 +52,8 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
           .fold<double>(0, (s, l) => s + l.days);
       setState(() {
         _records = list;
-        _total = totalDays;
-        _remaining = (totalDays - used).clamp(0, double.infinity);
+        _remaining = emp.annualLeaveBalance;
+        _total = _remaining + used > totalDays ? _remaining + used : totalDays;
         _loading = false;
         _error = null;
       });

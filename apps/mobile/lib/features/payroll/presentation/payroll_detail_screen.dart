@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/api/api_client.dart';
 import '../../../shared/models/models.dart';
@@ -41,9 +42,15 @@ class _PayrollDetailScreenState extends ConsumerState<PayrollDetailScreen> {
     final fmt = NumberFormat('#,###', 'ko');
     final r = _record;
 
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: Stack(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        context.go('/payroll');
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.bg,
+        body: Stack(
         children: [
           Positioned.fill(child: CustomPaint(painter: AuroraPainter())),
           SafeArea(
@@ -54,7 +61,7 @@ class _PayrollDetailScreenState extends ConsumerState<PayrollDetailScreen> {
                   child: Row(
                     children: [
                       IconButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () => context.go('/payroll'),
                         icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
                       ),
                       Text(
@@ -142,6 +149,7 @@ class _PayrollDetailScreenState extends ConsumerState<PayrollDetailScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

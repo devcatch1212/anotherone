@@ -66,32 +66,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (auth == null) return;
 
     if (auth.isGuest) {
-      final yesterdayKstStr = DateFormat('yyyy-MM-dd').format(DateTime.now().subtract(const Duration(days: 1)));
-      final twoDaysAgoKstStr = DateFormat('yyyy-MM-dd').format(DateTime.now().subtract(const Duration(days: 2)));
-
       if (mounted) {
         setState(() {
-          _leaveRemaining = 12.5;
-          _records = [
-            AttendanceRecord(
-              id: 'guest_rec_1',
-              companyId: 'guest_company',
-              date: yesterdayKstStr,
-              checkIn: '${yesterdayKstStr}T08:55:00Z',
-              checkOut: '${yesterdayKstStr}T18:05:00Z',
-              status: AttendanceStatus.normal,
-              workedMinutes: 480,
-            ),
-            AttendanceRecord(
-              id: 'guest_rec_2',
-              companyId: 'guest_company',
-              date: twoDaysAgoKstStr,
-              checkIn: '${twoDaysAgoKstStr}T09:12:00Z',
-              checkOut: '${twoDaysAgoKstStr}T18:02:00Z',
-              status: AttendanceStatus.late,
-              workedMinutes: 480,
-            ),
-          ];
+          _leaveRemaining = 0;
+          _records = [];
           _todayRecord = null;
           _workState = AttendanceState.before;
         });
@@ -323,6 +301,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         isLate ? '⚠️ 지각 처리되었습니다' : '✅ 출근이 기록되었습니다',
         isLate ? AppColors.warning : AppColors.success,
       );
+      _loadData();
     } catch (e) {
       _showSnackBar('오류: ${parseApiError(e)}', AppColors.danger);
     } finally {
@@ -390,6 +369,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _workState = AttendanceState.done;
       });
       _showSnackBar('✅ 퇴근이 기록되었습니다', AppColors.success);
+      _loadData();
     } catch (e) {
       _showSnackBar('오류: ${parseApiError(e)}', AppColors.danger);
     } finally {

@@ -111,6 +111,7 @@ class Employment {
   final bool isPrimary;
   final bool isActive;
   final String? endedAt;
+  final double annualLeaveBalance;
 
   Employment({
     required this.id,
@@ -131,6 +132,7 @@ class Employment {
     required this.isPrimary,
     required this.isActive,
     this.endedAt,
+    this.annualLeaveBalance = 15.0,
   });
 
   factory Employment.fromJson(Map<String, dynamic> json) => Employment(
@@ -138,6 +140,7 @@ class Employment {
         userId: json['userId'] as String,
         companyId: json['companyId'] as String,
         company: Company.fromJson(json['company'] as Map<String, dynamic>),
+        annualLeaveBalance: (json['annualLeaveBalance'] as num?)?.toDouble() ?? 15.0,
         position: json['position'] as String? ?? '',
         department: json['department'] as String?,
         wageType: json['wageType'] == 'hourly' ? WageType.hourly : WageType.daily,
@@ -225,7 +228,7 @@ class PayrollRecord {
   final double incomeTax;
   final double totalDeduction;
   final double netPay;
-  final String paidAt;
+  final String? paidAt;
   final bool confirmed;
   final int workedDays;
 
@@ -245,7 +248,7 @@ class PayrollRecord {
     required this.incomeTax,
     required this.totalDeduction,
     required this.netPay,
-    required this.paidAt,
+    this.paidAt,
     required this.confirmed,
     required this.workedDays,
   });
@@ -267,7 +270,7 @@ class PayrollRecord {
         incomeTax: (json['incomeTax'] as num?)?.toDouble() ?? 0,
         totalDeduction: (json['totalDeduction'] as num?)?.toDouble() ?? 0,
         netPay: (json['netPay'] as num).toDouble(),
-        paidAt: json['paidAt'] as String,
+        paidAt: json['paidAt'] as String?,
         confirmed: json['confirmed'] as bool? ?? false,
         workedDays: json['workedDays'] as int? ?? 0,
       );

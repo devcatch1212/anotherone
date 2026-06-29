@@ -101,27 +101,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
     } catch (e) {
       debugPrint('회원가입 에러 catch 진입: $e');
-      final errorMsg = parseApiError(e);
       if (mounted) {
-        setState(() => _error = errorMsg);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                title: const Text('회원가입 실패', style: TextStyle(fontWeight: FontWeight.bold)),
-                content: Text(errorMsg),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('확인', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            );
-          }
-        });
+        setState(() => _error = parseApiError(e));
       }
     } finally {
       if (mounted) setState(() => _loading = false);

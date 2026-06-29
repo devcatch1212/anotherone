@@ -679,6 +679,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         _step = 2;
       });
     } else {
+      if (_wageCtrl.text.trim().isEmpty) {
+        setState(() => _error = _wageType == WageType.hourly ? '시급을 입력해주세요' : '일급을 입력해주세요');
+        return;
+      }
+      final wage = double.tryParse(_wageCtrl.text.trim());
+      if (wage == null || wage <= 0) {
+        setState(() => _error = '올바른 금액을 입력해주세요');
+        return;
+      }
       _complete();
     }
   }

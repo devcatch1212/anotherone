@@ -95,7 +95,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
             margin: const EdgeInsets.all(16),
           ),
         );
-        Navigator.pop(context);
+        context.go('/leave');
       }
     } catch (e) {
       setState(() => _error = parseApiError(e));
