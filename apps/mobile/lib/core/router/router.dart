@@ -23,22 +23,27 @@ import '../../features/splash/presentation/splash_screen.dart';
 import '../widgets/main_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authAsync = ref.watch(authProvider);
-
-  return GoRouter(
+  final router = GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
-      // 아직 로딩 중이면 스플래시에 머무름
-      if (authAsync.isLoading) return '/';
+      final authAsync = ref.read(authProvider);
+      final loc = state.uri.path;
+      // 아직 로딩 중이면 스플래시에 머무름 (단, 로그인/회원가입 화면 유지)
+      if (authAsync.isLoading) {
+        if (loc == '/login' || loc == '/register') return null;
+        return '/';
+      }
 
       final auth = authAsync.value;
       final isAuthenticated = auth?.isAuthenticated ?? false;
       final onboardingCompleted = auth?.onboardingCompleted ?? false;
-      final loc = state.uri.path;
+
+      debugPrint('▶ [Router Guard] loc: $loc, isAuthenticated: $isAuthenticated, onboardingCompleted: $onboardingCompleted');
 
       // 비인증 상태에서 인증 필요 페이지 접근
       final publicRoutes = ['/', '/login', '/register'];
       if (!isAuthenticated && !publicRoutes.contains(loc)) {
+        debugPrint('▶ [Router Guard] 비인증 이탈 → /login 으로 강제 튕김');
         return '/login';
       }
 
@@ -130,4 +135,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+
+  ref.listen(authProvider, (previous, next) {
+    router.refresh();
+  });
+
+  return router;
 });

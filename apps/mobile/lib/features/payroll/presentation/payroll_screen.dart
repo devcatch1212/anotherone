@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:dio/dio.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/api/api_client.dart';
 import '../../../features/auth/auth_provider.dart';
@@ -43,6 +44,10 @@ class _PayrollScreenState extends ConsumerState<PayrollScreen> {
         });
       setState(() { _records = list; _loading = false; _error = null; });
     } catch (e) {
+      debugPrint('▶ [Payroll Load Error] : $e');
+      if (e is DioException) {
+        debugPrint('▶ [Payroll Load Error Response] : ${e.response?.data}');
+      }
       if (mounted) setState(() { _loading = false; _error = parseApiError(e); });
     }
   }

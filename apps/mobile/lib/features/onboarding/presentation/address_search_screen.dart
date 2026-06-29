@@ -42,7 +42,7 @@ class _AddressSearchScreenState extends State<AddressSearchScreen> {
           }
         },
       )
-      ..loadHtmlString(_daumPostcodeHtml);
+      ..loadHtmlString(_daumPostcodeHtml, baseUrl: 'https://daum.net');
   }
 
   @override

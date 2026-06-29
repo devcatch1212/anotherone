@@ -68,9 +68,10 @@ export class PayrollService {
       const dailyWorkHours = employment.dailyWorkHours || 8;
       hourlyWage = (employment.dailyWage ?? 0) / dailyWorkHours;
     }
-    
-    const weeklyScheduledHours = employment.dailyWorkHours * employment.workDaysOfWeek.length;
-    const workDaysRequired = employment.workDaysOfWeek.length;
+    const dailyWorkHours = employment.dailyWorkHours ?? 8;
+    const workDaysOfWeek = employment.workDaysOfWeek ?? [];
+    const weeklyScheduledHours = dailyWorkHours * workDaysOfWeek.length;
+    const workDaysRequired = workDaysOfWeek.length;
     const weeks = this.splitIntoWeeks(year, month);
 
     weeks.forEach(week => {
@@ -90,7 +91,7 @@ export class PayrollService {
           // day of week: 0=Sun, 1=Mon...6=Sat. DB workDaysOfWeek expects the same.
           // Wait, earlier I wrote workDaysOfWeek array of numbers 0=Mon.. but standard JS getDay() is 0=Sun. 
           // Let's assume standard JS getDay for matching.
-          if (employment.workDaysOfWeek.includes(curDate.getDay())) {
+          if (workDaysOfWeek.includes(curDate.getDay())) {
              weekWorkedDays++;
           }
         }

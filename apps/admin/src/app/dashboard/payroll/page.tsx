@@ -44,6 +44,8 @@ export default function PayrollPage() {
   
   // 상세 보기 모달 대상
   const [selectedItem, setSelectedItem] = useState<PayrollItem | null>(null);
+  // 도움말 모달 대상
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   // 근무지 목록 로드 (필터용)
   const loadFilters = async () => {
@@ -114,8 +116,30 @@ export default function PayrollPage() {
       {/* 타이틀 헤더 */}
       <div className="flex justify-between items-start" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight" style={{ fontSize: '28px', fontWeight: '800', color: '#1E293B' }}>
-            💵 급여 대장 및 명세서 발행
+          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2" style={{ fontSize: '28px', fontWeight: '800', color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>💵 급여 대장 및 명세서 발행</span>
+            <button
+              onClick={() => setShowHelpModal(true)}
+              title="급여 계산 공식 및 공제 기준 보기"
+              className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition cursor-pointer"
+              style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                backgroundColor: '#F1F5F9',
+                border: 'none',
+                fontSize: '13px',
+                fontWeight: 'bold',
+                color: '#64748B',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                verticalAlign: 'middle',
+              }}
+            >
+              ?
+            </button>
           </h1>
           <p className="text-sm text-slate-500 mt-2 font-medium" style={{ fontSize: '14px', color: '#64748B', marginTop: '6px' }}>
             근로자별 근무 일수를 정산하고, 4대보험 공제액을 제한 실수령액 명세서를 일괄 승인하여 발행합니다.
@@ -455,6 +479,162 @@ export default function PayrollPage() {
               }}
             >
               창 닫기
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 급여 계산 방식 안내 모달 */}
+      {showHelpModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.4)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999
+          }}
+          onClick={() => setShowHelpModal(false)}
+        >
+          <div 
+            className="w-full max-w-lg bg-white rounded-3xl border border-slate-200 shadow-2xl p-8"
+            style={{
+              backgroundColor: '#FFFFFF',
+              width: '100%',
+              maxWidth: '540px',
+              borderRadius: '24px',
+              border: '1px solid #E2E8F0',
+              padding: '32px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
+              boxSizing: 'border-box'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 헤더 */}
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9', paddingBottom: '16px', marginBottom: '24px' }}>
+              <div>
+                <h3 className="text-lg font-black text-slate-800" style={{ fontSize: '18px', fontWeight: '900', color: '#1E293B', margin: 0 }}>
+                  🧮 급여 계산 공식 및 세금 공제 안내
+                </h3>
+                <span className="text-xs text-slate-400 mt-1 block" style={{ fontSize: '12px', color: '#94A3B8', marginTop: '4px' }}>
+                  대한민국 근로기준법 및 요율 기준
+                </span>
+              </div>
+              <button 
+                onClick={() => setShowHelpModal(false)}
+                className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer"
+                style={{ border: 'none', backgroundColor: 'transparent', fontSize: '20px', cursor: 'pointer', color: '#94A3B8' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* 내용 영역 */}
+            <div className="flex flex-col gap-5 overflow-y-auto max-h-[450px] pr-1" style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '420px', overflowY: 'auto' }}>
+              
+              {/* 1. 지급액 공식 */}
+              <div>
+                <h4 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1.5" style={{ fontSize: '12px', fontWeight: '700', color: '#2563EB', marginBottom: '6px', margin: 0 }}>
+                  ➕ 지급 총액 (Gross Pay) 계산 방식
+                </h4>
+                <p className="text-xs text-slate-600 leading-relaxed" style={{ fontSize: '12.5px', color: '#475569', lineHeight: '1.6', margin: 0 }}>
+                  • <strong>기본급</strong>: 당월 실제 일한 시간(분) × 통상 시급<br />
+                  • <strong>주휴수당</strong>: 주 소정근로시간이 15시간 이상일 때, 평균 4.34주 기준 주 1일분의 기본 하루 급여를 가집계하여 추가 지급합니다.<br />
+                  • <strong>연장 수당</strong>: 승인된 연장 근무 분당 시급의 <strong>1.5배(150%)</strong>를 가산 지급합니다.
+                </p>
+              </div>
+
+              {/* 2. 공제액 요율 */}
+              <div>
+                <h4 className="text-xs font-bold text-red-500 uppercase tracking-wider mb-1.5" style={{ fontSize: '12px', fontWeight: '700', color: '#EF4444', marginBottom: '6px', margin: 0 }}>
+                  ➖ 4대 보험 및 세금 공제 요율 (근로자 부담분)
+                </h4>
+                <p className="text-xs text-slate-600 leading-relaxed" style={{ fontSize: '12.5px', color: '#475569', lineHeight: '1.6', margin: 0 }}>
+                  • <strong>국민연금</strong>: 지급 총액의 <strong>4.5%</strong> 공제<br />
+                  • <strong>건강보험</strong>: 지급 총액의 <strong>3.54%</strong> 공제<br />
+                  • <strong>고용보험</strong>: 지급 총액의 <strong>0.9%</strong> 공제<br />
+                  • <strong>근로소득세</strong>: 지급 총액의 <strong>1.5%</strong> 간이 공제
+                </p>
+              </div>
+
+              {/* 3. 구체적인 가상 예시 테이블 */}
+              <div>
+                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2" style={{ fontSize: '12px', fontWeight: '700', color: '#1E293B', marginBottom: '8px', margin: 0 }}>
+                  💡 급여 계산 구체적 예시 (총액 2,000,000원 기준)
+                </h4>
+                
+                <div style={{ border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                        <th style={{ padding: '8px 12px', color: '#64748B' }}>항목</th>
+                        <th style={{ padding: '8px 12px', color: '#64748B' }}>요율</th>
+                        <th style={{ padding: '8px 12px', color: '#64748B', textAlign: 'right' }}>금액 (원)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <td style={{ padding: '8px 12px', fontWeight: 'bold' }}>월 지급 총액</td>
+                        <td style={{ padding: '8px 12px', color: '#94A3B8' }}>-</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 'bold', color: '#1E293B' }}>2,000,000원</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid #F1F5F9', color: '#EF4444' }}>
+                        <td style={{ padding: '8px 12px' }}>국민연금</td>
+                        <td style={{ padding: '8px 12px' }}>4.50%</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right' }}>- 90,000원</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid #F1F5F9', color: '#EF4444' }}>
+                        <td style={{ padding: '8px 12px' }}>건강보험</td>
+                        <td style={{ padding: '8px 12px' }}>3.54%</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right' }}>- 70,800원</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid #F1F5F9', color: '#EF4444' }}>
+                        <td style={{ padding: '8px 12px' }}>고용보험</td>
+                        <td style={{ padding: '8px 12px' }}>0.90%</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right' }}>- 18,000원</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid #E2E8F0', color: '#EF4444' }}>
+                        <td style={{ padding: '8px 12px' }}>근로소득세</td>
+                        <td style={{ padding: '8px 12px' }}>1.50%</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right' }}>- 30,000원</td>
+                      </tr>
+                      <tr style={{ backgroundColor: '#EFF6FF', color: '#2563EB', fontWeight: 'bold' }}>
+                        <td style={{ padding: '10px 12px' }}>최종 실수령액</td>
+                        <td style={{ padding: '10px 12px', color: '#93C5FD' }}>-</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', fontSize: '12px' }}>1,791,200원</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+
+            {/* 하단 닫기 */}
+            <button
+              onClick={() => setShowHelpModal(false)}
+              className="mt-6 w-full py-2.5 rounded-xl text-sm font-bold bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition cursor-pointer"
+              style={{
+                marginTop: '24px',
+                width: '100%',
+                padding: '10px 0',
+                borderRadius: '12px',
+                backgroundColor: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                color: '#475569',
+                fontSize: '14px',
+                fontWeight: '700',
+                cursor: 'pointer'
+              }}
+            >
+              확인 완료
             </button>
           </div>
         </div>

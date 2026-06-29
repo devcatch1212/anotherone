@@ -48,7 +48,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               name: _nameCtrl.text.trim(),
             );
         if (mounted) {
-          context.go('/home');
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            if (mounted) {
+              await showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: const Text('회원가입 성공', style: TextStyle(fontWeight: FontWeight.bold)),
+                  content: const Text('회원가입이 성공적으로 완료되었습니다.\n확인을 누르면 홈 화면으로 이동합니다.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('확인', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              );
+              if (mounted) {
+                context.go('/home');
+              }
+            }
+          });
         }
       } else {
         await ref.read(authProvider.notifier).register(
@@ -56,9 +77,52 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               _emailCtrl.text.trim(),
               _passwordCtrl.text,
             );
+        if (mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: const Text('회원가입 성공', style: TextStyle(fontWeight: FontWeight.bold)),
+                  content: const Text('회원가입이 성공적으로 완료되었습니다.\n확인을 누르면 홈 화면으로 이동합니다.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('확인', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              );
+            }
+          });
+        }
       }
     } catch (e) {
-      if (mounted) setState(() => _error = parseApiError(e));
+      debugPrint('회원가입 에러 catch 진입: $e');
+      final errorMsg = parseApiError(e);
+      if (mounted) {
+        setState(() => _error = errorMsg);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: const Text('회원가입 실패', style: TextStyle(fontWeight: FontWeight.bold)),
+                content: Text(errorMsg),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('확인', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            );
+          }
+        });
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -66,16 +130,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(authProvider, (prev, next) {
-      if (next.hasError) {
-        setState(() {
-          _error = parseApiError(next.error!);
-          _loading = false;
-        });
-      }
-    });
-
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        context.go('/login');
+      },
+      child: Scaffold(
       backgroundColor: AppColors.bg,
       body: SizedBox.expand(
         child: Stack(
@@ -319,7 +380,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ],
       ),
     ),
-  );
+  ),
+);
 }
 
   Widget _label(String text) => Align(

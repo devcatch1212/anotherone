@@ -102,7 +102,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   }
 
   Future<void> login(String email, String password, bool remember) async {
-    state = const AsyncValue.loading();
     try {
       final res = await _api.post<Map<String, dynamic>>(
         '/api/auth/login',
@@ -132,12 +131,12 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         currentEmploymentId: primary?.id,
       ));
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      state = AsyncValue.data(state.value ?? const AuthState());
+      rethrow;
     }
   }
 
   Future<void> register(String name, String email, String password) async {
-    state = const AsyncValue.loading();
     try {
       await _api.post<Map<String, dynamic>>(
         '/api/auth/register',
@@ -146,7 +145,8 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       // 가입 후 바로 로그인
       await login(email, password, false);
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      state = AsyncValue.data(state.value ?? const AuthState());
+      rethrow;
     }
   }
 
@@ -224,7 +224,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     required String password,
     required String name,
   }) async {
-    state = const AsyncValue.loading();
     try {
       final response = await _api.post<Map<String, dynamic>>(
         '/api/auth/convert',
@@ -257,7 +256,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         currentEmploymentId: primary?.id,
       ));
     } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+      state = AsyncValue.data(state.value ?? const AuthState());
       rethrow;
     }
   }

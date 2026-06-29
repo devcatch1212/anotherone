@@ -37,7 +37,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           .read(authProvider.notifier)
           .login(_emailCtrl.text.trim(), _passwordCtrl.text, true);
     } catch (e) {
-      if (mounted) setState(() => _error = parseApiError(e));
+      debugPrint('로그인 에러 catch 진입: $e');
+      final errorMsg = parseApiError(e);
+      if (mounted) {
+        setState(() => _error = errorMsg);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: const Text('로그인 실패', style: TextStyle(fontWeight: FontWeight.bold)),
+                content: Text(errorMsg),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('확인', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            );
+          }
+        });
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -45,14 +67,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(authProvider, (prev, next) {
-      if (next.hasError) {
-        setState(() {
-          _error = parseApiError(next.error!);
-          _loading = false;
-        });
-      }
-    });
 
     return Scaffold(
       backgroundColor: AppColors.bg,
