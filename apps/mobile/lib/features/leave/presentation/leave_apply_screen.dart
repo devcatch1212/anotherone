@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/api/api_client.dart';
 import '../../../features/auth/auth_provider.dart';
@@ -68,6 +69,10 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
       LeaveType.official: 'official',
     }[_type];
 
+    final double days = _type == LeaveType.half
+        ? 0.5
+        : _endDate.difference(_startDate).inDays + 1.0;
+
     try {
       await ref.read(apiClientProvider).post<dynamic>(
         '/api/leave',
@@ -76,6 +81,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
           'type': typeStr,
           'startDate': DateFormat('yyyy-MM-dd').format(_startDate),
           'endDate': DateFormat('yyyy-MM-dd').format(_endDate),
+          'days': days,
           'reason': _reasonCtrl.text.trim(),
         },
       );
@@ -111,9 +117,15 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
       LeaveType.official: '공가',
     };
 
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: Stack(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        context.go('/leave');
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.bg,
+        body: Stack(
         children: [
           Positioned.fill(child: CustomPaint(painter: AuroraPainter())),
           SafeArea(
@@ -124,7 +136,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
                   child: Row(
                     children: [
                       IconButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () => context.go('/leave'),
                         icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
                       ),
                       const Text('휴가 신청', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
@@ -280,6 +292,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
