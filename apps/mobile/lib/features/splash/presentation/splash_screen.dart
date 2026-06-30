@@ -64,7 +64,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       // (router redirect가 / 로 유지해 줌)
       return;
     } else if (!onboarded) {
-      context.go('/onboarding');
+      context.go('/welcome');
     } else {
       context.go('/home');
     }

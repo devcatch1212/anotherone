@@ -1,5 +1,5 @@
 // lib/core/router/router.dart
-// go_router 라우팅 설정 (기기 UUID 기반 자동 인증)
+// go_router 라우팅 설정 (기기 UUID 기반 자동 인증 및 웰컴 인트로)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +17,7 @@ import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/settings/presentation/workplace_edit_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
+import '../../features/onboarding/presentation/welcome_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import '../widgets/main_shell.dart';
 
@@ -39,14 +40,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       // 인증 실패(네트워크 오류 등) → 스플래시에서 재시도 대기
       if (!isAuthenticated && loc != '/') return '/';
 
-      // 스플래시에서 인증 완료 시 이동
+      // 스플래시에서 인증 완료 시 최초 사용자는 /welcome, 기존 사용자는 /home으로 이동
       if (isAuthenticated && loc == '/') {
-        return onboardingCompleted ? '/home' : '/onboarding';
+        return onboardingCompleted ? '/home' : '/welcome';
       }
 
-      // 온보딩 미완료
-      if (isAuthenticated && !onboardingCompleted && loc != '/onboarding') {
-        return '/onboarding';
+      // 온보딩 미완료 상태에서 /welcome과 /onboarding 외의 페이지 접근 차단
+      if (isAuthenticated && !onboardingCompleted) {
+        if (loc != '/welcome' && loc != '/onboarding') {
+          return '/welcome';
+        }
+      }
+
+      // 온보딩이 이미 완료되었는데 /welcome 이나 /onboarding에 들어오면 /home으로 보냄
+      if (isAuthenticated && onboardingCompleted && (loc == '/welcome' || loc == '/onboarding')) {
+        return '/home';
       }
 
       return null;
@@ -55,6 +63,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/',
         builder: (_, __) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/welcome',
+        builder: (_, __) => const WelcomeScreen(),
       ),
       GoRoute(
         path: '/onboarding',
