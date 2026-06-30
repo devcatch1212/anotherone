@@ -85,7 +85,7 @@ export class AdminService {
         employmentId: e.id,
         userId: e.userId,
         name: e.user.name,
-        email: e.user.email,
+        email: e.user.email ?? '',
         position: e.position,
         department: e.department,
         wageType: e.wageType,
@@ -161,7 +161,7 @@ export class AdminService {
     return {
       employee: {
         name: employment.user.name,
-        email: employment.user.email,
+        email: employment.user.email ?? '',
         position: employment.position,
         department: employment.department,
       },
@@ -631,7 +631,7 @@ export class AdminService {
       payrolls.push({
         userId: emp.userId,
         userName: emp.user.name,
-        userEmail: emp.user.email,
+        userEmail: emp.user.email ?? '',
         companyId: emp.companyId,
         companyName: emp.company.name,
         position: emp.position,
