@@ -13,6 +13,11 @@ export class SettingsController {
     return this.settingsService.updateProfile(req.user.id, body);
   }
 
+  @Put('name')
+  async updateName(@Request() req: any, @Body() body: { name: string }) {
+    return this.settingsService.updateName(req.user.id, body.name);
+  }
+
   @Put('password')
   async updatePassword(@Request() req: any, @Body() body: UpdatePasswordDto) {
     return this.settingsService.updatePassword(req.user.id, body);

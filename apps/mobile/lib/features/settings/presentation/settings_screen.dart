@@ -58,8 +58,25 @@ class SettingsScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(user?.name ?? '사용자',
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
+                                Row(
+                                  children: [
+                                    Text(user?.name ?? '사용자',
+                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
+                                    const SizedBox(width: 8),
+                                    GestureDetector(
+                                      onTap: () => _showEditNameDialog(context, ref, user?.name ?? ''),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.15),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.edit_rounded, color: Colors.white, size: 14),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
                                 Text(user?.email ?? '기기 계정',
                                     style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.8))),
                               ],
@@ -213,6 +230,48 @@ class SettingsScreen extends ConsumerWidget {
             trailing ?? (onTap != null ? const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted) : const SizedBox.shrink()),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showEditNameDialog(BuildContext context, WidgetRef ref, String currentName) {
+    final controller = TextEditingController(text: currentName);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('닉네임 수정', style: TextStyle(fontWeight: FontWeight.w800)),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: '새로운 닉네임을 입력하세요',
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          maxLength: 15,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final newName = controller.text.trim();
+              if (newName.isEmpty) return;
+              try {
+                await ref.read(authProvider.notifier).updateName(newName);
+                if (ctx.mounted) Navigator.pop(ctx);
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('닉네임 변경에 실패했습니다: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('저장', style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
       ),
     );
   }

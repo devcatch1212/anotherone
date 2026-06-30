@@ -114,4 +114,15 @@ export class SettingsService {
 
     return { message: '근무가 종료 처리되었습니다.', employment: updated };
   }
+
+  async updateName(userId: string, name: string) {
+    if (!name || name.trim().length === 0) {
+      throw new BadRequestException('이름은 비워둘 수 없습니다.');
+    }
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { name: name.trim() },
+    });
+    return { message: '사용자 이름이 성공적으로 변경되었습니다.', user: updatedUser };
+  }
 }

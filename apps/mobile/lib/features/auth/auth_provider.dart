@@ -192,6 +192,19 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       currentEmploymentId: employment?.id,
     ));
   }
+
+  Future<void> updateName(String name) async {
+    try {
+      await _api.put<Map<String, dynamic>>(
+        '/api/settings/name',
+        data: {'name': name.trim()},
+      );
+      await refreshUser();
+    } catch (e) {
+      debugPrint('이름 업데이트 실패: $e');
+      rethrow;
+    }
+  }
 }
 
 final authProvider = AsyncNotifierProvider<AuthNotifier, AuthState>(
