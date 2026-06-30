@@ -60,7 +60,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final isAuth = auth.isAuthenticated;
     final onboarded = auth.onboardingCompleted;
     if (!isAuth) {
-      context.go('/login');
+      // 네트워크 오류 등으로 자동 인증 실패 시 스플래시 재시도 대기
+      // (router redirect가 / 로 유지해 줌)
+      return;
     } else if (!onboarded) {
       context.go('/onboarding');
     } else {
