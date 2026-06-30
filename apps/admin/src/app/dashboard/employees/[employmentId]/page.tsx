@@ -223,7 +223,9 @@ export default function EmployeeDetailPage() {
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-bold text-slate-400 tracking-wide uppercase" style={{ fontSize: '11px', fontWeight: '700', color: '#94A3B8' }}>근로자명</span>
               <span className="text-sm font-extrabold text-slate-800 mt-1" style={{ fontSize: '14px', fontWeight: '800', color: '#1E293B' }}>{employment.user.name}</span>
-              <span className="text-xs text-slate-500" style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>{employment.user.email}</span>
+              <span className="text-xs text-slate-500" style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+                {employment.user.email || `(기기 계정) ${employment.user.name}`}
+              </span>
             </div>
 
             <div className="flex flex-col gap-1">

@@ -296,7 +296,7 @@ export default function SettingsPage() {
                     <tr key={emp.id} className="hover:bg-slate-50/50 transition">
                       <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
                         <div className="font-bold text-slate-800" style={{ fontSize: '14px', fontWeight: '700', color: '#1E293B' }}>{emp.user.name}</div>
-                        <div className="text-xs text-slate-400 mt-1" style={{ fontSize: '11px', color: '#94A3B8' }}>{emp.user.email}</div>
+                        <div className="text-xs text-slate-400 mt-1" style={{ fontSize: '11px', color: '#94A3B8' }}>{emp.user.email || `(기기 계정) ${emp.user.name}`}</div>
                       </td>
                       <td className="px-6 py-4 font-semibold text-slate-700" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
                         🏢 {emp.company.name}

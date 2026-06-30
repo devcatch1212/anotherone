@@ -331,7 +331,7 @@ export default function RequestsPage() {
                     <tr key={l.id} className="hover:bg-slate-50/50 transition">
                       <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
                         <div className="font-bold text-slate-800" style={{ fontSize: '14px', fontWeight: '700', color: '#1E293B' }}>{l.user.name}</div>
-                        <div className="text-xs text-slate-400 mt-1" style={{ fontSize: '11px', color: '#94A3B8' }}>{l.user.email}</div>
+                        <div className="text-xs text-slate-400 mt-1" style={{ fontSize: '11px', color: '#94A3B8' }}>{l.user.email || `(기기 계정) ${l.user.name}`}</div>
                       </td>
                       <td className="px-6 py-4 font-semibold text-slate-700" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
                         {l.company.name}
@@ -406,7 +406,7 @@ export default function RequestsPage() {
                     <tr key={c.id} className="hover:bg-slate-50/50 transition">
                       <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
                         <div className="font-bold text-slate-800" style={{ fontSize: '14px', fontWeight: '700', color: '#1E293B' }}>{c.user.name}</div>
-                        <div className="text-xs text-slate-400 mt-1" style={{ fontSize: '11px', color: '#94A3B8' }}>{c.user.email}</div>
+                        <div className="text-xs text-slate-400 mt-1" style={{ fontSize: '11px', color: '#94A3B8' }}>{c.user.email || `(기기 계정) ${c.user.name}`}</div>
                       </td>
                       <td className="px-6 py-4 font-semibold text-slate-700" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
                         {c.company.name}
@@ -485,7 +485,7 @@ export default function RequestsPage() {
                     <tr key={o.id} className="hover:bg-slate-50/50 transition">
                       <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
                         <div className="font-bold text-slate-800" style={{ fontSize: '14px', fontWeight: '700', color: '#1E293B' }}>{o.user.name}</div>
-                        <div className="text-xs text-slate-400 mt-1" style={{ fontSize: '11px', color: '#94A3B8' }}>{o.user.email}</div>
+                        <div className="text-xs text-slate-400 mt-1" style={{ fontSize: '11px', color: '#94A3B8' }}>{o.user.email || `(기기 계정) ${o.user.name}`}</div>
                       </td>
                       <td className="px-6 py-4 font-semibold text-slate-700" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
                         {o.company.name}

@@ -204,7 +204,9 @@ export default function CompanyEmployeesPage() {
                   <tr key={e.employmentId} className="hover:bg-slate-50/50 transition duration-150">
                     <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
                       <div className="font-bold text-slate-800" style={{ fontSize: '14px', fontWeight: '700', color: '#1E293B' }}>{e.name}</div>
-                      <div className="text-xs text-slate-400 mt-1" style={{ fontSize: '11px', color: '#94A3B8', marginTop: '4px' }}>{e.email || '(이메일 없음)'}</div>
+                      <div className="text-xs text-slate-400 mt-1" style={{ fontSize: '11px', color: '#94A3B8', marginTop: '4px' }}>
+                        {e.email || `(기기 계정) ${e.name}`}
+                      </div>
                     </td>
                     <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
                       <div className="font-semibold text-slate-800" style={{ fontSize: '13px', fontWeight: '600', color: '#334155' }}>
