@@ -116,6 +116,41 @@ export class AuthService {
     };
   }
 
+  async deviceLogin(deviceId: string) {
+    // 기존 기기 UUID로 사용자 조회
+    let user = await this.prisma.user.findUnique({
+      where: { deviceId },
+      include: { employments: { include: { company: true } } },
+    });
+
+    // 없으면 새 익명 계정 생성
+    if (!user) {
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      user = await this.prisma.user.create({
+        data: {
+          name: `사용자_${randomSuffix}`,
+          isAnonymous: true,
+          deviceId,
+        },
+        include: { employments: { include: { company: true } } },
+      });
+    }
+
+    const payload = { sub: user.id, email: user.email };
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        onboardingCompleted: user.onboardingCompleted,
+        isAnonymous: user.isAnonymous,
+        status: user.status,
+        employments: user.employments,
+      },
+    };
+  }
+
   async convertAnonymous(userId: string, data: any) {
     const { email, password, name } = data;
 

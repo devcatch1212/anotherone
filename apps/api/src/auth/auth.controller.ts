@@ -38,4 +38,9 @@ export class AuthController {
   async convertAnonymous(@Request() req: any, @Body() body: RegisterDto) {
     return this.authService.convertAnonymous(req.user.id, body);
   }
+
+  @Post('device')
+  async deviceLogin(@Body() body: { deviceId: string }) {
+    return this.authService.deviceLogin(body.deviceId);
+  }
 }

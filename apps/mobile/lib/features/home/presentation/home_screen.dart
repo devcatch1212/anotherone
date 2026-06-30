@@ -9,7 +9,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/api/api_client.dart';
 import '../../../features/auth/auth_provider.dart';
 import '../../../shared/models/models.dart';
-import '../../../core/widgets/guest_guard.dart';
 import '../../../shared/utils/attendance_utils.dart';
 
 enum GpsStatus { loading, ok, far, denied }
@@ -65,17 +64,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final auth = ref.read(authProvider).value;
     if (auth == null) return;
 
-    if (auth.isGuest) {
-      if (mounted) {
-        setState(() {
-          _leaveRemaining = 0;
-          _records = [];
-          _todayRecord = null;
-          _workState = AttendanceState.before;
-        });
-      }
-      return;
-    }
 
     final emp = auth.currentEmployment;
     if (emp == null) return;
@@ -237,14 +225,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _handleCheckIn() async {
-    final isGuest = ref.read(authProvider).value?.isGuest ?? false;
-    if (isGuest) {
-      showDialog(
-        context: context,
-        builder: (context) => const GuestAlert(),
-      );
-      return;
-    }
     if (_workState != AttendanceState.before) return;
     final emp = _employment;
     if (emp == null) return;
@@ -310,14 +290,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _handleCheckOut() async {
-    final isGuest = ref.read(authProvider).value?.isGuest ?? false;
-    if (isGuest) {
-      showDialog(
-        context: context,
-        builder: (context) => const GuestAlert(),
-      );
-      return;
-    }
     if (_workState != AttendanceState.working) return;
     final emp = _employment;
     if (emp == null) return;
@@ -393,14 +365,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _showOvertimeSheet() {
-    final isGuest = ref.read(authProvider).value?.isGuest ?? false;
-    if (isGuest) {
-      showDialog(
-        context: context,
-        builder: (context) => const GuestAlert(),
-      );
-      return;
-    }
     final startCtrl = TextEditingController();
     final endCtrl = TextEditingController();
     final reasonCtrl = TextEditingController();

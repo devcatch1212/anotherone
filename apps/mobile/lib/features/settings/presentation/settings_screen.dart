@@ -12,7 +12,6 @@ class SettingsScreen extends ConsumerWidget {
     final auth = ref.watch(authProvider).value;
     final user = auth?.user;
     final employments = user?.employments ?? [];
-    final isGuest = auth?.isGuest ?? false;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -59,9 +58,9 @@ class SettingsScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(isGuest ? '게스트 체험 중 👤' : (user?.name ?? '사용자'),
+                                Text(user?.name ?? '사용자',
                                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
-                                Text(isGuest ? '정식 회원가입 후 전체 서비스를 이용해보세요!' : (user?.email ?? ''),
+                                Text(user?.email ?? '기기 계정',
                                     style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.8))),
                               ],
                             ),
@@ -148,47 +147,40 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 20),
 
-                    // 로그아웃 또는 가입하기
+                    // 데이터 초기화 버튼
                     GestureDetector(
                       onTap: () async {
-                        if (isGuest) {
-                          await ref.read(authProvider.notifier).logout();
-                          if (context.mounted) context.go('/login');
-                          return;
-                        }
-
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (ctx) => AlertDialog(
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            title: const Text('로그아웃', style: TextStyle(fontWeight: FontWeight.w800)),
-                            content: const Text('정말 로그아웃 하시겠습니까?'),
+                            title: const Text('데이터 초기화', style: TextStyle(fontWeight: FontWeight.w800)),
+                            content: const Text('기기 데이터를 초기화하면 새 계정으로 시작합니다. 온보딩부터 다시 진행해야 합니다.'),
                             actions: [
                               TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
                               TextButton(
                                 onPressed: () => Navigator.pop(ctx, true),
-                                child: const Text('로그아웃', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
+                                child: const Text('초기화', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
                               ),
                             ],
                           ),
                         );
                         if (confirm == true) {
                           await ref.read(authProvider.notifier).logout();
-                          if (context.mounted) context.go('/login');
                         }
                       },
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isGuest ? AppColors.primaryLight : AppColors.dangerLight,
+                          color: AppColors.dangerLight,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: (isGuest ? AppColors.primary : AppColors.danger).withOpacity(0.2)),
+                          border: Border.all(color: AppColors.danger.withOpacity(0.2)),
                         ),
-                        child: Row(
+                        child: const Row(
                           children: [
-                            Icon(isGuest ? Icons.login_rounded : Icons.logout_rounded, color: isGuest ? AppColors.primary : AppColors.danger, size: 20),
-                            const SizedBox(width: 12),
-                            Text(isGuest ? '정식 회원가입 / 로그인하기' : '로그아웃', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: isGuest ? AppColors.primary : AppColors.danger)),
+                            Icon(Icons.refresh_rounded, color: AppColors.danger, size: 20),
+                            SizedBox(width: 12),
+                            Text('데이터 초기화', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.danger)),
                           ],
                         ),
                       ),

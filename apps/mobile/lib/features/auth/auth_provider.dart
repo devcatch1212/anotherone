@@ -1,11 +1,12 @@
 // lib/features/auth/auth_provider.dart
-// 인증 상태관리 Riverpod Provider
+// 기기 UUID 기반 자동 인증 상태관리 Riverpod Provider
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../shared/models/models.dart';
 import '../../core/storage/auth_storage.dart';
 import '../../core/api/api_client.dart';
+import '../../core/services/device_id_service.dart';
 
 // ── 인증 상태 ──
 class AuthState {
@@ -15,7 +16,6 @@ class AuthState {
   final String? currentEmploymentId;
   final bool isAuthenticated;
   final bool onboardingCompleted;
-  final bool isGuest;
 
   const AuthState({
     this.token,
@@ -24,7 +24,6 @@ class AuthState {
     this.currentEmploymentId,
     this.isAuthenticated = false,
     this.onboardingCompleted = false,
-    this.isGuest = false,
   });
 
   Employment? get currentEmployment {
@@ -43,7 +42,6 @@ class AuthState {
     String? currentEmploymentId,
     bool? isAuthenticated,
     bool? onboardingCompleted,
-    bool? isGuest,
   }) =>
       AuthState(
         token: token ?? this.token,
@@ -52,7 +50,6 @@ class AuthState {
         currentEmploymentId: currentEmploymentId ?? this.currentEmploymentId,
         isAuthenticated: isAuthenticated ?? this.isAuthenticated,
         onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
-        isGuest: isGuest ?? this.isGuest,
       );
 }
 
@@ -73,46 +70,51 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   @override
   Future<AuthState> build() async {
     _storage = ref.read(authStorageProvider);
-    // 401 자동 로그아웃: logout 콜백을 ApiClient에 직접 주입
     _api = ApiClient(
       _storage,
       onUnauthorized: () async => logout(),
     );
-    return _loadFromStorage();
+    return _initAuth();
   }
 
-  Future<AuthState> _loadFromStorage() async {
+  /// 앱 시작 시 저장된 토큰 확인 → 없으면 기기 UUID로 자동 로그인
+  Future<AuthState> _initAuth() async {
     final token = await _storage.getToken();
     final user = await _storage.getUser();
-    if (token == null || user == null) return const AuthState();
 
-    final activeEmployments = user.employments.where((e) => e.isActive).toList();
-    final primary = activeEmployments.firstWhereOrNull((e) => e.isPrimary) ??
-        activeEmployments.firstOrNull ??
-        user.employments.firstOrNull;
+    if (token != null && user != null) {
+      // 기존 토큰 있음 → 바로 복원
+      final activeEmployments = user.employments.where((e) => e.isActive).toList();
+      final primary = activeEmployments.firstWhereOrNull((e) => e.isPrimary) ??
+          activeEmployments.firstOrNull ??
+          user.employments.firstOrNull;
 
-    return AuthState(
-      token: token,
-      user: user,
-      isAuthenticated: true,
-      onboardingCompleted: user.onboardingCompleted,
-      currentCompanyId: primary?.companyId,
-      currentEmploymentId: primary?.id,
-    );
+      return AuthState(
+        token: token,
+        user: user,
+        isAuthenticated: true,
+        onboardingCompleted: user.onboardingCompleted,
+        currentCompanyId: primary?.companyId,
+        currentEmploymentId: primary?.id,
+      );
+    }
+
+    // 토큰 없음 → 기기 UUID로 자동 신규 로그인
+    return _loginWithDeviceId();
   }
 
-  Future<void> login(String email, String password, bool remember) async {
+  Future<AuthState> _loginWithDeviceId() async {
     try {
+      final deviceId = await DeviceIdService.getOrCreate();
       final res = await _api.post<Map<String, dynamic>>(
-        '/api/auth/login',
-        data: {'email': email, 'password': password},
+        '/api/auth/device',
+        data: {'deviceId': deviceId},
       );
       final token = res['access_token'] as String;
       final user = User.fromJson(res['user'] as Map<String, dynamic>);
 
       await _storage.saveToken(token);
       await _storage.saveUser(user);
-      await _storage.saveRememberMe(remember);
 
       final activeEmployments = user.employments.where((e) => e.isActive).toList();
       final primary = activeEmployments.firstWhereOrNull((e) => e.isPrimary) ??
@@ -122,64 +124,26 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       await _storage.saveCurrentCompanyId(primary?.companyId);
       await _storage.saveCurrentEmploymentId(primary?.id);
 
-      state = AsyncValue.data(AuthState(
+      return AuthState(
         token: token,
         user: user,
         isAuthenticated: true,
         onboardingCompleted: user.onboardingCompleted,
         currentCompanyId: primary?.companyId,
         currentEmploymentId: primary?.id,
-      ));
-    } catch (e, st) {
-      state = AsyncValue.data(state.value ?? const AuthState());
-      rethrow;
-    }
-  }
-
-  Future<void> register(String name, String email, String password) async {
-    try {
-      await _api.post<Map<String, dynamic>>(
-        '/api/auth/register',
-        data: {'name': name, 'email': email, 'password': password},
       );
-      // 가입 후 바로 로그인
-      await login(email, password, false);
-    } catch (e, st) {
-      state = AsyncValue.data(state.value ?? const AuthState());
-      rethrow;
+    } catch (e) {
+      debugPrint('기기 자동 로그인 실패: $e');
+      return const AuthState();
     }
   }
 
   Future<void> logout() async {
     await _storage.clearAll();
-    state = const AsyncValue.data(AuthState());
-  }
-
-  Future<void> loginAsGuest() async {
+    // 로그아웃 시에도 바로 기기 UUID로 재로그인
     state = const AsyncValue.loading();
-    try {
-      final response = await _api.post<Map<String, dynamic>>('/api/auth/anonymous');
-      
-      final token = response['access_token'] as String;
-      final userData = response['user'];
-      final user = User.fromJson(userData as Map<String, dynamic>);
-
-      await _storage.saveToken(token);
-      await _storage.saveUser(user);
-
-      state = AsyncValue.data(AuthState(
-        token: token,
-        user: user,
-        isAuthenticated: true,
-        onboardingCompleted: user.onboardingCompleted,
-        isGuest: true,
-        currentCompanyId: null,
-        currentEmploymentId: null,
-      ));
-    } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
-      rethrow;
-    }
+    final newState = await _loginWithDeviceId();
+    state = AsyncValue.data(newState);
   }
 
   Future<void> completeOnboarding() async {
@@ -199,9 +163,19 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       final user = User.fromJson(res);
       await _storage.saveUser(user);
       final current = state.value ?? const AuthState();
-      state = AsyncValue.data(current.copyWith(user: user));
+
+      final activeEmployments = user.employments.where((e) => e.isActive).toList();
+      final primary = activeEmployments.firstWhereOrNull((e) => e.isPrimary) ??
+          activeEmployments.firstOrNull ??
+          user.employments.firstOrNull;
+
+      state = AsyncValue.data(current.copyWith(
+        user: user,
+        currentCompanyId: primary?.companyId,
+        currentEmploymentId: primary?.id,
+        onboardingCompleted: user.onboardingCompleted,
+      ));
     } catch (e) {
-      // 사용자 정보 갱신 실패는 치명적이지 않으므로 로그만 남김
       debugPrint('refreshUser 실패: $e');
     }
   }
@@ -217,48 +191,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       currentCompanyId: companyId,
       currentEmploymentId: employment?.id,
     ));
-  }
-
-  Future<void> convertToRealUser({
-    required String email,
-    required String password,
-    required String name,
-  }) async {
-    try {
-      final response = await _api.post<Map<String, dynamic>>(
-        '/api/auth/convert',
-        data: {
-          'email': email.trim(),
-          'password': password,
-          'name': name.trim(),
-        },
-      );
-
-      final token = response['access_token'] as String;
-      final userData = response['user'];
-      final user = User.fromJson(userData as Map<String, dynamic>);
-
-      await _storage.saveToken(token);
-      await _storage.saveUser(user);
-
-      final activeEmployments = user.employments.where((e) => e.isActive).toList();
-      final primary = activeEmployments.firstWhereOrNull((e) => e.isPrimary) ??
-          activeEmployments.firstOrNull ??
-          user.employments.firstOrNull;
-
-      state = AsyncValue.data(AuthState(
-        token: token,
-        user: user,
-        isAuthenticated: true,
-        onboardingCompleted: user.onboardingCompleted,
-        isGuest: false,
-        currentCompanyId: primary?.companyId,
-        currentEmploymentId: primary?.id,
-      ));
-    } catch (e, stack) {
-      state = AsyncValue.data(state.value ?? const AuthState());
-      rethrow;
-    }
   }
 }
 

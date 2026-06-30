@@ -18,6 +18,7 @@ model User {
   status              String   @default("active") // 'active' | 'withdrawn'
   isAnonymous         Boolean  @default(false)
   isAdmin             Boolean  @default(false)
+  deviceId            String?  @unique
 
   // Relations
   employments         Employment[]

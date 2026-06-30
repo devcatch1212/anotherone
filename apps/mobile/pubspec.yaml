@@ -51,6 +51,7 @@ dependencies:
 
   # 웹뷰 (주소 및 지도)
   webview_flutter: ^4.10.0
+  uuid: ^4.5.3
 
 dev_dependencies:
   flutter_test:

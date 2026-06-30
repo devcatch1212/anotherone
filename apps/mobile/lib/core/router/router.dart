@@ -1,13 +1,11 @@
 // lib/core/router/router.dart
-// go_router 라우팅 설정
+// go_router 라우팅 설정 (기기 UUID 기반 자동 인증)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../shared/models/models.dart';
 import '../../features/auth/auth_provider.dart';
-import '../../features/auth/presentation/login_screen.dart';
-import '../../features/auth/presentation/register_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/attendance/presentation/attendance_screen.dart';
 import '../../features/payroll/presentation/payroll_screen.dart';
@@ -28,11 +26,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final authAsync = ref.read(authProvider);
       final loc = state.uri.path;
-      // 아직 로딩 중이면 스플래시에 머무름 (단, 로그인/회원가입 화면 유지)
-      if (authAsync.isLoading) {
-        if (loc == '/login' || loc == '/register') return null;
-        return '/';
-      }
+
+      // 기기 자동 로그인 중 → 스플래시 유지
+      if (authAsync.isLoading) return '/';
 
       final auth = authAsync.value;
       final isAuthenticated = auth?.isAuthenticated ?? false;
@@ -40,17 +36,12 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       debugPrint('▶ [Router Guard] loc: $loc, isAuthenticated: $isAuthenticated, onboardingCompleted: $onboardingCompleted');
 
-      // 비인증 상태에서 인증 필요 페이지 접근
-      final publicRoutes = ['/', '/login', '/register'];
-      if (!isAuthenticated && !publicRoutes.contains(loc)) {
-        debugPrint('▶ [Router Guard] 비인증 이탈 → /login 으로 강제 튕김');
-        return '/login';
-      }
+      // 인증 실패(네트워크 오류 등) → 스플래시에서 재시도 대기
+      if (!isAuthenticated && loc != '/') return '/';
 
-      // 인증 상태에서 로그인/스플래시 접근
-      if (isAuthenticated && (loc == '/login' || loc == '/register')) {
-        if (!onboardingCompleted) return '/onboarding';
-        return '/home';
+      // 스플래시에서 인증 완료 시 이동
+      if (isAuthenticated && loc == '/') {
+        return onboardingCompleted ? '/home' : '/onboarding';
       }
 
       // 온보딩 미완료
@@ -64,14 +55,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/',
         builder: (_, __) => const SplashScreen(),
-      ),
-      GoRoute(
-        path: '/login',
-        builder: (_, __) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: '/register',
-        builder: (_, __) => const RegisterScreen(),
       ),
       GoRoute(
         path: '/onboarding',
