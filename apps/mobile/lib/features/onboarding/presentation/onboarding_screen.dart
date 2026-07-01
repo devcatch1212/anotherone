@@ -625,10 +625,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         child: ElevatedButton(
           onPressed: _loading ? null : _handleNext,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF3E6872),
-            foregroundColor: Colors.white,
+            backgroundColor: const Color(0xFFF4F4F5),
+            foregroundColor: const Color(0xFF3E6872),
             shadowColor: Colors.transparent,
             elevation: 0,
+            side: const BorderSide(color: Color(0xFF3E6872), width: 1.5),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14)),
           ),
@@ -637,14 +638,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
-                      color: Colors.white, strokeWidth: 2),
+                      color: Color(0xFF3E6872), strokeWidth: 2),
                 )
               : Text(
                   _step < 2 ? '다음' : '완료',
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: Color(0xFF3E6872),
                   ),
                 ),
         ),
