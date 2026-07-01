@@ -84,7 +84,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFFF7F7A0), Color(0xFFE8C84A)],
+            colors: [Color(0xFFF5F375), Color(0xFFE8C84A)],
           ),
         ),
         child: Center(

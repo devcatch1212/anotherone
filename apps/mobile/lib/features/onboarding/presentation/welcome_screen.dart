@@ -51,7 +51,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFFF7F7A0), Color(0xFFEBEB7A)],
+            colors: [Color(0xFFF5F375), Color(0xFFECEC60)],
           ),
         ),
         child: SafeArea(
@@ -211,7 +211,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFFF7F7A0),
+                          color: Color(0xFFF5F375),
                           letterSpacing: 0.5,
                         ),
                       ),

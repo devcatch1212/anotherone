@@ -28,8 +28,8 @@ class AppColors {
   static const vacationLight = Color(0xFFEFF6FF);
 
   // Neutral - 크림 옐로 배경
-  static const bg = Color(0xFFF7F7A0);             // 밝은 크림 옐로 배경
-  static const surface = Color(0xFFFFFDE7);        // 카드 배경 (연한 레몬)
+  static const bg = Color(0xFFF5F375);             // 정확한 배경 옐로 #F5F375
+  static const surface = Color(0xFFFCFCBE);        // 카드 배경 (더 밝은 크림)
   static const border = Color(0xFFE0D84A);         // 노란 테두리
   static const textPrimary = Color(0xFF1A1A1A);    // 거의 검정
   static const textSecondary = Color(0xFF5A5A3A);  // 올리브 그린 톤 텍스트
@@ -40,7 +40,7 @@ class AppColors {
   static const glassBorder = Color(0x99F0E850);    // 노란 테두리
 
   // Gradient
-  static const gradientStart = Color(0xFFF7F7A0);  // 밝은 옐로
+  static const gradientStart = Color(0xFFF5F375);  // 배경 옐로
   static const gradientEnd = Color(0xFFE8C84A);    // 머스타드
 }
 
