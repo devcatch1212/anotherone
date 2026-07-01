@@ -134,7 +134,7 @@ class AppTheme {
           foregroundColor: const Color(0xFF3E6872),
           elevation: 0,
           shadowColor: Colors.transparent,
-          side: const BorderSide(color: Color(0xFF3E6872), width: 1.2),
+          side: const BorderSide(color: Color(0xFF3E6872), width: 1.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),

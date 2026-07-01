@@ -207,7 +207,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFF4F4F5),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF3E6872), width: 1.5),
+                    border: Border.all(color: const Color(0xFF3E6872), width: 1.0),
                   ),
                   child: const Center(
                     child: Text(
