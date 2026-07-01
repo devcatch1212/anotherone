@@ -296,11 +296,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : AppColors.bg,
+                color: isSelected ? const Color(0xFFE2EFF1) : AppColors.bg,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon,
-                  color: isSelected ? Colors.white : AppColors.textMuted,
+                  color: isSelected ? const Color(0xFF3E6872) : AppColors.textMuted,
                   size: 24),
             ),
             const SizedBox(width: 16),
