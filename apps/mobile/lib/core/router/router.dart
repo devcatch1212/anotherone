@@ -16,6 +16,7 @@ import '../../features/leave/presentation/leave_apply_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/settings/presentation/workplace_edit_screen.dart';
+import '../../features/settings/presentation/legal_detail_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/onboarding/presentation/welcome_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
@@ -124,6 +125,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                 );
               }
               return WorkplaceEditScreen(employment: employment);
+            },
+          ),
+          GoRoute(
+            path: '/settings/legal',
+            builder: (_, state) {
+              final type = state.uri.queryParameters['type'] ?? 'terms';
+              return LegalDetailScreen(type: type);
             },
           ),
         ],

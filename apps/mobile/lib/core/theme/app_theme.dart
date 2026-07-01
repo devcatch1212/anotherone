@@ -28,8 +28,8 @@ class AppColors {
   static const vacationLight = Color(0xFFE0F4FD);
 
   // Neutral - iOS 시스템 팔레트
-  static const bg = Color(0xFFEEEEF0);             // iOS 배경 (연한 회색)
-  static const surface = Color(0xFFFFFFFF);         // 카드 순백
+  static const bg = Color(0xFFFFFFFF);             // iOS 배경 (흰색)
+  static const surface = Color(0xFFEEF2F2);         // 카드 배경 #EEF2F2
   static const border = Color(0xFFE5E5EA);          // iOS 구분선
   static const textPrimary = Color(0xFF1C1C1E);    // iOS 다크
   static const textSecondary = Color(0xFF6C6C70);  // iOS 세컨더리 그레이

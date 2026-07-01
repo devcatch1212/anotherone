@@ -14,7 +14,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const res = exception.getResponse();
-      message = typeof res === 'string' ? res : (res as any).message || message;
+      if (typeof res === 'string') {
+        message = res;
+      } else if (res && typeof res === 'object' && 'message' in res) {
+        const msg = (res as any).message;
+        message = Array.isArray(msg) ? (msg[0]?.toString() ?? message) : (msg?.toString() ?? message);
+      }
     } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
       status = HttpStatus.BAD_REQUEST;
       switch (exception.code) {

@@ -95,10 +95,11 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [AppColors.primary, AppColors.info]),
+                        color: const Color(0xFFEEF2F2),
+                        border: Border.all(color: const Color(0xFF3E6872), width: 1.0),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Text('신청하기', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
+                      child: const Text('신청하기', style: TextStyle(color: Color(0xFF3E6872), fontSize: 13, fontWeight: FontWeight.w700)),
                     ),
                   ),
                 ],
@@ -106,7 +107,7 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
             ),
             Expanded(
               child: _loading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF3E6872)))
                   : _error != null
                       ? Center(
                           child: Column(
@@ -118,7 +119,7 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
                               const SizedBox(height: 16),
                               TextButton(
                                 onPressed: _load,
-                                child: const Text('다시 시도', style: TextStyle(color: AppColors.primary)),
+                                child: const Text('다시 시도', style: TextStyle(color: Color(0xFF3E6872))),
                               ),
                             ],
                           ),
@@ -132,9 +133,8 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF6366F1)]),
+                              color: AppColors.surface,
                               borderRadius: BorderRadius.circular(20),
-                              boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.2), blurRadius: 16, offset: const Offset(0, 6))],
                             ),
                             child: Row(
                               children: [
@@ -142,31 +142,78 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('남은 연차', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13)),
+                                      const Text('남은 연차', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                                      const SizedBox(height: 4),
                                       Row(
                                         crossAxisAlignment: CrossAxisAlignment.baseline,
                                         textBaseline: TextBaseline.alphabetic,
                                         children: [
-                                          Text('$_remaining', style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w800)),
+                                          Text('$_remaining', style: const TextStyle(color: Color(0xFF3E6872), fontSize: 36, fontWeight: FontWeight.w800)),
                                           const SizedBox(width: 4),
-                                          Text('일 / $_total일', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14)),
+                                          const Text('일', style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                                          const SizedBox(width: 6),
+                                          Text('/ $_total일', style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
                                         ],
                                       ),
                                     ],
                                   ),
                                 ),
-                                const Icon(Icons.beach_access_rounded, color: Colors.white, size: 48),
+                                const Icon(Icons.beach_access_rounded, color: Color(0xFF3E6872), size: 44),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 20),
                           const Align(
                             alignment: Alignment.centerLeft,
                             child: Text('신청 내역', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                           ),
                           const SizedBox(height: 10),
                           if (_records.isEmpty)
-                            const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('휴가 신청 내역이 없습니다', style: TextStyle(color: AppColors.textMuted))))
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF3E6872).withOpacity(0.08),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.beach_access_rounded,
+                                      size: 28,
+                                      color: Color(0xFF3E6872),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    '아직 신청한 휴가 내역이 없습니다',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  const Text(
+                                    '우측 상단의 신청하기 버튼을 통해 휴가를 신청할 수 있습니다.',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.textMuted,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            )
                           else
                             ...(_records.map((r) {
                               final s = statusStyle[r.status] ?? statusStyle[LeaveStatus.pending]!;
@@ -174,9 +221,8 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
                                 margin: const EdgeInsets.only(bottom: 8),
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.7),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: Colors.white.withOpacity(0.5)),
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Row(
                                   children: [

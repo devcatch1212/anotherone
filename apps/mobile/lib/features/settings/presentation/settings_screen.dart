@@ -20,7 +20,7 @@ class SettingsScreen extends ConsumerWidget {
         child: Column(
           children: [
             Container(
-              color: Colors.white.withOpacity(0.65),
+              color: Colors.transparent,
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
               child: const Align(
                 alignment: Alignment.centerLeft,
@@ -38,9 +38,9 @@ class SettingsScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF6366F1)]),
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(20),
-                        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 16, offset: const Offset(0, 6))],
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 16, offset: const Offset(0, 4))],
                       ),
                       child: Row(
                         children: [
@@ -48,10 +48,10 @@ class SettingsScreen extends ConsumerWidget {
                             width: 56,
                             height: 56,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: const Color(0xFF3E6872).withOpacity(0.08),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.person_rounded, color: Colors.white, size: 28),
+                            child: const Icon(Icons.person_rounded, color: Color(0xFF3E6872), size: 28),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
@@ -61,24 +61,21 @@ class SettingsScreen extends ConsumerWidget {
                                 Row(
                                   children: [
                                     Text(user?.name ?? '사용자',
-                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
+                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
                                     const SizedBox(width: 8),
                                     GestureDetector(
                                       onTap: () => _showEditNameDialog(context, ref, user?.name ?? ''),
                                       child: Container(
                                         padding: const EdgeInsets.all(4),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.15),
+                                          color: const Color(0xFF3E6872).withOpacity(0.08),
                                           shape: BoxShape.circle,
                                         ),
-                                        child: const Icon(Icons.edit_rounded, color: Colors.white, size: 14),
+                                        child: const Icon(Icons.edit_rounded, color: Color(0xFF3E6872), size: 14),
                                       ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 2),
-                                Text(user?.email ?? '기기 계정',
-                                    style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.8))),
                               ],
                             ),
                           ),
@@ -93,26 +90,25 @@ class SettingsScreen extends ConsumerWidget {
                       const SizedBox(height: 10),
                       ...employments.map((emp) => GestureDetector(
                             onTap: () => context.go('/settings/workplace/edit', extra: emp),
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.7),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: Colors.white.withOpacity(0.5)),
-                              ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: emp.isActive ? AppColors.primaryLight : AppColors.bg,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Icon(Icons.business_rounded,
-                                      color: emp.isActive ? AppColors.primary : AppColors.textMuted, size: 20),
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: emp.isActive ? const Color(0xFF3E6872).withOpacity(0.08) : AppColors.bg,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(Icons.business_rounded,
+                                        color: emp.isActive ? const Color(0xFF3E6872) : AppColors.textMuted, size: 20),
+                                  ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
@@ -162,6 +158,18 @@ class SettingsScreen extends ConsumerWidget {
                       label: '버전 정보',
                       trailing: const Text('1.0.0', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
                     ),
+                    const SizedBox(height: 8),
+                    _settingTile(
+                      icon: Icons.description_outlined,
+                      label: '서비스 이용약관',
+                      onTap: () => context.go('/settings/legal?type=terms'),
+                    ),
+                    const SizedBox(height: 8),
+                    _settingTile(
+                      icon: Icons.privacy_tip_outlined,
+                      label: '개인정보처리방침',
+                      onTap: () => context.go('/settings/legal?type=privacy'),
+                    ),
                     const SizedBox(height: 20),
 
                     // 데이터 초기화 버튼
@@ -187,17 +195,23 @@ class SettingsScreen extends ConsumerWidget {
                         }
                       },
                       child: Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
-                          color: AppColors.dangerLight,
+                          color: const Color(0xFF2C2C2E),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.danger.withOpacity(0.2)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.refresh_rounded, color: AppColors.danger, size: 20),
+                            Icon(Icons.refresh_rounded, color: Color(0xFFFF3B30), size: 20),
                             SizedBox(width: 12),
-                            Text('데이터 초기화', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.danger)),
+                            Text('데이터 초기화', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
                           ],
                         ),
                       ),
@@ -218,9 +232,8 @@ class SettingsScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.7),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withOpacity(0.5)),
         ),
         child: Row(
           children: [

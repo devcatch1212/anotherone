@@ -50,12 +50,9 @@ class _PayrollDetailScreenState extends ConsumerState<PayrollDetailScreen> {
       },
       child: Scaffold(
         backgroundColor: AppColors.bg,
-        body: Stack(
-        children: [
-          Positioned.fill(child: CustomPaint(painter: AuroraPainter())),
-          SafeArea(
-            child: Column(
-              children: [
+        body: SafeArea(
+          child: Column(
+            children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(8, 8, 20, 0),
                   child: Row(
@@ -102,22 +99,20 @@ class _PayrollDetailScreenState extends ConsumerState<PayrollDetailScreen> {
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(24),
                                     decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [Color(0xFF3B82F6), Color(0xFF6366F1)],
-                                      ),
+                                      color: AppColors.surface,
                                       borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))],
+                                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 16, offset: const Offset(0, 4))],
                                     ),
                                     child: Column(
                                       children: [
-                                        Text('${r.year}년 ${r.month}월 실수령액',
-                                            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13, fontWeight: FontWeight.w500)),
+                                        const Text('실수령액',
+                                            style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
                                         const SizedBox(height: 8),
                                         Text('${fmt.format(r.netPay)}원',
-                                            style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                                            style: const TextStyle(color: Color(0xFF3E6872), fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
                                         const SizedBox(height: 4),
                                         Text('근무 ${r.workedDays}일',
-                                            style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
+                                            style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
                                       ],
                                     ),
                                   ),
@@ -145,10 +140,8 @@ class _PayrollDetailScreenState extends ConsumerState<PayrollDetailScreen> {
                               ),
                             ),
                 ),
-              ],
-            ),
+            ],
           ),
-        ],
         ),
       ),
     );
@@ -158,9 +151,8 @@ class _PayrollDetailScreenState extends ConsumerState<PayrollDetailScreen> {
         width: double.infinity,
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.7),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.5)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

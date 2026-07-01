@@ -63,7 +63,7 @@ class _PayrollScreenState extends ConsumerState<PayrollScreen> {
         child: Column(
           children: [
             Container(
-              color: Colors.white.withOpacity(0.65),
+              color: Colors.transparent,
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
               child: const Align(
                 alignment: Alignment.centerLeft,
@@ -103,10 +103,9 @@ class _PayrollScreenState extends ConsumerState<PayrollScreen> {
                                 margin: const EdgeInsets.only(bottom: 12),
                                 padding: const EdgeInsets.all(18),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: AppColors.surface,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: Colors.white.withOpacity(0.5)),
-                                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 3))],
+                                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 3))],
                                 ),
                                 child: Row(
                                   children: [
@@ -114,10 +113,10 @@ class _PayrollScreenState extends ConsumerState<PayrollScreen> {
                                       width: 44,
                                       height: 44,
                                       decoration: BoxDecoration(
-                                        gradient: const LinearGradient(colors: [AppColors.primary, AppColors.info]),
-                                        borderRadius: BorderRadius.circular(12),
+                                        color: const Color(0xFF3E6872).withOpacity(0.08),
+                                        shape: BoxShape.circle,
                                       ),
-                                      child: const Icon(Icons.payments_rounded, color: Colors.white, size: 22),
+                                      child: const Icon(Icons.payments_rounded, color: Color(0xFF3E6872), size: 20),
                                     ),
                                     const SizedBox(width: 14),
                                     Expanded(
@@ -135,7 +134,7 @@ class _PayrollScreenState extends ConsumerState<PayrollScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.end,
                                       children: [
                                         Text('${fmt.format(r.netPay)}원',
-                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF3E6872))),
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                           decoration: BoxDecoration(

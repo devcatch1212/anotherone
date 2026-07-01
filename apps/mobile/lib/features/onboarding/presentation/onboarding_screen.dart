@@ -204,7 +204,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   height: 4,
                   margin: EdgeInsets.only(right: i < 2 ? 4 : 0),
                   decoration: BoxDecoration(
-                    color: i <= _step ? AppColors.primary : AppColors.border,
+                    color: i <= _step ? const Color(0xFF3E6872) : AppColors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -600,15 +600,37 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 16),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: AppColors.dangerLight,
-              borderRadius: BorderRadius.circular(10),
+              color: const Color(0xFF2C2C2E),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            child: Text(
-              _error,
-              style: const TextStyle(
-                  color: AppColors.danger, fontSize: 13),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.error_rounded,
+                  color: Color(0xFFFF3B30),
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _error,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

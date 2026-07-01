@@ -548,15 +548,37 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
                     if (_error.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
-                          color: AppColors.dangerLight,
+                          color: const Color(0xFF2C2C2E),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.danger.withOpacity(0.3)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        child: Text(
-                          _error,
-                          style: const TextStyle(color: AppColors.danger, fontSize: 13, fontWeight: FontWeight.w600),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_rounded,
+                              color: Color(0xFFFF3B30),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _error,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -568,36 +590,27 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
                       SizedBox(
                         width: double.infinity,
                         height: 52,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(colors: [AppColors.primary, AppColors.info]),
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.3),
-                                blurRadius: 16,
-                                offset: const Offset(0, 6),
-                              )
-                            ],
+                        child: ElevatedButton(
+                          onPressed: _loading ? null : _save,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF3E6872),
+                            foregroundColor: Colors.white,
+                            shadowColor: Colors.transparent,
+                            elevation: 0,
+                            side: const BorderSide(color: Color(0xFF3E6872), width: 1.0),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
                           ),
-                          child: ElevatedButton(
-                            onPressed: _loading ? null : _save,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                            ),
-                            child: _loading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                  )
-                                : const Text(
-                                    '변경 내용 저장하기',
-                                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
-                                  ),
-                          ),
+                          child: _loading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                )
+                              : const Text(
+                                  '변경 내용 저장하기',
+                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
+                                ),
                         ),
                       ),
                       const SizedBox(height: 12),

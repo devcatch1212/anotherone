@@ -91,7 +91,7 @@ export class AuthService {
   async anonymousRegister() {
     const uuid = Math.random().toString(36).substring(2, 10);
     const email = `anon_${uuid}@example.com`;
-    const name = `게스트_${Math.floor(1000 + Math.random() * 9000)}`;
+    const name = `크루_${Math.floor(1000 + Math.random() * 9000)}`;
 
     const user = await this.prisma.user.create({
       data: {

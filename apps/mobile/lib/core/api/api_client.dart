@@ -104,7 +104,15 @@ String parseApiError(Object error) {
   if (error is DioException) {
     final data = error.response?.data;
     if (data is Map) {
-      return data['message']?.toString() ?? '서버 오류가 발생했습니다';
+      final msgVal = data['message'];
+      if (msgVal is List) {
+        if (msgVal.isNotEmpty) {
+          return msgVal.first.toString().replaceAll('[', '').replaceAll(']', '');
+        }
+      } else if (msgVal != null) {
+        return msgVal.toString().replaceAll('[', '').replaceAll(']', '');
+      }
+      return '서버 오류가 발생했습니다';
     }
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.receiveTimeout) {

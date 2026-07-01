@@ -228,6 +228,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (_workState != AttendanceState.before) return;
     final emp = _employment;
     if (emp == null) return;
+    
+    if (_gpsStatus == GpsStatus.denied) {
+      _showSnackBar('위치 권한이 필요합니다. 설정에서 권한을 허용해주세요.', AppColors.warning);
+      return;
+    }
+    
     setState(() => _checkingIn = true);
     try {
       // 1. 터치 시점 실시간 위치 조회 (5초 타임아웃)
@@ -293,6 +299,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (_workState != AttendanceState.working) return;
     final emp = _employment;
     if (emp == null) return;
+    
+    if (_gpsStatus == GpsStatus.denied) {
+      _showSnackBar('위치 권한이 필요합니다. 설정에서 권한을 허용해주세요.', AppColors.warning);
+      return;
+    }
+    
     setState(() => _checkingIn = true);
     try {
       // 1. 터치 시점 실시간 위치 조회 (5초 타임아웃)
@@ -611,26 +623,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
                 child: Column(
                   children: [
-                    if (_loadError != null)
+                     if (_loadError != null)
                       Container(
                         margin: const EdgeInsets.only(bottom: 14),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
-                          color: AppColors.dangerLight,
+                          color: const Color(0xFF2C2C2E),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.danger.withOpacity(0.2)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: Row(
                           children: [
-                            const Text('⚠️', style: TextStyle(fontSize: 16)),
+                            const Icon(
+                              Icons.error_rounded,
+                              color: Color(0xFFFF3B30), // iOS System Red
+                              size: 20,
+                            ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 _loadError!,
                                 style: const TextStyle(
                                   fontSize: 13,
-                                  color: AppColors.danger,
-                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
@@ -663,20 +685,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Container(
                       padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xD03B82F6),
-                            Color(0xD08B5CF6),
-                          ],
-                        ),
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.2),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
@@ -688,11 +703,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('이번 달 근무시간',
+                                  const Text('이번 달 근무시간',
                                       style: TextStyle(
                                           fontSize: 11,
-                                          color: Colors.white.withOpacity(0.7),
-                                          fontWeight: FontWeight.w500)),
+                                          color: AppColors.textSecondary,
+                                          fontWeight: FontWeight.w600)),
                                   const SizedBox(height: 4),
                                   Row(
                                     crossAxisAlignment:
@@ -703,13 +718,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                           style: const TextStyle(
                                               fontSize: 26,
                                               fontWeight: FontWeight.w700,
-                                              color: Colors.white)),
+                                              color: Color(0xFF3E6872))),
                                       const SizedBox(width: 4),
-                                      Text('/ ${monthlyTarget}h',
+                                      const Text('/ 160h', // target hours
                                           style: TextStyle(
                                               fontSize: 13,
-                                              color: Colors.white
-                                                  .withOpacity(0.5))),
+                                              color: AppColors.textMuted)),
                                     ],
                                   ),
                                 ],
@@ -717,11 +731,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text('남은 연차',
+                                  const Text('남은 연차',
                                       style: TextStyle(
                                           fontSize: 11,
-                                          color: Colors.white.withOpacity(0.7),
-                                          fontWeight: FontWeight.w500)),
+                                          color: AppColors.textSecondary,
+                                          fontWeight: FontWeight.w600)),
                                   const SizedBox(height: 4),
                                   Row(
                                     crossAxisAlignment:
@@ -732,13 +746,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                           style: const TextStyle(
                                               fontSize: 26,
                                               fontWeight: FontWeight.w700,
-                                              color: Colors.white)),
+                                              color: Color(0xFF3E6872))),
                                       const SizedBox(width: 2),
-                                      Text('일',
+                                      const Text('일',
                                           style: TextStyle(
                                               fontSize: 13,
-                                              color: Colors.white
-                                                  .withOpacity(0.5))),
+                                              color: AppColors.textMuted)),
                                     ],
                                   ),
                                 ],
@@ -750,9 +763,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             borderRadius: BorderRadius.circular(99),
                             child: LinearProgressIndicator(
                               value: workedPercent / 100,
-                              backgroundColor: Colors.white.withOpacity(0.2),
+                              backgroundColor: AppColors.bg,
                               valueColor: const AlwaysStoppedAnimation<Color>(
-                                  Color(0xFF00F0FF)),
+                                  Color(0xFF3E6872)),
                               minHeight: 6,
                             ),
                           ),
@@ -761,9 +774,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               '$workedPercent% 달성 · ${(monthlyTarget - monthlyWorked).clamp(0, double.infinity).toStringAsFixed(1)}h 남음',
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontSize: 11,
-                                  color: Colors.white.withOpacity(0.7)),
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textSecondary),
                             ),
                           ),
                         ],
@@ -775,10 +789,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.65),
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                            color: Colors.white.withOpacity(0.6)),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.04),
@@ -860,7 +872,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     style: const TextStyle(
                                       fontSize: 44,
                                       fontWeight: FontWeight.w700,
-                                      color: AppColors.textPrimary,
+                                      color: Color(0xFF3E6872),
                                       letterSpacing: -1,
                                       fontFeatures: [
                                         FontFeature.tabularFigures()
@@ -870,30 +882,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                                 const SizedBox(height: 10),
                                 // GPS 상태
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: gpsColor,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Text(gpsIcon,
-                                          style: const TextStyle(fontSize: 14)),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          gpsText,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: gpsTextColor,
+                                Builder(
+                                  builder: (context) {
+                                    final isWarning = _gpsStatus == GpsStatus.far || _gpsStatus == GpsStatus.denied;
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: isWarning ? const Color(0xFF2C2C2E) : gpsColor,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: isWarning 
+                                            ? null 
+                                            : Border.all(color: gpsTextColor.withOpacity(0.15)),
+                                        boxShadow: isWarning ? [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.1),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 3),
                                           ),
-                                        ),
+                                        ] : null,
                                       ),
-                                    ],
-                                  ),
+                                      child: Row(
+                                        children: [
+                                          if (isWarning)
+                                            const Icon(
+                                              Icons.error_rounded,
+                                              color: Color(0xFFFF3B30),
+                                              size: 18,
+                                            )
+                                          else
+                                            Text(gpsIcon, style: const TextStyle(fontSize: 14)),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              gpsText,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: isWarning ? Colors.white : gpsTextColor,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
                                 ),
                                 const SizedBox(height: 10),
                                 // 출퇴근 버튼
@@ -974,38 +1007,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return SizedBox(
         width: double.infinity,
         height: 48,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: _gpsStatus == GpsStatus.ok
-                  ? [AppColors.primary, AppColors.info]
-                  : [AppColors.border, AppColors.border],
+        child: ElevatedButton(
+          onPressed: _checkingIn ? null : _handleCheckIn,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFEEF2F2),
+            foregroundColor: const Color(0xFF3E6872),
+            elevation: 0,
+            shadowColor: Colors.transparent,
+            side: const BorderSide(
+              color: Color(0xFF3E6872),
+              width: 1.0,
             ),
-            borderRadius: BorderRadius.circular(12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
-          child: ElevatedButton(
-            onPressed:
-                _checkingIn || _gpsStatus != GpsStatus.ok ? null : _handleCheckIn,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.login_rounded, size: 16, color: Colors.white),
-                const SizedBox(width: 6),
-                Text(
-                  _checkingIn ? '처리 중...' : '출근 기록하기',
-                  style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.login_rounded,
+                size: 16,
+                color: Color(0xFF3E6872),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                _checkingIn ? '처리 중...' : '출근 기록하기',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF3E6872),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       );
@@ -1018,46 +1052,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             flex: 2,
             child: SizedBox(
               height: 48,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: _gpsStatus == GpsStatus.ok
-                        ? [AppColors.primary, AppColors.info]
-                        : [AppColors.border, AppColors.border],
+              child: ElevatedButton(
+                onPressed: _checkingIn ? null : _handleCheckOut,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEEF2F2),
+                  foregroundColor: const Color(0xFF3E6872),
+                  elevation: 0,
+                  shadowColor: Colors.transparent,
+                  side: const BorderSide(
+                    color: Color(0xFF3E6872),
+                    width: 1.0,
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: ElevatedButton(
-                  onPressed: _checkingIn || _gpsStatus != GpsStatus.ok
-                      ? null
-                      : _handleCheckOut,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 14,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3E6872),
+                        borderRadius: BorderRadius.circular(3),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _checkingIn ? '처리 중...' : '퇴근 기록하기',
-                        style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _checkingIn ? '처리 중...' : '퇴근 기록하기',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF3E6872),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -1069,15 +1099,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: OutlinedButton(
                 onPressed: _showOvertimeSheet,
                 style: OutlinedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF4F4F5),
+                  foregroundColor: const Color(0xFF3E6872),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
-                  side: const BorderSide(color: AppColors.border),
+                  side: const BorderSide(color: Color(0xFF3E6872), width: 1.0),
                 ),
                 child: const Text('⏱️ 연장',
                     style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary)),
+                        color: Color(0xFF3E6872))),
               ),
             ),
           ),
@@ -1090,21 +1122,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       width: double.infinity,
       height: 48,
       decoration: BoxDecoration(
-        color: AppColors.primaryLight,
+        color: const Color(0xFFF4F4F5),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary, width: 1.5),
+        border: Border.all(color: const Color(0xFF3E6872), width: 1.0),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.check_rounded, color: AppColors.primary, size: 20),
+          const Icon(Icons.check_rounded, color: Color(0xFF3E6872), size: 20),
           const SizedBox(width: 8),
           Text(
             '오늘 근무 종료${_todayRecord?.checkOut != null ? ' (${_formatTime(_todayRecord!.checkOut!)} 퇴근)' : ''}',
             style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: AppColors.primary),
+                color: Color(0xFF3E6872)),
           ),
         ],
       ),
@@ -1148,19 +1180,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         const SizedBox(height: 10),
         Container(
+          width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.65),
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.6)),
           ),
           child: recent.isEmpty
-              ? const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text(
-                    '출퇴근 기록이 없습니다',
-                    style:
-                        TextStyle(fontSize: 13, color: AppColors.textMuted),
-                    textAlign: TextAlign.center,
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3E6872).withOpacity(0.08),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.history_toggle_off_rounded,
+                          size: 28,
+                          color: Color(0xFF3E6872),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        '아직 등록된 근무 기록이 없습니다',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        '오늘의 출퇴근을 기록하고 하루를 시작해보세요!',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textMuted,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 )
               : ListView.separated(
@@ -1260,9 +1323,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.65),
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withOpacity(0.6)),
           ),
           child: Column(
             children: [
