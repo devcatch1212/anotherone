@@ -424,12 +424,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               onPressed: _showAddressSearch,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.bg,
+                foregroundColor: AppColors.textPrimary,
+                side: const BorderSide(color: Color(0xFFCCCCCC), width: 1.2),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 elevation: 0,
+                shadowColor: Colors.transparent,
               ),
               child: const Text(
                 '주소 검색',
@@ -620,44 +622,32 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: SizedBox(
         width: double.infinity,
         height: 52,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppColors.primary, AppColors.info],
-            ),
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
+        child: ElevatedButton(
+          onPressed: _loading ? null : _handleNext,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.bg,
+            foregroundColor: AppColors.textPrimary,
+            shadowColor: Colors.transparent,
+            elevation: 0,
+            side: const BorderSide(color: Color(0xFFCCCCCC), width: 1.2),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
           ),
-          child: ElevatedButton(
-            onPressed: _loading ? null : _handleNext,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
-            ),
-            child: _loading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                        color: Colors.white, strokeWidth: 2),
-                  )
-                : Text(
-                    _step < 2 ? '다음' : '완료',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
+          child: _loading
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                      color: AppColors.textPrimary, strokeWidth: 2),
+                )
+              : Text(
+                  _step < 2 ? '다음' : '완료',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
                   ),
-          ),
+                ),
         ),
       ),
     );

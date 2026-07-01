@@ -131,9 +131,11 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryDark,
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.bg,
+          foregroundColor: AppColors.textPrimary,
           elevation: 0,
+          shadowColor: Colors.transparent,
+          side: const BorderSide(color: Color(0xFFCCCCCC), width: 1.2),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
