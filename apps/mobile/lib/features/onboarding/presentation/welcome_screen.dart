@@ -21,19 +21,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       'icon': Icons.my_location_rounded,
       'title': '정확한 위치 인증 출퇴근',
       'desc': '근무지 반경 안에서 터치 한 번으로\n지연 없이 출퇴근을 기록하세요.',
-      'color': const Color(0xFF3B82F6),
+      'color': AppColors.accent,
     },
     {
       'icon': Icons.payments_rounded,
       'title': '투명한 급여 자동 계산',
       'desc': '출퇴근 기록을 바탕으로 주휴수당과\n예상 급여 명세서를 바로 확인합니다.',
-      'color': const Color(0xFF10B981),
+      'color': AppColors.warning,
     },
     {
       'icon': Icons.beach_access_rounded,
       'title': '자유로운 연차 신청',
       'desc': '남은 연차 일수를 실시간 동기화하고\n앱에서 간편하게 연차를 상신하세요.',
-      'color': const Color(0xFF6366F1),
+      'color': AppColors.info,
     },
   ];
 
@@ -51,14 +51,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFFF8FAFC), Color(0xFFEEF2F6)],
+            colors: [Color(0xFFF7F7A0), Color(0xFFEBEB7A)],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
               const SizedBox(height: 40),
-              
+
               // ── 브랜드 로고 및 앱 타이틀 ──
               Column(
                 children: [
@@ -66,13 +66,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF3B82F6), Color(0xFF6366F1)],
-                      ),
+                      color: const Color(0xFF1A1A1A).withOpacity(0.08),
                       borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: const Color(0xFF1A1A1A).withOpacity(0.15),
+                        width: 1.5,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF3B82F6).withOpacity(0.25),
+                          color: const Color(0xFFE8C84A).withOpacity(0.4),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
@@ -81,7 +83,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     child: const Icon(
                       Icons.people_rounded,
                       size: 36,
-                      color: Colors.white,
+                      color: Color(0xFF1A1A1A),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -105,7 +107,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                 ],
               ),
-              
+
               const Expanded(child: SizedBox()),
 
               // ── 기능 소개 캐러셀 (PageView) ──
@@ -127,7 +129,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           Container(
                             padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
-                              color: item['color'].withOpacity(0.1),
+                              color: (item['color'] as Color).withOpacity(0.12),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -174,7 +176,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     height: 6,
                     decoration: BoxDecoration(
                       color: _currentPage == index
-                          ? const Color(0xFF3B82F6)
+                          ? AppColors.primaryDark
                           : AppColors.textMuted.withOpacity(0.4),
                       borderRadius: BorderRadius.circular(3),
                     ),
@@ -193,13 +195,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-                      ),
+                      color: AppColors.textPrimary,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF3B82F6).withOpacity(0.3),
+                          color: const Color(0xFF1A1A1A).withOpacity(0.2),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -211,7 +211,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                          color: Color(0xFFF7F7A0),
                           letterSpacing: 0.5,
                         ),
                       ),

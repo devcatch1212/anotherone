@@ -5,43 +5,43 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
-  // Brand
-  static const primary = Color(0xFF3B82F6);
-  static const primaryDark = Color(0xFF1D4ED8);
-  static const primaryLight = Color(0xFFEFF6FF);
+  // Brand - 머스타드 옐로 계열 (캘린더 화면 메인 색상)
+  static const primary = Color(0xFFE8C84A);        // 머스타드 옐로
+  static const primaryDark = Color(0xFFC9A820);    // 진한 머스타드
+  static const primaryLight = Color(0xFFFFFDE7);   // 연한 레몬
 
-  // Accent (neon cyan)
-  static const accent = Color(0xFF00F0FF);
-  static const accentDark = Color(0xFF0891B2);
-  static const accentLight = Color(0xFFECFEFF);
+  // Accent - 초록 (정상 출근 체크)
+  static const accent = Color(0xFF22C55E);
+  static const accentDark = Color(0xFF16A34A);
+  static const accentLight = Color(0xFFDCFCE7);
 
   // Semantic
-  static const success = Color(0xFF10B981);
-  static const successLight = Color(0xFFECFDF5);
-  static const danger = Color(0xFFF43F5E);
-  static const dangerLight = Color(0xFFFFF1F2);
-  static const warning = Color(0xFFF59E0B);
-  static const warningLight = Color(0xFFFFFBEB);
-  static const info = Color(0xFF6366F1);
-  static const infoLight = Color(0xFFEEF2FF);
-  static const vacation = Color(0xFFFF2E93);
-  static const vacationLight = Color(0xFFFFF1F2);
+  static const success = Color(0xFF22C55E);
+  static const successLight = Color(0xFFDCFCE7);
+  static const danger = Color(0xFFEF4444);
+  static const dangerLight = Color(0xFFFEE2E2);
+  static const warning = Color(0xFFF97316);        // 오렌지 (연장근무)
+  static const warningLight = Color(0xFFFFEDD5);
+  static const info = Color(0xFF7C3AED);           // 퍼플 뱃지
+  static const infoLight = Color(0xFFEDE9FE);
+  static const vacation = Color(0xFF3B82F6);       // 휴가는 파란색 유지
+  static const vacationLight = Color(0xFFEFF6FF);
 
-  // Neutral
-  static const bg = Color(0xFFF8FAFC);
-  static const surface = Color(0xFFFFFFFF);
-  static const border = Color(0xFFE2E8F0);
-  static const textPrimary = Color(0xFF0F172A);
-  static const textSecondary = Color(0xFF475569);
-  static const textMuted = Color(0xFF94A3B8);
+  // Neutral - 크림 옐로 배경
+  static const bg = Color(0xFFF7F7A0);             // 밝은 크림 옐로 배경
+  static const surface = Color(0xFFFFFDE7);        // 카드 배경 (연한 레몬)
+  static const border = Color(0xFFE0D84A);         // 노란 테두리
+  static const textPrimary = Color(0xFF1A1A1A);    // 거의 검정
+  static const textSecondary = Color(0xFF5A5A3A);  // 올리브 그린 톤 텍스트
+  static const textMuted = Color(0xFF9A9A6A);      // 흐린 올리브
 
-  // Glassmorphism
-  static const glassWhite = Color(0xA6FFFFFF); // rgba(255,255,255,0.65)
-  static const glassBorder = Color(0x99FFFFFF); // rgba(255,255,255,0.6)
+  // Glassmorphism - 노란 틴트 글래스
+  static const glassWhite = Color(0xCCFFFDE7);     // 레몬빛 반투명
+  static const glassBorder = Color(0x99F0E850);    // 노란 테두리
 
   // Gradient
-  static const gradientStart = Color(0xFF3B82F6);
-  static const gradientEnd = Color(0xFF6366F1);
+  static const gradientStart = Color(0xFFF7F7A0);  // 밝은 옐로
+  static const gradientEnd = Color(0xFFE8C84A);    // 머스타드
 }
 
 class AppTheme {
@@ -51,6 +51,8 @@ class AppTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         brightness: Brightness.light,
+        surface: AppColors.surface,
+        background: AppColors.bg,
       ),
       scaffoldBackgroundColor: AppColors.bg,
       textTheme: GoogleFonts.notoSansKrTextTheme(
@@ -129,7 +131,7 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.primaryDark,
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -169,59 +171,42 @@ class AppTheme {
   }
 }
 
-// 오로라 배경 그라디언트 페인터
+// 노란 배경 웜 그라디언트 페인터 (캘린더 화면 스타일)
 class AuroraPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..blendMode = BlendMode.srcOver;
 
-    // Top-left blue
-    final blueGradient = RadialGradient(
-      center: const Alignment(-1, -1),
-      radius: 1.2,
+    // 중앙 밝은 옐로 하이라이트
+    final centerGlow = RadialGradient(
+      center: Alignment.topCenter,
+      radius: 1.4,
       colors: [
-        AppColors.primary.withOpacity(0.12),
+        const Color(0xFFFFFF80).withOpacity(0.4),
         Colors.transparent,
       ],
     );
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
       paint
-        ..shader = blueGradient.createShader(
+        ..shader = centerGlow.createShader(
           Rect.fromLTWH(0, 0, size.width, size.height),
         ),
     );
 
-    // Top-right cyan
-    final cyanGradient = RadialGradient(
-      center: const Alignment(1, -1),
-      radius: 1.2,
+    // 하단 머스타드 그라디언트
+    final bottomWarm = RadialGradient(
+      center: const Alignment(0, 1.2),
+      radius: 1.0,
       colors: [
-        AppColors.accent.withOpacity(0.12),
+        const Color(0xFFE8C84A).withOpacity(0.25),
         Colors.transparent,
       ],
     );
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
       paint
-        ..shader = cyanGradient.createShader(
-          Rect.fromLTWH(0, 0, size.width, size.height),
-        ),
-    );
-
-    // Bottom pink
-    final pinkGradient = RadialGradient(
-      center: const Alignment(0, 1),
-      radius: 1.2,
-      colors: [
-        AppColors.vacation.withOpacity(0.09),
-        Colors.transparent,
-      ],
-    );
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      paint
-        ..shader = pinkGradient.createShader(
+        ..shader = bottomWarm.createShader(
           Rect.fromLTWH(0, 0, size.width, size.height),
         ),
     );

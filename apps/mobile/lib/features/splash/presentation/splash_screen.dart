@@ -82,9 +82,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF7F7A0), Color(0xFFE8C84A)],
           ),
         ),
         child: Center(
@@ -97,25 +97,25 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: const Color(0xFF1A1A1A).withOpacity(0.08),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+                      color: const Color(0xFF1A1A1A).withOpacity(0.15),
                     ),
                   ),
                   child: const Icon(
                     Icons.people_rounded,
                     size: 40,
-                    color: Colors.white,
+                    color: Color(0xFF1A1A1A),
                   ),
                 ),
                 const SizedBox(height: 20),
                 const Text(
                   '근무관리',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF1A1A1A),
                     fontSize: 28,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w900,
                     letterSpacing: -0.5,
                   ),
                 ),
@@ -123,7 +123,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 Text(
                   '출퇴근 · 급여 · 휴가 한 번에',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: const Color(0xFF1A1A1A).withOpacity(0.6),
                     fontSize: 14,
                   ),
                 ),
@@ -132,7 +132,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   width: 24,
                   height: 24,
                   child: CircularProgressIndicator(
-                    color: Colors.white.withOpacity(0.6),
+                    color: const Color(0xFF1A1A1A).withOpacity(0.4),
                     strokeWidth: 2,
                   ),
                 ),
