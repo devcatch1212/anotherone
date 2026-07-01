@@ -205,7 +205,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.textPrimary,
+                    color: const Color(0xFF3E6872),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Center(

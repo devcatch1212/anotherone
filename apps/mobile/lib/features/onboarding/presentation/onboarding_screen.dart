@@ -625,7 +625,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         child: ElevatedButton(
           onPressed: _loading ? null : _handleNext,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.textPrimary,
+            backgroundColor: const Color(0xFF3E6872),
             foregroundColor: Colors.white,
             shadowColor: Colors.transparent,
             elevation: 0,
