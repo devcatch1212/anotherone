@@ -424,9 +424,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               onPressed: _showAddressSearch,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-                backgroundColor: AppColors.bg,
+                backgroundColor: AppColors.surface,
                 foregroundColor: AppColors.textPrimary,
-                side: const BorderSide(color: Color(0xFFCCCCCC), width: 1.2),
+                side: const BorderSide(color: AppColors.border, width: 1.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -625,27 +625,26 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         child: ElevatedButton(
           onPressed: _loading ? null : _handleNext,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.bg,
-            foregroundColor: AppColors.textPrimary,
+            backgroundColor: AppColors.textPrimary,
+            foregroundColor: Colors.white,
             shadowColor: Colors.transparent,
             elevation: 0,
-            side: const BorderSide(color: Color(0xFFCCCCCC), width: 1.2),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14)),
           ),
           child: _loading
-              ? SizedBox(
+              ? const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
-                      color: AppColors.textPrimary, strokeWidth: 2),
+                      color: Colors.white, strokeWidth: 2),
                 )
               : Text(
                   _step < 2 ? '다음' : '완료',
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: Colors.white,
                   ),
                 ),
         ),

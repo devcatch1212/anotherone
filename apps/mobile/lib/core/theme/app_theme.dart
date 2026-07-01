@@ -1,47 +1,47 @@
 // lib/core/theme/app_theme.dart
-// 웹앱과 동일한 디자인 시스템
+// iOS 스타일 미니멀 디자인 시스템 (캘린더 레퍼런스 기반)
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
-  // Brand - 머스타드 옐로 계열 (캘린더 화면 메인 색상)
-  static const primary = Color(0xFFE8C84A);        // 머스타드 옐로
-  static const primaryDark = Color(0xFFC9A820);    // 진한 머스타드
-  static const primaryLight = Color(0xFFFFFDE7);   // 연한 레몬
+  // Brand - iOS 스타일 미니멀 다크
+  static const primary = Color(0xFF1C1C1E);        // iOS 다크 (메인 텍스트/버튼)
+  static const primaryDark = Color(0xFF000000);    // 순수 블랙
+  static const primaryLight = Color(0xFFF2F2F7);   // iOS 시스템 그레이6
 
-  // Accent - 초록 (정상 출근 체크)
-  static const accent = Color(0xFF22C55E);
-  static const accentDark = Color(0xFF16A34A);
-  static const accentLight = Color(0xFFDCFCE7);
+  // Accent - 파스텔 그린 (정상 출근)
+  static const accent = Color(0xFF34C759);          // iOS 그린
+  static const accentDark = Color(0xFF248A3D);
+  static const accentLight = Color(0xFFD1F2D9);     // 파스텔 그린 써클
 
-  // Semantic
-  static const success = Color(0xFF22C55E);
-  static const successLight = Color(0xFFDCFCE7);
-  static const danger = Color(0xFFEF4444);
-  static const dangerLight = Color(0xFFFEE2E2);
-  static const warning = Color(0xFFF97316);        // 오렌지 (연장근무)
-  static const warningLight = Color(0xFFFFEDD5);
-  static const info = Color(0xFF7C3AED);           // 퍼플 뱃지
-  static const infoLight = Color(0xFFEDE9FE);
-  static const vacation = Color(0xFF3B82F6);       // 휴가는 파란색 유지
-  static const vacationLight = Color(0xFFEFF6FF);
+  // Semantic - 파스텔 계열 (캘린더 아이콘 색상)
+  static const success = Color(0xFF34C759);         // iOS 그린
+  static const successLight = Color(0xFFD1F2D9);   // 파스텔 초록 (정상 써클)
+  static const danger = Color(0xFFFF3B30);          // iOS 레드
+  static const dangerLight = Color(0xFFFFE0DE);
+  static const warning = Color(0xFFF5A3A3);         // 파스텔 핑크 (연장근무 써클)
+  static const warningLight = Color(0xFFFCECEC);
+  static const info = Color(0xFFAFB4F5);            // 파스텔 퍼플 (기타)
+  static const infoLight = Color(0xFFECEDF9);
+  static const vacation = Color(0xFF5AC8FA);        // iOS 라이트블루 (휴가)
+  static const vacationLight = Color(0xFFE0F4FD);
 
-  // Neutral - 크림 옐로 배경
-  static const bg = Color(0xFFF5F375);             // 정확한 배경 옐로 #F5F375
-  static const surface = Color(0xFFFCFCBE);        // 카드 배경 (더 밝은 크림)
-  static const border = Color(0xFFE0D84A);         // 노란 테두리
-  static const textPrimary = Color(0xFF1A1A1A);    // 거의 검정
-  static const textSecondary = Color(0xFF5A5A3A);  // 올리브 그린 톤 텍스트
-  static const textMuted = Color(0xFF9A9A6A);      // 흐린 올리브
+  // Neutral - iOS 시스템 팔레트
+  static const bg = Color(0xFFEEEEF0);             // iOS 배경 (연한 회색)
+  static const surface = Color(0xFFFFFFFF);         // 카드 순백
+  static const border = Color(0xFFE5E5EA);          // iOS 구분선
+  static const textPrimary = Color(0xFF1C1C1E);    // iOS 다크
+  static const textSecondary = Color(0xFF6C6C70);  // iOS 세컨더리 그레이
+  static const textMuted = Color(0xFFAEAEB2);      // iOS 뮤트
 
-  // Glassmorphism - 노란 틴트 글래스
-  static const glassWhite = Color(0xCCFFFDE7);     // 레몬빛 반투명
-  static const glassBorder = Color(0x99F0E850);    // 노란 테두리
+  // Glassmorphism
+  static const glassWhite = Color(0xCCFFFFFF);
+  static const glassBorder = Color(0x33E5E5EA);
 
-  // Gradient
-  static const gradientStart = Color(0xFFF5F375);  // 배경 옐로
-  static const gradientEnd = Color(0xFFE8C84A);    // 머스타드
+  // Gradient (뱃지용)
+  static const gradientStart = Color(0xFF1C1C1E);
+  static const gradientEnd = Color(0xFF3A3A3C);
 }
 
 class AppTheme {
@@ -52,7 +52,6 @@ class AppTheme {
         seedColor: AppColors.primary,
         brightness: Brightness.light,
         surface: AppColors.surface,
-        background: AppColors.bg,
       ),
       scaffoldBackgroundColor: AppColors.bg,
       textTheme: GoogleFonts.notoSansKrTextTheme(
@@ -131,11 +130,11 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.bg,
+          backgroundColor: AppColors.surface,
           foregroundColor: AppColors.textPrimary,
           elevation: 0,
           shadowColor: Colors.transparent,
-          side: const BorderSide(color: Color(0xFFCCCCCC), width: 1.2),
+          side: const BorderSide(color: AppColors.border, width: 1.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -148,7 +147,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white.withOpacity(0.7),
+        fillColor: AppColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.border),
@@ -159,7 +158,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.textPrimary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -173,45 +172,12 @@ class AppTheme {
   }
 }
 
-// 노란 배경 웜 그라디언트 페인터 (캘린더 화면 스타일)
+// iOS 스타일 미니멀 배경 페인터 (은은한 그레이톤)
 class AuroraPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..blendMode = BlendMode.srcOver;
-
-    // 중앙 밝은 옐로 하이라이트
-    final centerGlow = RadialGradient(
-      center: Alignment.topCenter,
-      radius: 1.4,
-      colors: [
-        const Color(0xFFFFFF80).withOpacity(0.4),
-        Colors.transparent,
-      ],
-    );
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      paint
-        ..shader = centerGlow.createShader(
-          Rect.fromLTWH(0, 0, size.width, size.height),
-        ),
-    );
-
-    // 하단 머스타드 그라디언트
-    final bottomWarm = RadialGradient(
-      center: const Alignment(0, 1.2),
-      radius: 1.0,
-      colors: [
-        const Color(0xFFE8C84A).withOpacity(0.25),
-        Colors.transparent,
-      ],
-    );
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      paint
-        ..shader = bottomWarm.createShader(
-          Rect.fromLTWH(0, 0, size.width, size.height),
-        ),
-    );
+    // 플랫 디자인 - 배경 그라디언트 없음
+    // scaffoldBackgroundColor로 단순하게 처리
   }
 
   @override
