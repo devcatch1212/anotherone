@@ -274,16 +274,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : Colors.white,
+          color: isSelected ? const Color(0xFFF8F8FA) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected ? const Color(0xFF6C6C70) : AppColors.border,
             width: 1.0,
           ),
           boxShadow: [
             BoxShadow(
               color: isSelected
-                  ? AppColors.primary.withOpacity(0.1)
+                  ? Colors.black.withOpacity(0.05)
                   : Colors.black.withOpacity(0.03),
               blurRadius: 12,
               offset: const Offset(0, 4),
@@ -296,11 +296,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFFE2EFF1) : AppColors.bg,
+                color: isSelected ? const Color(0xFFE5E5EA) : const Color(0xFFF2F2F7),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon,
-                  color: isSelected ? const Color(0xFF3E6872) : AppColors.textMuted,
+                  color: isSelected ? const Color(0xFF6C6C70) : const Color(0xFFAEAEB2),
                   size: 24),
             ),
             const SizedBox(width: 16),
@@ -313,7 +313,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                      color: isSelected ? const Color(0xFF1C1C1E) : AppColors.textPrimary,
                     ),
                   ),
                   Text(
@@ -326,7 +326,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
             if (isSelected)
               const Icon(Icons.check_circle_rounded,
-                  color: AppColors.primary, size: 24),
+                  color: Color(0xFF6C6C70), size: 24),
           ],
         ),
       ),
