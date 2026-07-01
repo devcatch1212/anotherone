@@ -424,9 +424,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               onPressed: _showAddressSearch,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-                backgroundColor: AppColors.surface,
-                foregroundColor: AppColors.textPrimary,
-                side: const BorderSide(color: AppColors.border, width: 1.0),
+                backgroundColor: const Color(0xFFF4F4F5),
+                foregroundColor: const Color(0xFF3E6872),
+                side: const BorderSide(color: Color(0xFF3E6872), width: 1.2),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
