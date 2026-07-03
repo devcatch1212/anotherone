@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/kakao_map_utils.dart';
@@ -82,6 +84,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         _addressCtrl.text = address;
       });
       _mapController?.runJavaScript("searchAddress('$address')");
+      if (mounted) {
+        FocusScope.of(context).unfocus(); // 키보드 내리기
+      }
     }
   }
 
@@ -113,6 +118,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     });
     try {
       final api = ref.read(apiClientProvider);
+      final weeklyWorkDays = int.tryParse(_workDaysCtrl.text) ?? 5;
+      final workDaysOfWeek = List.generate(weeklyWorkDays.clamp(1, 7), (i) => i);
+
       await api.post<Map<String, dynamic>>(
         '/api/onboarding/company',
         data: {
@@ -129,7 +137,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           'dailyWage':
               _wageType == WageType.daily ? double.tryParse(_wageCtrl.text) : null,
           'dailyWorkHours': double.tryParse(_workHoursCtrl.text) ?? 8.0,
-          'weeklyWorkDays': int.tryParse(_workDaysCtrl.text) ?? 5,
+          'weeklyWorkDays': weeklyWorkDays,
+          'workDaysOfWeek': workDaysOfWeek,
           'workStartTime': _startTimeCtrl.text,
           'workEndTime': _endTimeCtrl.text,
         },
@@ -454,7 +463,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: _mapController != null
-                    ? WebViewWidget(controller: _mapController!)
+                    ? WebViewWidget(
+                        controller: _mapController!,
+                        gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+                          Factory<OneSequenceGestureRecognizer>(
+                            () => EagerGestureRecognizer(),
+                          ),
+                        },
+                      )
                     : const Center(child: CircularProgressIndicator()),
               ),
             ),
@@ -676,6 +692,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _handleNext() {
+    FocusScope.of(context).unfocus(); // 다음 스텝 이동 시 키보드 닫기
     if (_step == 0) {
       if (_mapController == null) {
         _initMapController();

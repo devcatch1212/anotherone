@@ -68,11 +68,12 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
     _endTimeCtrl = TextEditingController(text: emp.workEndTime ?? '18:00');
     _breakMinutesCtrl = TextEditingController(text: (emp.breakMinutes ?? 60).toString());
 
-    if (emp.workDaysOfWeek != null) {
+    if (emp.workDaysOfWeek != null && emp.workDaysOfWeek!.isNotEmpty) {
       _selectedDays.addAll(emp.workDaysOfWeek!);
     } else {
-      // 요일 정보가 없을 시 평일 기본 세팅
-      _selectedDays.addAll([0, 1, 2, 3, 4]);
+      // 요일 정보가 없을 시 주 근무일수(weeklyWorkDays)만큼 순차 기본 요일 활성화
+      final count = emp.weeklyWorkDays.clamp(1, 7);
+      _selectedDays.addAll(List.generate(count, (i) => i));
     }
 
     // 맵 딜레이드 초기화
