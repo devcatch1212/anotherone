@@ -165,10 +165,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
+    // 1. 캐시된 마지막 위치 즉각 반영 (지연 제로)
+    try {
+      final lastPos = await Geolocator.getLastKnownPosition();
+      if (lastPos != null && mounted) {
+        final d = _calcDistance(
+          lastPos.latitude,
+          lastPos.longitude,
+          emp.company.latitude,
+          emp.company.longitude,
+        );
+        setState(() {
+          _distance = d;
+          _gpsStatus = d <= emp.company.radiusMeters ? GpsStatus.ok : GpsStatus.far;
+        });
+      }
+    } catch (_) {}
+
+    // 2. 단발성 현재 위치 강제 요청 (LocationManager 활용하여 신속 응답 유도)
+    try {
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: AndroidSettings(
+          accuracy: LocationAccuracy.high,
+          forceLocationManager: true,
+        ),
+      ).timeout(const Duration(seconds: 4));
+      if (mounted) {
+        final d = _calcDistance(
+          pos.latitude,
+          pos.longitude,
+          emp.company.latitude,
+          emp.company.longitude,
+        );
+        setState(() {
+          _distance = d;
+          _gpsStatus = d <= emp.company.radiusMeters ? GpsStatus.ok : GpsStatus.far;
+        });
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    // 3. 실시간 변경 대응 스트림 리스닝 시작
     _positionSub = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
+      locationSettings: AndroidSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 5,
+        distanceFilter: 3,
+        forceLocationManager: true,
       ),
     ).listen(
       (pos) {
