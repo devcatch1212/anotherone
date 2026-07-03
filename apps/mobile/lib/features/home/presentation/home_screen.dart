@@ -42,7 +42,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         setState(() => _now = DateTime.now());
       }
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // authProvider 로딩 완료 후 데이터 초기화 (온보딩→홈 전환 시 null 방지)
+      await ref.read(authProvider.future);
+      if (!mounted) return;
       _loadData();
       _startGps();
     });

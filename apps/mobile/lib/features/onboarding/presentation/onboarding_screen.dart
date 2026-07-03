@@ -786,6 +786,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         setState(() => _error = '올바른 금액을 입력해주세요');
         return;
       }
+      // 2025년 최저임금 검증 (시급 10,030원 / 일급 80,240원)
+      const minHourlyWage = 10030.0;
+      const minDailyWage = 80240.0; // 10,030 × 8시간
+      if (_wageType == WageType.hourly && wage < minHourlyWage) {
+        setState(() => _error = '시급이 최저임금(10,030원)보다 낮습니다. 다시 확인해주세요.');
+        return;
+      }
+      if (_wageType == WageType.daily && wage < minDailyWage) {
+        setState(() => _error = '일급이 최저임금 기준(80,240원)보다 낮습니다. 다시 확인해주세요.');
+        return;
+      }
+      if (_selectedDays.isEmpty) {
+        setState(() => _error = '근무 요일을 1일 이상 선택해주세요.');
+        return;
+      }
       _complete();
     }
   }

@@ -149,6 +149,19 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
       return;
     }
 
+    // 2025년 최저임금 검증 (시급 10,030원 / 일급 80,240원)
+    final wage = double.tryParse(_wageCtrl.text.trim()) ?? 0;
+    const minHourlyWage = 10030.0;
+    const minDailyWage = 80240.0;
+    if (_wageType == WageType.hourly && wage < minHourlyWage) {
+      setState(() => _error = '시급이 최저임금(10,030원)보다 낮습니다. 다시 확인해주세요.');
+      return;
+    }
+    if (_wageType == WageType.daily && wage < minDailyWage) {
+      setState(() => _error = '일급이 최저임금 기준(80,240원)보다 낮습니다. 다시 확인해주세요.');
+      return;
+    }
+
     setState(() {
       _loading = true;
       _error = '';
