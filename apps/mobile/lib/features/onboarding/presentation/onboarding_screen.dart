@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/kakao_map_utils.dart';
@@ -96,6 +97,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _workDaysCtrl = TextEditingController(text: '5');
   final _startTimeCtrl = TextEditingController(text: '09:00');
   final _endTimeCtrl = TextEditingController(text: '18:00');
+  // 근무 요일 선택 (0=월 ~ 6=일), 기본 평일
+  final List<int> _selectedDays = [0, 1, 2, 3, 4];
+  final List<String> _weekDayNames = ['월', '화', '수', '목', '금', '토', '일'];
 
   @override
   void dispose() {
@@ -118,8 +122,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     });
     try {
       final api = ref.read(apiClientProvider);
-      final weeklyWorkDays = int.tryParse(_workDaysCtrl.text) ?? 5;
-      final workDaysOfWeek = List.generate(weeklyWorkDays.clamp(1, 7), (i) => i);
+      final weeklyWorkDays = _selectedDays.length;
 
       await api.post<Map<String, dynamic>>(
         '/api/onboarding/company',
@@ -138,11 +141,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               _wageType == WageType.daily ? double.tryParse(_wageCtrl.text) : null,
           'dailyWorkHours': double.tryParse(_workHoursCtrl.text) ?? 8.0,
           'weeklyWorkDays': weeklyWorkDays,
-          'workDaysOfWeek': workDaysOfWeek,
+          'workDaysOfWeek': List<int>.from(_selectedDays),
           'workStartTime': _startTimeCtrl.text,
           'workEndTime': _endTimeCtrl.text,
         },
       );
+      // 온보딩 완료 직후 위치 권한 요청
+      await _requestLocationPermission();
       await ref.read(authProvider.notifier).completeOnboarding();
       await ref.read(authProvider.notifier).refreshUser();
       if (mounted) context.go('/home');
@@ -150,6 +155,30 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       setState(() => _error = parseApiError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  /// 위치 권한 요청 (온보딩 완료 후 GPS 기반 출퇴근 인증에 필요)
+  Future<void> _requestLocationPermission() async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever) {
+        // 영구 거부 시 설정 앱으로 안내
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('출퇴근 GPS 인증을 위해 설정에서 위치 권한을 허용해주세요.'),
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+        await Geolocator.openAppSettings();
+      }
+    } catch (e) {
+      debugPrint('위치 권한 요청 오류: $e');
     }
   }
 
@@ -611,6 +640,46 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 16),
+        _label('근무 요일'),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: List.generate(7, (index) {
+            final isSelected = _selectedDays.contains(index);
+            return FilterChip(
+              label: Text(_weekDayNames[index]),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _selectedDays.add(index);
+                    _selectedDays.sort();
+                  } else {
+                    _selectedDays.remove(index);
+                  }
+                  // 주 근무일수 텍스트 필드도 자동 업데이트
+                  _workDaysCtrl.text = _selectedDays.length.toString();
+                });
+              },
+              selectedColor: const Color(0xFFD6E9EC),
+              checkmarkColor: const Color(0xFF3E6872),
+              labelStyle: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? const Color(0xFF3E6872) : AppColors.textSecondary,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+                side: BorderSide(
+                  color: isSelected ? const Color(0xFF3E6872) : AppColors.border,
+                  width: isSelected ? 1.5 : 1,
+                ),
+              ),
+            );
+          }),
         ),
         if (_error.isNotEmpty) ...[
           const SizedBox(height: 16),

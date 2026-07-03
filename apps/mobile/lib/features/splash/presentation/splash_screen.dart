@@ -16,6 +16,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnim;
+  bool _showRetry = false;
 
   @override
   void initState() {
@@ -33,42 +34,57 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 1600));
     if (!mounted) return;
 
-    // 버전 체크 수행
-    final versionService = ref.read(versionServiceProvider);
-    final versionInfo = await versionService.checkVersion();
-    if (!mounted) return;
+    // 버전 체크 (5초 타임아웃, 실패해도 진행)
+    try {
+      final versionService = ref.read(versionServiceProvider);
+      final versionInfo = await versionService.checkVersion()
+          .timeout(const Duration(seconds: 5), onTimeout: () => VersionInfo(
+                state: UpdateState.none,
+                currentVersion: '1.0.0',
+                latestVersion: '1.0.0',
+                storeUrl: '',
+              ));
+      if (!mounted) return;
 
-    if (versionInfo.state == UpdateState.force) {
-      await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => UpdateDialog(versionInfo: versionInfo),
-      );
-      return; // 강제 업데이트는 다음 화면으로 못 가도록 차단
-    } else if (versionInfo.state == UpdateState.optional) {
-      final updateSelected = await showDialog<bool>(
-        context: context,
-        barrierDismissible: true,
-        builder: (context) => UpdateDialog(versionInfo: versionInfo),
-      );
-      if (updateSelected == true) {
-        return; // 스토어 이동 시 앱 진입 중단
+      if (versionInfo.state == UpdateState.force) {
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => UpdateDialog(versionInfo: versionInfo),
+        );
+        return;
+      } else if (versionInfo.state == UpdateState.optional) {
+        final updateSelected = await showDialog<bool>(
+          context: context,
+          barrierDismissible: true,
+          builder: (context) => UpdateDialog(versionInfo: versionInfo),
+        );
+        if (updateSelected == true) return;
       }
+    } catch (_) {
+      // 버전 체크 실패 시 무시하고 계속 진행
     }
-
-    final auth = await ref.read(authProvider.future);
     if (!mounted) return;
-    final isAuth = auth.isAuthenticated;
-    final onboarded = auth.onboardingCompleted;
-    if (!isAuth) {
-      // 네트워크 오류 등으로 자동 인증 실패 시 스플래시 재시도 대기
-      // (router redirect가 / 로 유지해 줌)
-      return;
-    } else if (!onboarded) {
-      context.go('/welcome');
-    } else {
-      context.go('/home');
+
+    try {
+      final auth = await ref.read(authProvider.future)
+          .timeout(const Duration(seconds: 20));
+      if (!mounted) return;
+      if (!auth.isAuthenticated) {
+        // 인증 실패 → 재시도 UI 표시
+        setState(() => _showRetry = true);
+        return;
+      }
+      auth.onboardingCompleted ? context.go('/home') : context.go('/welcome');
+    } catch (_) {
+      if (mounted) setState(() => _showRetry = true);
     }
+  }
+
+  Future<void> _retry() async {
+    setState(() => _showRetry = false);
+    await ref.read(authProvider.notifier).build();
+    _navigate();
   }
 
   @override
@@ -128,14 +144,32 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   ),
                 ),
                 const SizedBox(height: 48),
-                SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    color: AppColors.textMuted,
-                    strokeWidth: 2,
+                if (_showRetry) ...[
+                  Text(
+                    '서버에 연결할 수 없습니다',
+                    style: TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 13,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  TextButton.icon(
+                    onPressed: _retry,
+                    icon: const Icon(Icons.refresh_rounded, size: 18),
+                    label: const Text('다시 시도'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                    ),
+                  ),
+                ] else
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: AppColors.textMuted,
+                      strokeWidth: 2,
+                    ),
+                  ),
               ],
             ),
           ),
