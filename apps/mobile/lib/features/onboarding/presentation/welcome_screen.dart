@@ -64,10 +64,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(22),
-                    border: Border.all(color: AppColors.border),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
+                        color: Colors.black.withOpacity(0.04),
                         blurRadius: 16,
                         offset: const Offset(0, 4),
                       ),
@@ -121,10 +120,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.border),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color: Colors.black.withOpacity(0.02),
                             blurRadius: 12,
                             offset: const Offset(0, 2),
                           ),
@@ -205,7 +203,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF4F4F5),
+                    color: AppColors.surface, // 홈 화면 근무시간 카드/출근버튼 배경색과 완전 일치
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: const Color(0xFF3E6872), width: 1.0),
                   ),
