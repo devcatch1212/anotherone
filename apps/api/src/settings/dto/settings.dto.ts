@@ -76,6 +76,10 @@ export class UpdateProfileDto {
   @IsString({ message: '메모는 문자열이어야 합니다.' })
   @IsOptional()
   memo?: string;
+
+  @IsString({ message: '상시 근로자 수는 문자열이어야 합니다.' })
+  @IsOptional()
+  employeeCount?: string; // 'under5' | 'over5'
 }
 
 export class UpdatePasswordDto {

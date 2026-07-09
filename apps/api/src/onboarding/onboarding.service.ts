@@ -28,6 +28,7 @@ export class OnboardingService {
       hireDate,
       memo,
       name,
+      employeeCount,
     } = data;
 
     // 1. 동일한 회사명과 주소를 가진 근무지(Company)가 이미 존재하는지 검증
@@ -77,6 +78,7 @@ export class OnboardingService {
         breakMinutes,
         hireDate: hireDate ? new Date(hireDate) : null,
         memo: memo || null,
+        employeeCount: employeeCount || 'over5',
         isPrimary: true, // 가장 최근에 추가된 근무지를 Primary로 설정
       },
     });

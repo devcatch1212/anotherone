@@ -35,6 +35,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   double _latitude = 37.5004;
   double _longitude = 127.0368;
   WebViewController? _mapController;
+  String _employeeCount = 'over5';
 
   @override
   void initState() {
@@ -153,6 +154,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           if (_hireDate != null)
             'hireDate': _hireDate!.toIso8601String().substring(0, 10),
           if (_memoCtrl.text.trim().isNotEmpty) 'memo': _memoCtrl.text.trim(),
+          'employeeCount': _employeeCount,
         },
       );
       // 온보딩 완료 직후 위치 권한 요청
@@ -405,6 +407,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
         ),
         const SizedBox(height: 16),
+        _label('사업장 규모 (상시 근로자 수)'),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(child: _buildEmployeeCountButton('under5', '5인 미만')),
+            const SizedBox(width: 12),
+            Expanded(child: _buildEmployeeCountButton('over5', '5인 이상 (기본값)')),
+          ],
+        ),
+        const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
@@ -584,7 +596,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
         const SizedBox(height: 16),
         // ── 입사일자 ──
-        _label('입사일자 (선택)'),
+        _label('입사일자 (필수)'),
         const SizedBox(height: 6),
         GestureDetector(
           onTap: () async {
@@ -863,6 +875,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         _step = 2;
       });
     } else {
+      if (_hireDate == null) {
+        setState(() => _error = '입사일자를 선택해주세요.');
+        return;
+      }
       if (_wageCtrl.text.trim().isEmpty) {
         setState(() => _error = '급여액을 입력해주세요');
         return;
@@ -932,6 +948,34 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
       });
     }
+  }
+
+  Widget _buildEmployeeCountButton(String value, String text) {
+    final isSelected = _employeeCount == value;
+    return GestureDetector(
+      onTap: () => setState(() => _employeeCount = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFE2EFF1) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF3E6872) : AppColors.border,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: isSelected ? const Color(0xFF3E6872) : AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
 }

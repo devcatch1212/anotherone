@@ -91,6 +91,8 @@ export class AdminService {
         wageType: e.wageType,
         hourlyWage: e.hourlyWage,
         dailyWage: e.dailyWage,
+        weeklyWage: e.weeklyWage,
+        monthlyWage: e.monthlyWage,
         workStartTime: e.workStartTime,
         workEndTime: e.workEndTime,
         weeklyWorkDays: e.weeklyWorkDays,
@@ -98,6 +100,8 @@ export class AdminService {
         isPrimary: e.isPrimary,
         userStatus: e.user.status,
         joinedAt: e.createdAt,
+        hireDate: e.hireDate,
+        memo: e.memo,
       })),
     };
   }

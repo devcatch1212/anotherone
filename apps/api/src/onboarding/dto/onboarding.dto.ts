@@ -84,4 +84,8 @@ export class CompanyOnboardingDto {
   @IsNumber({}, { message: '월급은 숫자여야 합니다.' })
   @IsOptional()
   monthlyWage?: number;
+
+  @IsString({ message: '상시 근로자 수는 문자열이어야 합니다.' })
+  @IsOptional()
+  employeeCount?: string; // 'under5' | 'over5'
 }

@@ -46,6 +46,7 @@ export class SettingsService {
         weeklyWorkDays: data.workDaysOfWeek.length,
         hireDate: data.hireDate ? new Date(data.hireDate) : undefined,
         memo: data.memo !== undefined ? data.memo : undefined,
+        employeeCount: data.employeeCount !== undefined ? data.employeeCount : undefined,
       },
       include: { company: true },
     });

@@ -13,10 +13,15 @@ interface EmploymentDetail {
   wageType: string;
   hourlyWage: number | null;
   dailyWage: number | null;
+  weeklyWage: number | null;
+  monthlyWage: number | null;
   workStartTime: string;
   workEndTime: string;
   weeklyWorkDays: number;
   isActive: boolean;
+  hireDate: string | null;
+  memo: string | null;
+  employeeCount: string;
   user: {
     id: string;
     name: string;
@@ -235,6 +240,13 @@ export default function EmployeeDetailPage() {
             </div>
 
             <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-bold text-slate-400 tracking-wide uppercase" style={{ fontSize: '11px', fontWeight: '700', color: '#94A3B8' }}>사업장 규모</span>
+              <span className="text-sm font-extrabold text-slate-800 mt-1" style={{ fontSize: '14px', fontWeight: '800', color: '#1E293B' }}>
+                {employment.employeeCount === 'under5' ? '5인 미만' : '5인 이상'}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
               <span className="text-[11px] font-bold text-slate-400 tracking-wide uppercase" style={{ fontSize: '11px', fontWeight: '700', color: '#94A3B8' }}>부서 / 직책</span>
               <span className="text-sm font-extrabold text-slate-800 mt-1" style={{ fontSize: '14px', fontWeight: '800', color: '#1E293B' }}>
                 {employment.department ? `${employment.department} · ` : ''}{employment.position || '직원'}
@@ -251,11 +263,32 @@ export default function EmployeeDetailPage() {
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-bold text-slate-400 tracking-wide uppercase" style={{ fontSize: '11px', fontWeight: '700', color: '#94A3B8' }}>계약 임금</span>
               <span className="text-sm font-black text-slate-800 mt-1" style={{ fontSize: '14px', fontWeight: '800' }}>
-                {employment.wageType === 'hourly' ? (
+                {employment.wageType === 'hourly' && (
                   <span className="text-blue-600" style={{ color: '#2563EB' }}>시급: {employment.hourlyWage?.toLocaleString()}원</span>
-                ) : (
+                )}
+                {employment.wageType === 'daily' && (
                   <span className="text-indigo-600" style={{ color: '#4F46E5' }}>일급: {employment.dailyWage?.toLocaleString()}원</span>
                 )}
+                {employment.wageType === 'weekly' && (
+                  <span className="text-teal-600" style={{ color: '#0D9488' }}>주급: {employment.weeklyWage?.toLocaleString()}원</span>
+                )}
+                {employment.wageType === 'monthly' && (
+                  <span className="text-purple-600" style={{ color: '#9333EA' }}>월급: {employment.monthlyWage?.toLocaleString()}원</span>
+                )}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-bold text-slate-400 tracking-wide uppercase" style={{ fontSize: '11px', fontWeight: '700', color: '#94A3B8' }}>입사일자</span>
+              <span className="text-sm font-extrabold text-slate-800 mt-1" style={{ fontSize: '14px', fontWeight: '800', color: '#1E293B' }}>
+                {employment.hireDate ? new Date(employment.hireDate).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }) : '미지정'}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-bold text-slate-400 tracking-wide uppercase" style={{ fontSize: '11px', fontWeight: '700', color: '#94A3B8' }}>기업 메모</span>
+              <span className="text-sm font-medium text-slate-700 mt-1 whitespace-pre-wrap" style={{ fontSize: '13px', fontWeight: '500', color: '#475569' }}>
+                {employment.memo || '등록된 메모가 없습니다.'}
               </span>
             </div>
 

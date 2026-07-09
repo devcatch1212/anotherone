@@ -15,6 +15,8 @@ interface EmployeeSummary {
   wageType: string;
   hourlyWage: number | null;
   dailyWage: number | null;
+  weeklyWage: number | null;
+  monthlyWage: number | null;
   workStartTime: string;
   workEndTime: string;
   weeklyWorkDays: number;
@@ -22,6 +24,8 @@ interface EmployeeSummary {
   isPrimary: boolean;
   userStatus: string;
   joinedAt: string;
+  hireDate: string | null;
+  memo: string | null;
 }
 
 interface CompanyEmployeesData {
@@ -195,6 +199,7 @@ export default function CompanyEmployeesPage() {
                   <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>부서 / 직책</th>
                   <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>근무 요일 / 시간</th>
                   <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>급여 정보</th>
+                  <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>입사일자</th>
                   <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>상태</th>
                   <th className="px-6 py-4 text-right" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9', textAlign: 'right' }}>상세조회</th>
                 </tr>
@@ -219,11 +224,23 @@ export default function CompanyEmployeesPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
-                      {e.wageType === 'hourly' ? (
+                      {e.wageType === 'hourly' && (
                         <div className="font-medium" style={{ fontSize: '13px' }}>시급: <strong className="text-blue-600 font-semibold" style={{ color: '#2563EB' }}>{e.hourlyWage?.toLocaleString()}원</strong></div>
-                      ) : (
+                      )}
+                      {e.wageType === 'daily' && (
                         <div className="font-medium" style={{ fontSize: '13px' }}>일급: <strong className="text-indigo-600 font-semibold" style={{ color: '#4F46E5' }}>{e.dailyWage?.toLocaleString()}원</strong></div>
                       )}
+                      {e.wageType === 'weekly' && (
+                        <div className="font-medium" style={{ fontSize: '13px' }}>주급: <strong className="text-teal-600 font-semibold" style={{ color: '#0D9488' }}>{e.weeklyWage?.toLocaleString()}원</strong></div>
+                      )}
+                      {e.wageType === 'monthly' && (
+                        <div className="font-medium" style={{ fontSize: '13px' }}>월급: <strong className="text-purple-600 font-semibold" style={{ color: '#9333EA' }}>{e.monthlyWage?.toLocaleString()}원</strong></div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
+                      <div className="font-medium text-slate-700" style={{ fontSize: '13px', color: '#475569' }}>
+                        {e.hireDate ? new Date(e.hireDate).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '미지정'}
+                      </div>
                     </td>
                     <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
                       {e.isActive ? (

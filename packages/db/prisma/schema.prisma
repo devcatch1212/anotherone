@@ -75,6 +75,7 @@ model Employment {
   breakMinutes    Int?
   hireDate        DateTime? // 입사일자
   memo            String?   // 기업 메모 (급여일, 담당자 등)
+  employeeCount   String   @default("over5") // 'under5' | 'over5'
   isPrimary       Boolean  @default(false)
   isActive        Boolean  @default(true)
   endedAt         DateTime?

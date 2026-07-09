@@ -116,6 +116,7 @@ class Employment {
   final double annualLeaveBalance;
   final String? hireDate;
   final String? memo;
+  final String employeeCount;
 
   Employment({
     required this.id,
@@ -141,6 +142,7 @@ class Employment {
     this.annualLeaveBalance = 15.0,
     this.hireDate,
     this.memo,
+    this.employeeCount = 'over5',
   });
 
   factory Employment.fromJson(Map<String, dynamic> json) => Employment(
@@ -171,6 +173,7 @@ class Employment {
             ? (json['hireDate'] as String).substring(0, 10)
             : null,
         memo: json['memo'] as String?,
+        employeeCount: json['employeeCount'] as String? ?? 'over5',
       );
 
   static WageType _parseWageType(String? value) {

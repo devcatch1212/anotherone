@@ -42,6 +42,7 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _memoCtrl;
   DateTime? _hireDate;
+  late String _employeeCount;
 
   // 요일 선택을 위한 리스트 (0=월, 6=일)
   final List<int> _selectedDays = [];
@@ -72,6 +73,7 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
     _nameCtrl = TextEditingController();
     _memoCtrl = TextEditingController(text: emp.memo ?? '');
     _hireDate = emp.hireDate != null ? DateTime.tryParse(emp.hireDate!) : null;
+    _employeeCount = emp.employeeCount;
 
     _startTimeCtrl = TextEditingController(text: emp.workStartTime ?? '09:00');
     _endTimeCtrl = TextEditingController(text: emp.workEndTime ?? '18:00');
@@ -159,6 +161,10 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
       setState(() => _error = '최소 하루 이상의 근무 요일을 선택해주세요.');
       return;
     }
+    if (_hireDate == null) {
+      setState(() => _error = '입사일자를 선택해주세요.');
+      return;
+    }
 
     // 2025년 최저임금 검증
     final wage = double.tryParse(_wageCtrl.text.trim()) ?? 0;
@@ -208,6 +214,7 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
           if (_hireDate != null)
             'hireDate': _hireDate!.toIso8601String().substring(0, 10),
           'memo': _memoCtrl.text.trim(),
+          'employeeCount': _employeeCount,
         },
       );
 
@@ -343,6 +350,16 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
                         validator: (v) => (v == null || v.trim().isEmpty) ? '회사명을 입력해주세요' : null,
                       ),
                       const SizedBox(height: 16),
+                      _buildLabel('사업장 규모 (상시 근로자 수)'),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(child: _buildEmployeeCountButton('under5', '5인 미만', isEditable)),
+                          const SizedBox(width: 12),
+                          Expanded(child: _buildEmployeeCountButton('over5', '5인 이상 (기본값)', isEditable)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
                       Row(
                         children: [
                           Expanded(
@@ -463,7 +480,7 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
                       ),
                       const SizedBox(height: 16),
                       // ── 입사일자 ──
-                      _buildLabel('입사일자 (선택)'),
+                      _buildLabel('입사일자 (필수)'),
                       const SizedBox(height: 6),
                       GestureDetector(
                         onTap: isEditable
@@ -874,6 +891,34 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
         controller.text = '$hourStr:$minuteStr';
       });
     }
+  }
+
+  Widget _buildEmployeeCountButton(String value, String text, bool enabled) {
+    final isSelected = _employeeCount == value;
+    return GestureDetector(
+      onTap: enabled ? () => setState(() => _employeeCount = value) : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFE2EFF1) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF3E6872) : AppColors.border,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: isSelected ? const Color(0xFF3E6872) : AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
 }
