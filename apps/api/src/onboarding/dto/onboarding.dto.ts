@@ -30,8 +30,8 @@ export class CompanyOnboardingDto {
   department?: string;
 
   @IsString({ message: '급여 유형은 문자열이어야 합니다.' })
-  @IsNotEmpty({ message: '급여 유형(시급/일급)을 선택해주세요.' })
-  wageType!: string;
+  @IsNotEmpty({ message: '급여 유형(시급/일급/주급/월급)을 선택해주세요.' })
+  wageType!: string; // 'hourly' | 'daily' | 'weekly' | 'monthly'
 
   @IsNumber({}, { message: '시급은 숫자여야 합니다.' })
   @IsOptional()
@@ -64,4 +64,24 @@ export class CompanyOnboardingDto {
   @IsNumber({}, { message: '휴게 시간은 숫자여야 합니다.' })
   @IsOptional()
   breakMinutes?: number;
+
+  @IsString({ message: '이름은 문자열이어야 합니다.' })
+  @IsOptional()
+  name?: string; // 미입력 시 서버 자동 닉네임 유지
+
+  @IsString({ message: '입사일자는 문자열이어야 합니다.' })
+  @IsOptional()
+  hireDate?: string; // 'yyyy-MM-dd'
+
+  @IsString({ message: '메모는 문자열이어야 합니다.' })
+  @IsOptional()
+  memo?: string; // 기업 메모 (급여일, 기타)
+
+  @IsNumber({}, { message: '주급은 숫자여야 합니다.' })
+  @IsOptional()
+  weeklyWage?: number;
+
+  @IsNumber({}, { message: '월급은 숫자여야 합니다.' })
+  @IsOptional()
+  monthlyWage?: number;
 }

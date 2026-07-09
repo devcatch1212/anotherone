@@ -39,6 +39,9 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
   late final TextEditingController _startTimeCtrl;
   late final TextEditingController _endTimeCtrl;
   late final TextEditingController _breakMinutesCtrl;
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _memoCtrl;
+  DateTime? _hireDate;
 
   // 요일 선택을 위한 리스트 (0=월, 6=일)
   final List<int> _selectedDays = [];
@@ -59,10 +62,16 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
     _longitude = emp.company.longitude;
 
     _wageType = emp.wageType;
-    final wageValue = _wageType == WageType.hourly
-        ? (emp.hourlyWage ?? 0).toInt()
-        : (emp.dailyWage ?? 0).toInt();
+    final wageValue = switch (_wageType) {
+      WageType.hourly => (emp.hourlyWage ?? 0).toInt(),
+      WageType.daily => (emp.dailyWage ?? 0).toInt(),
+      WageType.weekly => (emp.weeklyWage ?? 0).toInt(),
+      WageType.monthly => (emp.monthlyWage ?? 0).toInt(),
+    };
     _wageCtrl = TextEditingController(text: wageValue > 0 ? wageValue.toString() : '');
+    _nameCtrl = TextEditingController();
+    _memoCtrl = TextEditingController(text: emp.memo ?? '');
+    _hireDate = emp.hireDate != null ? DateTime.tryParse(emp.hireDate!) : null;
 
     _startTimeCtrl = TextEditingController(text: emp.workStartTime ?? '09:00');
     _endTimeCtrl = TextEditingController(text: emp.workEndTime ?? '18:00');
@@ -126,6 +135,8 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
     _startTimeCtrl.dispose();
     _endTimeCtrl.dispose();
     _breakMinutesCtrl.dispose();
+    _nameCtrl.dispose();
+    _memoCtrl.dispose();
     super.dispose();
   }
 
@@ -149,16 +160,21 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
       return;
     }
 
-    // 2025년 최저임금 검증 (시급 10,030원 / 일급 80,240원)
+    // 2025년 최저임금 검증
     final wage = double.tryParse(_wageCtrl.text.trim()) ?? 0;
-    const minHourlyWage = 10030.0;
-    const minDailyWage = 80240.0;
-    if (_wageType == WageType.hourly && wage < minHourlyWage) {
-      setState(() => _error = '시급이 최저임금(10,030원)보다 낮습니다. 다시 확인해주세요.');
-      return;
-    }
-    if (_wageType == WageType.daily && wage < minDailyWage) {
-      setState(() => _error = '일급이 최저임금 기준(80,240원)보다 낮습니다. 다시 확인해주세요.');
+    const minHourly = 10030.0;
+    const minDaily = 80240.0;
+    const minWeekly = 401200.0;
+    const minMonthly = 2096270.0;
+    final minimums = {
+      WageType.hourly: (minHourly, '시급이 최저임금(10,030원)보다 낮습니다.'),
+      WageType.daily: (minDaily, '일급이 최저임금 기준(80,240원)보다 낮습니다.'),
+      WageType.weekly: (minWeekly, '주급이 최저임금 기준(401,200원)보다 낮습니다.'),
+      WageType.monthly: (minMonthly, '월급이 최저임금 기준(2,096,270원)보다 낮습니다.'),
+    };
+    final (minWage, errMsg) = minimums[_wageType]!;
+    if (wage < minWage) {
+      setState(() => _error = '$errMsg 다시 확인해주세요.');
       return;
     }
 
@@ -179,13 +195,19 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
           'longitude': _longitude,
           'position': _positionCtrl.text.trim().isNotEmpty ? _positionCtrl.text.trim() : '직원',
           'department': _departmentCtrl.text.trim().isNotEmpty ? _departmentCtrl.text.trim() : null,
-          'wageType': _wageType == WageType.hourly ? 'hourly' : 'daily',
+          'wageType': _wageType.name,
           'hourlyWage': _wageType == WageType.hourly ? double.tryParse(_wageCtrl.text) : null,
           'dailyWage': _wageType == WageType.daily ? double.tryParse(_wageCtrl.text) : null,
+          'weeklyWage': _wageType == WageType.weekly ? double.tryParse(_wageCtrl.text) : null,
+          'monthlyWage': _wageType == WageType.monthly ? double.tryParse(_wageCtrl.text) : null,
           'workStartTime': _startTimeCtrl.text,
           'workEndTime': _endTimeCtrl.text,
           'breakMinutes': int.tryParse(_breakMinutesCtrl.text) ?? 60,
           'workDaysOfWeek': _selectedDays,
+          if (_nameCtrl.text.trim().isNotEmpty) 'name': _nameCtrl.text.trim(),
+          if (_hireDate != null)
+            'hireDate': _hireDate!.toIso8601String().substring(0, 10),
+          'memo': _memoCtrl.text.trim(),
         },
       );
 
@@ -427,21 +449,75 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
                     _buildSectionHeader('급여 및 근무 형태 설정'),
                     const SizedBox(height: 10),
                     _buildCard([
+                      // ── 성명 수정 ──
+                      _buildLabel('성명 변경 (선택)'),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _nameCtrl,
+                        enabled: isEditable,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          hintText: '미입력 시 현재 이름 유지',
+                          prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // ── 입사일자 ──
+                      _buildLabel('입사일자 (선택)'),
+                      const SizedBox(height: 6),
+                      GestureDetector(
+                        onTap: isEditable
+                            ? () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: _hireDate ?? DateTime.now(),
+                                  firstDate: DateTime(2000),
+                                  lastDate: DateTime.now(),
+                                  locale: const Locale('ko', 'KR'),
+                                );
+                                if (picked != null) setState(() => _hireDate = picked);
+                              }
+                            : null,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: isEditable ? Colors.white : const Color(0xFFF8F8F8),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.calendar_today_outlined, size: 20,
+                                  color: isEditable ? AppColors.textMuted : AppColors.border),
+                              const SizedBox(width: 12),
+                              Text(
+                                _hireDate != null
+                                    ? '${_hireDate!.year}년 ${_hireDate!.month}월 ${_hireDate!.day}일'
+                                    : '날짜를 선택해주세요',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: _hireDate != null ? AppColors.textPrimary : AppColors.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       _buildLabel('임금 유형'),
                       const SizedBox(height: 8),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
-                          Expanded(
-                            child: _buildWageTypeButton(WageType.hourly, '시급', isEditable),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildWageTypeButton(WageType.daily, '일급', isEditable),
-                          ),
+                          _buildWageTypeButton(WageType.hourly, '시급', isEditable),
+                          _buildWageTypeButton(WageType.daily, '일급', isEditable),
+                          _buildWageTypeButton(WageType.weekly, '주급', isEditable),
+                          _buildWageTypeButton(WageType.monthly, '월급', isEditable),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      _buildLabel(_wageType == WageType.hourly ? '시급액 (원)' : '일급액 (원)'),
+                      _buildLabel(_wageTypeLabel(_wageType)),
                       const SizedBox(height: 6),
                       TextFormField(
                         controller: _wageCtrl,
@@ -556,6 +632,24 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
                           if (int.tryParse(v) == null) return '정수만 입력 가능합니다';
                           return null;
                         },
+                      ),
+                      const SizedBox(height: 16),
+                      // ── 기업 메모 ──
+                      _buildLabel('기업 메모 (선택)'),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _memoCtrl,
+                        enabled: isEditable,
+                        maxLines: 3,
+                        textInputAction: TextInputAction.newline,
+                        decoration: const InputDecoration(
+                          hintText: '급여일, 담당자 연락처 등 메모',
+                          prefixIcon: Padding(
+                            padding: EdgeInsets.only(bottom: 40),
+                            child: Icon(Icons.note_outlined, size: 20),
+                          ),
+                          alignLabelWithHint: true,
+                        ),
                       ),
                     ]),
 
@@ -713,7 +807,7 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
       onTap: enabled ? () => setState(() => _wageType = type) : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primaryLight : Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -726,7 +820,7 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
           child: Text(
             text,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
               color: isSelected ? AppColors.primary : AppColors.textSecondary,
             ),
@@ -735,6 +829,20 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
       ),
     );
   }
+
+  String _wageTypeLabel(WageType type) => switch (type) {
+    WageType.hourly => '시급액 (원)',
+    WageType.daily => '일급액 (원)',
+    WageType.weekly => '주급액 (원)',
+    WageType.monthly => '월급액 (원)',
+  };
+
+  String _wageTypeHint(WageType type) => switch (type) {
+    WageType.hourly => '예: 10,030',
+    WageType.daily => '예: 80,240',
+    WageType.weekly => '예: 401,200',
+    WageType.monthly => '예: 2,096,270',
+  };
 
   Future<void> _selectTime(BuildContext context, TextEditingController controller) async {
     final parts = controller.text.split(':');

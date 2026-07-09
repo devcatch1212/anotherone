@@ -17,12 +17,17 @@ export class OnboardingService {
       wageType,
       hourlyWage,
       dailyWage,
+      weeklyWage,
+      monthlyWage,
       dailyWorkHours,
       weeklyWorkDays,
       workStartTime,
       workEndTime,
       workDaysOfWeek,
       breakMinutes,
+      hireDate,
+      memo,
+      name,
     } = data;
 
     // 1. 동일한 회사명과 주소를 가진 근무지(Company)가 이미 존재하는지 검증
@@ -60,22 +65,29 @@ export class OnboardingService {
         position: position || '직원',
         department: department || null,
         wageType,
-        hourlyWage,
-        dailyWage,
+        hourlyWage: wageType === 'hourly' ? hourlyWage : null,
+        dailyWage: wageType === 'daily' ? dailyWage : null,
+        weeklyWage: wageType === 'weekly' ? weeklyWage : null,
+        monthlyWage: wageType === 'monthly' ? monthlyWage : null,
         dailyWorkHours,
         weeklyWorkDays,
         workStartTime,
         workEndTime,
         workDaysOfWeek,
         breakMinutes,
+        hireDate: hireDate ? new Date(hireDate) : null,
+        memo: memo || null,
         isPrimary: true, // 가장 최근에 추가된 근무지를 Primary로 설정
       },
     });
 
-    // 3. User의 온보딩 완료 상태 업데이트
+    // 3. User의 온보딩 완료 상태 업데이트 + 이름 변경 (입력된 경우)
     await this.prisma.user.update({
       where: { id: userId },
-      data: { onboardingCompleted: true },
+      data: {
+        onboardingCompleted: true,
+        ...(name && name.trim() ? { name: name.trim() } : {}),
+      },
     });
 
     return { company, employment };

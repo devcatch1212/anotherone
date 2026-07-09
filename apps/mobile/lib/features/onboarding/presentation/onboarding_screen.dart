@@ -97,6 +97,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _workDaysCtrl = TextEditingController(text: '5');
   final _startTimeCtrl = TextEditingController(text: '09:00');
   final _endTimeCtrl = TextEditingController(text: '18:00');
+  final _nameCtrl = TextEditingController();
+  final _memoCtrl = TextEditingController();
+  DateTime? _hireDate;
   // 근무 요일 선택 (0=월 ~ 6=일), 기본 평일
   final List<int> _selectedDays = [0, 1, 2, 3, 4];
   final List<String> _weekDayNames = ['월', '화', '수', '목', '금', '토', '일'];
@@ -112,6 +115,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _workDaysCtrl.dispose();
     _startTimeCtrl.dispose();
     _endTimeCtrl.dispose();
+    _nameCtrl.dispose();
+    _memoCtrl.dispose();
     super.dispose();
   }
 
@@ -134,16 +139,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           'radiusMeters': 100,
           'position': _positionCtrl.text.trim().isNotEmpty ? _positionCtrl.text.trim() : '직원',
           'department': _departmentCtrl.text.trim().isNotEmpty ? _departmentCtrl.text.trim() : null,
-          'wageType': _wageType == WageType.hourly ? 'hourly' : 'daily',
-          'hourlyWage':
-              _wageType == WageType.hourly ? double.tryParse(_wageCtrl.text) : null,
-          'dailyWage':
-              _wageType == WageType.daily ? double.tryParse(_wageCtrl.text) : null,
+          'wageType': _wageType.name, // 'hourly'|'daily'|'weekly'|'monthly'
+          'hourlyWage': _wageType == WageType.hourly ? double.tryParse(_wageCtrl.text) : null,
+          'dailyWage': _wageType == WageType.daily ? double.tryParse(_wageCtrl.text) : null,
+          'weeklyWage': _wageType == WageType.weekly ? double.tryParse(_wageCtrl.text) : null,
+          'monthlyWage': _wageType == WageType.monthly ? double.tryParse(_wageCtrl.text) : null,
           'dailyWorkHours': double.tryParse(_workHoursCtrl.text) ?? 8.0,
-          'weeklyWorkDays': weeklyWorkDays,
+          'weeklyWorkDays': _selectedDays.length,
           'workDaysOfWeek': List<int>.from(_selectedDays),
           'workStartTime': _startTimeCtrl.text,
           'workEndTime': _endTimeCtrl.text,
+          if (_nameCtrl.text.trim().isNotEmpty) 'name': _nameCtrl.text.trim(),
+          if (_hireDate != null)
+            'hireDate': _hireDate!.toIso8601String().substring(0, 10),
+          if (_memoCtrl.text.trim().isNotEmpty) 'memo': _memoCtrl.text.trim(),
         },
       );
       // 온보딩 완료 직후 위치 권한 요청
@@ -287,19 +296,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           style: TextStyle(fontSize: 14, color: AppColors.textMuted),
         ),
         const SizedBox(height: 32),
-        _wageTypeCard(
-          WageType.hourly,
-          '시급',
-          '시간당 임금을 받는 경우',
-          Icons.schedule_rounded,
-        ),
+        _wageTypeCard(WageType.hourly, '시급', '시간당 임금을 받는 경우', Icons.schedule_rounded),
         const SizedBox(height: 12),
-        _wageTypeCard(
-          WageType.daily,
-          '일급',
-          '하루 단위로 임금을 받는 경우',
-          Icons.today_rounded,
-        ),
+        _wageTypeCard(WageType.daily, '일급', '하루 단위로 임금을 받는 경우', Icons.today_rounded),
+        const SizedBox(height: 12),
+        _wageTypeCard(WageType.weekly, '주급', '주 단위로 임금을 받는 경우', Icons.date_range_rounded),
+        const SizedBox(height: 12),
+        _wageTypeCard(WageType.monthly, '월급', '월 단위로 임금을 받는 경우', Icons.calendar_month_rounded),
       ],
     );
   }
@@ -537,12 +540,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Widget _buildStep3() {
+    final wageLabel = {
+      WageType.hourly: '시급 (원)',
+      WageType.daily: '일급 (원)',
+      WageType.weekly: '주급 (원)',
+      WageType.monthly: '월급 (원)',
+    }[_wageType]!;
+    final wageHint = {
+      WageType.hourly: '예: 10,030',
+      WageType.daily: '예: 80,240',
+      WageType.weekly: '예: 401,200',
+      WageType.monthly: '예: 2,096,270',
+    }[_wageType]!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
         Text(
-          '${_wageType == WageType.hourly ? '시급' : '일급'} 및 근무 조건을 설정해주세요',
+          '${ { WageType.hourly: '시급', WageType.daily: '일급', WageType.weekly: '주급', WageType.monthly: '월급' }[_wageType] } 및 근무 조건을 설정해주세요',
           style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w800,
@@ -555,15 +570,67 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           '급여 계산에 사용됩니다',
           style: TextStyle(fontSize: 14, color: AppColors.textMuted),
         ),
-        const SizedBox(height: 32),
-        _label(_wageType == WageType.hourly ? '시급 (원)' : '일급 (원)'),
+        const SizedBox(height: 24),
+        // ── 성명 입력 ──
+        _label('성명 (선택)'),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: _nameCtrl,
+          textInputAction: TextInputAction.next,
+          decoration: const InputDecoration(
+            hintText: '미입력 시 자동 닉네임 유지',
+            prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // ── 입사일자 ──
+        _label('입사일자 (선택)'),
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: _hireDate ?? DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime.now(),
+              locale: const Locale('ko', 'KR'),
+            );
+            if (picked != null) setState(() => _hireDate = picked);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.calendar_today_outlined, size: 20, color: AppColors.textMuted),
+                const SizedBox(width: 12),
+                Text(
+                  _hireDate != null
+                      ? '${_hireDate!.year}년 ${_hireDate!.month}월 ${_hireDate!.day}일'
+                      : '날짜를 선택해주세요',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: _hireDate != null ? AppColors.textPrimary : AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // ── 급여액 ──
+        _label(wageLabel),
         const SizedBox(height: 6),
         TextFormField(
           controller: _wageCtrl,
           keyboardType: TextInputType.number,
           textInputAction: TextInputAction.next,
           decoration: InputDecoration(
-            hintText: _wageType == WageType.hourly ? '예: 10320' : '예: 80000',
+            hintText: wageHint,
             prefixIcon: const Icon(Icons.payments_outlined, size: 20),
           ),
         ),
@@ -618,8 +685,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _startTimeCtrl,
-                    keyboardType: TextInputType.datetime,
-                    decoration: const InputDecoration(hintText: '09:00'),
+                    readOnly: true,
+                    onTap: () => _selectTime(_startTimeCtrl),
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.access_time_rounded, size: 20),
+                    ),
                   ),
                 ],
               ),
@@ -633,8 +703,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _endTimeCtrl,
-                    keyboardType: TextInputType.datetime,
-                    decoration: const InputDecoration(hintText: '18:00'),
+                    readOnly: true,
+                    onTap: () => _selectTime(_endTimeCtrl),
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.access_time_filled_rounded, size: 20),
+                    ),
                   ),
                 ],
               ),
@@ -681,6 +754,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             );
           }),
         ),
+        const SizedBox(height: 16),
+        // ── 기업 메모 ──
+        _label('기업 메모 (선택)'),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: _memoCtrl,
+          maxLines: 3,
+          textInputAction: TextInputAction.newline,
+          decoration: const InputDecoration(
+            hintText: '급여일, 담당자 연락처 등 메모',
+            prefixIcon: Padding(
+              padding: EdgeInsets.only(bottom: 40),
+              child: Icon(Icons.note_outlined, size: 20),
+            ),
+            alignLabelWithHint: true,
+          ),
+        ),
         if (_error.isNotEmpty) ...[
           const SizedBox(height: 16),
           Container(
@@ -699,11 +789,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.error_rounded,
-                  color: Color(0xFFFF3B30),
-                  size: 20,
-                ),
+                const Icon(Icons.error_rounded, color: Color(0xFFFF3B30), size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -778,7 +864,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       });
     } else {
       if (_wageCtrl.text.trim().isEmpty) {
-        setState(() => _error = _wageType == WageType.hourly ? '시급을 입력해주세요' : '일급을 입력해주세요');
+        setState(() => _error = '급여액을 입력해주세요');
         return;
       }
       final wage = double.tryParse(_wageCtrl.text.trim());
@@ -786,15 +872,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         setState(() => _error = '올바른 금액을 입력해주세요');
         return;
       }
-      // 2025년 최저임금 검증 (시급 10,030원 / 일급 80,240원)
-      const minHourlyWage = 10030.0;
-      const minDailyWage = 80240.0; // 10,030 × 8시간
-      if (_wageType == WageType.hourly && wage < minHourlyWage) {
-        setState(() => _error = '시급이 최저임금(10,030원)보다 낮습니다. 다시 확인해주세요.');
-        return;
-      }
-      if (_wageType == WageType.daily && wage < minDailyWage) {
-        setState(() => _error = '일급이 최저임금 기준(80,240원)보다 낮습니다. 다시 확인해주세요.');
+      // 2025년 최저임금 검증
+      const minHourly = 10030.0;
+      const minDaily = 80240.0;    // 10,030 × 8h
+      const minWeekly = 401200.0;  // 10,030 × 8h × 5일
+      const minMonthly = 2096270.0; // 2025 최저월급
+      final minimums = {
+        WageType.hourly: (minHourly, '시급이 최저임금(10,030원)보다 낮습니다.'),
+        WageType.daily: (minDaily, '일급이 최저임금 기준(80,240원)보다 낮습니다.'),
+        WageType.weekly: (minWeekly, '주급이 최저임금 기준(401,200원)보다 낮습니다.'),
+        WageType.monthly: (minMonthly, '월급이 최저임금 기준(2,096,270원)보다 낮습니다.'),
+      };
+      final (minWage, errMsg) = minimums[_wageType]!;
+      if (wage < minWage) {
+        setState(() => _error = '$errMsg 다시 확인해주세요.');
         return;
       }
       if (_selectedDays.isEmpty) {
@@ -813,5 +904,34 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           color: AppColors.textSecondary,
         ),
       );
+
+  Future<void> _selectTime(TextEditingController controller) async {
+    final parts = controller.text.split(':');
+    final initialTime = parts.length == 2
+        ? TimeOfDay(hour: int.tryParse(parts[0]) ?? 9, minute: int.tryParse(parts[1]) ?? 0)
+        : const TimeOfDay(hour: 9, minute: 0);
+
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: Color(0xFF3E6872),
+            onPrimary: Colors.white,
+            onSurface: AppColors.textPrimary,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+
+    if (picked != null && mounted) {
+      setState(() {
+        controller.text =
+            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+      });
+    }
+  }
 
 }

@@ -142,14 +142,14 @@ class SettingsScreen extends ConsumerWidget {
                     ],
 
                     // 설정 항목들
-                    const Text('일반', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
-                    const SizedBox(height: 10),
-                    _settingTile(
-                      icon: Icons.add_business_rounded,
-                      label: '근무지 추가 등록',
-                      onTap: () => context.go('/onboarding'),
-                    ),
-                    const SizedBox(height: 20),
+                    // const Text('일반', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                    // const SizedBox(height: 10),
+                    // _settingTile(
+                    //   icon: Icons.add_business_rounded,
+                    //   label: '근무지 추가 등록',
+                    //   onTap: () => context.go('/onboarding'),
+                    // ),
+                    // const SizedBox(height: 20),
 
                     const Text('앱 정보', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
                     const SizedBox(height: 10),
@@ -170,48 +170,48 @@ class SettingsScreen extends ConsumerWidget {
                       label: '개인정보처리방침',
                       onTap: () => context.go('/settings/legal?type=privacy'),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 32),
 
-                    // 데이터 초기화 버튼
-                    GestureDetector(
-                      onTap: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            title: const Text('데이터 초기화', style: TextStyle(fontWeight: FontWeight.w800)),
-                            content: const Text('기기 데이터를 초기화하면 새 계정으로 시작합니다. 온보딩부터 다시 진행해야 합니다.'),
-                            actions: [
-                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, true),
-                                child: const Text('초기화', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (confirm == true) {
-                          await ref.read(authProvider.notifier).logout();
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2C2C2E),
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                    // 데이터 초기화 버튼 (눈에 띄지 않게 텍스트 형태로 하단 배치)
+                    Center(
+                      child: TextButton(
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              title: const Text('데이터 초기화', style: TextStyle(fontWeight: FontWeight.w800)),
+                              content: const Text('기기 데이터를 초기화하면 새 계정으로 시작합니다. 온보딩부터 다시 진행해야 합니다.'),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: const Text('초기화', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
+                                ),
+                              ],
                             ),
-                          ],
+                          );
+                          if (confirm == true) {
+                            await ref.read(authProvider.notifier).logout();
+                          }
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFFFF3B30).withOpacity(0.7),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         ),
                         child: const Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.refresh_rounded, color: Color(0xFFFF3B30), size: 20),
-                            SizedBox(width: 12),
-                            Text('데이터 초기화', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+                            Icon(Icons.refresh_rounded, size: 16),
+                            SizedBox(width: 6),
+                            Text(
+                              '데이터 초기화',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
                           ],
                         ),
                       ),

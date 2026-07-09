@@ -37,14 +37,26 @@ export class SettingsService {
         wageType: data.wageType,
         hourlyWage: data.wageType === 'hourly' ? data.hourlyWage : null,
         dailyWage: data.wageType === 'daily' ? data.dailyWage : null,
+        weeklyWage: data.wageType === 'weekly' ? data.weeklyWage : null,
+        monthlyWage: data.wageType === 'monthly' ? data.monthlyWage : null,
         workStartTime: data.workStartTime,
         workEndTime: data.workEndTime,
         breakMinutes: data.breakMinutes,
         workDaysOfWeek: data.workDaysOfWeek,
         weeklyWorkDays: data.workDaysOfWeek.length,
+        hireDate: data.hireDate ? new Date(data.hireDate) : undefined,
+        memo: data.memo !== undefined ? data.memo : undefined,
       },
       include: { company: true },
     });
+
+    // 이름 변경 (입력된 경우)
+    if (data.name && data.name.trim()) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { name: data.name.trim() },
+      });
+    }
 
     return { message: '설정이 저장되었습니다.', employment: updatedEmployment };
   }

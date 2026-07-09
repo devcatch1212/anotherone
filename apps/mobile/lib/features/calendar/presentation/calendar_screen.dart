@@ -158,11 +158,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3E6872)),
                           ),
                         ),
-                      const SizedBox(width: 10),
-                      IconButton(
-                        onPressed: () => GoRouter.of(context).go('/settings'),
-                        icon: const Icon(Icons.edit_outlined, size: 22, color: Color(0xFF3E6872)),
-                      ),
                     ],
                   ),
                 ],

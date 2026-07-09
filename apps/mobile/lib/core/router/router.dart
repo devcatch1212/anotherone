@@ -78,7 +78,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/home',
-            builder: (_, __) => const HomeScreen(),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: HomeScreen(),
+            ),
           ),
           GoRoute(
             path: '/attendance',
@@ -86,11 +88,15 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/calendar',
-            builder: (_, __) => const CalendarScreen(),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: CalendarScreen(),
+            ),
           ),
           GoRoute(
             path: '/leave',
-            builder: (_, __) => const LeaveScreen(),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: LeaveScreen(),
+            ),
           ),
           GoRoute(
             path: '/leave/apply',
@@ -98,7 +104,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/payroll',
-            builder: (_, __) => const PayrollScreen(),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: PayrollScreen(),
+            ),
           ),
           GoRoute(
             path: '/payroll/:id',
@@ -111,7 +119,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/settings',
-            builder: (_, __) => const SettingsScreen(),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: SettingsScreen(),
+            ),
           ),
           GoRoute(
             path: '/settings/workplace/edit',

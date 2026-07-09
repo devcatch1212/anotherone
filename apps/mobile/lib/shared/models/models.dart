@@ -1,7 +1,7 @@
 // lib/shared/models/models.dart
 // 앱 전체에서 사용하는 데이터 모델
 
-enum WageType { hourly, daily }
+enum WageType { hourly, daily, weekly, monthly }
 
 enum AttendanceStatus { normal, late, absent, vacation, holiday }
 
@@ -102,6 +102,8 @@ class Employment {
   final WageType wageType;
   final double? hourlyWage;
   final double? dailyWage;
+  final double? weeklyWage;
+  final double? monthlyWage;
   final double dailyWorkHours;
   final int weeklyWorkDays;
   final String? workStartTime;
@@ -112,6 +114,8 @@ class Employment {
   final bool isActive;
   final String? endedAt;
   final double annualLeaveBalance;
+  final String? hireDate;
+  final String? memo;
 
   Employment({
     required this.id,
@@ -123,6 +127,8 @@ class Employment {
     required this.wageType,
     this.hourlyWage,
     this.dailyWage,
+    this.weeklyWage,
+    this.monthlyWage,
     required this.dailyWorkHours,
     required this.weeklyWorkDays,
     this.workStartTime,
@@ -133,6 +139,8 @@ class Employment {
     required this.isActive,
     this.endedAt,
     this.annualLeaveBalance = 15.0,
+    this.hireDate,
+    this.memo,
   });
 
   factory Employment.fromJson(Map<String, dynamic> json) => Employment(
@@ -143,9 +151,11 @@ class Employment {
         annualLeaveBalance: (json['annualLeaveBalance'] as num?)?.toDouble() ?? 15.0,
         position: json['position'] as String? ?? '',
         department: json['department'] as String?,
-        wageType: json['wageType'] == 'hourly' ? WageType.hourly : WageType.daily,
+        wageType: _parseWageType(json['wageType'] as String?),
         hourlyWage: (json['hourlyWage'] as num?)?.toDouble(),
         dailyWage: (json['dailyWage'] as num?)?.toDouble(),
+        weeklyWage: (json['weeklyWage'] as num?)?.toDouble(),
+        monthlyWage: (json['monthlyWage'] as num?)?.toDouble(),
         dailyWorkHours: (json['dailyWorkHours'] as num?)?.toDouble() ?? 8.0,
         weeklyWorkDays: json['weeklyWorkDays'] as int? ?? 5,
         workStartTime: json['workStartTime'] as String?,
@@ -157,7 +167,20 @@ class Employment {
         isPrimary: json['isPrimary'] as bool? ?? false,
         isActive: json['isActive'] as bool? ?? true,
         endedAt: json['endedAt'] as String?,
+        hireDate: json['hireDate'] != null
+            ? (json['hireDate'] as String).substring(0, 10)
+            : null,
+        memo: json['memo'] as String?,
       );
+
+  static WageType _parseWageType(String? value) {
+    switch (value) {
+      case 'daily': return WageType.daily;
+      case 'weekly': return WageType.weekly;
+      case 'monthly': return WageType.monthly;
+      default: return WageType.hourly;
+    }
+  }
 
   int get effectiveWeeklyWorkDays =>
       workDaysOfWeek?.length ?? weeklyWorkDays;

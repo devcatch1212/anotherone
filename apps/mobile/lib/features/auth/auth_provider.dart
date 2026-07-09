@@ -134,7 +134,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       );
     } catch (e) {
       debugPrint('기기 자동 로그인 실패: $e');
-      return const AuthState();
+      rethrow; // 에러를 상위로 전파하여 실제 원인 파악 가능하도록
     }
   }
 

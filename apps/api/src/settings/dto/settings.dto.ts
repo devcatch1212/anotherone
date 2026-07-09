@@ -17,6 +17,14 @@ export class UpdateProfileDto {
   @IsOptional()
   dailyWage?: number;
 
+  @IsNumber({}, { message: '주급을 숫자로 입력해주세요.' })
+  @IsOptional()
+  weeklyWage?: number;
+
+  @IsNumber({}, { message: '월급을 숫자로 입력해주세요.' })
+  @IsOptional()
+  monthlyWage?: number;
+
   @IsString({ message: '회사명을 입력해주세요.' })
   @IsNotEmpty({ message: '회사명을 입력해주세요.' })
   companyName!: string;
@@ -56,6 +64,18 @@ export class UpdateProfileDto {
   @IsString({ message: '부서는 문자열이어야 합니다.' })
   @IsOptional()
   department?: string;
+
+  @IsString({ message: '이름은 문자열이어야 합니다.' })
+  @IsOptional()
+  name?: string;
+
+  @IsString({ message: '입사일자는 문자열이어야 합니다.' })
+  @IsOptional()
+  hireDate?: string; // 'yyyy-MM-dd'
+
+  @IsString({ message: '메모는 문자열이어야 합니다.' })
+  @IsOptional()
+  memo?: string;
 }
 
 export class UpdatePasswordDto {

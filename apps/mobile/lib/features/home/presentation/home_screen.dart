@@ -143,6 +143,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _startGps() async {
+    _positionSub?.cancel(); // 기존 위치 리스너 해제 후 재등록 진행 (중복 방지)
     final emp = _employment;
     if (emp == null) {
       setState(() => _gpsStatus = GpsStatus.ok);
@@ -345,6 +346,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (_workState != AttendanceState.working) return;
     final emp = _employment;
     if (emp == null) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('퇴근 확인', style: TextStyle(fontWeight: FontWeight.w800)),
+        content: const Text('정말 퇴근하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              '퇴근하기',
+              style: TextStyle(color: Color(0xFF3E6872), fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
     
     if (_gpsStatus == GpsStatus.denied) {
       _showSnackBar('위치 권한이 필요합니다. 설정에서 권한을 허용해주세요.', AppColors.warning);
@@ -572,6 +597,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 온보딩 완료 직후 또는 근무지 교체 시 실시간 감지하여 GPS 트래킹 즉각 트리거
+    ref.listen<AsyncValue<AuthState>>(authProvider, (previous, next) {
+      final prevEmp = previous?.value?.currentEmployment;
+      final nextEmp = next.value?.currentEmployment;
+      if (prevEmp?.id != nextEmp?.id && nextEmp != null) {
+        _startGps();
+      }
+    });
+
     final auth = ref.watch(authProvider).value;
     final emp = auth?.currentEmployment;
     final userName = auth?.user?.name ?? '사용자';
@@ -625,25 +659,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(dateStr,
-                          style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textMuted,
-                              fontWeight: FontWeight.w500)),
-                      const SizedBox(height: 2),
-                      Text(
-                        '안녕하세요, $userName님 👋',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    dateStr,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.3,
+                    ),
                   ),
                   GestureDetector(
                     onTap: () => context.go('/notifications'),
@@ -984,18 +1007,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                     // 최근 기록
                     _buildRecentRecords(),
-                    const SizedBox(height: 16),
+                    // const SizedBox(height: 16),
 
                     // 빠른 메뉴
-                    Row(
-                      children: [
-                        _quickMenu('💰', '급여명세서', '/payroll'),
-                        const SizedBox(width: 10),
-                        _quickMenu('📅', '근무 캘린더', '/calendar'),
-                        const SizedBox(width: 10),
-                        _quickMenu('🌴', '휴가 신청', '/leave/apply'),
-                      ],
-                    ),
+                    // Row(
+                    //   children: [
+                    //     _quickMenu('💰', '급여명세서', '/payroll'),
+                    //     const SizedBox(width: 10),
+                    //     _quickMenu('📅', '근무 캘린더', '/calendar'),
+                    //     const SizedBox(width: 10),
+                    //     _quickMenu('🌴', '휴가 신청', '/leave/apply'),
+                    //   ],
+                    // ),
                   ],
                 ),
               ),

@@ -62,15 +62,19 @@ model Employment {
   id              String   @id @default(uuid())
   position        String
   department      String?
-  wageType        String   // 'hourly' | 'daily'
+  wageType        String   // 'hourly' | 'daily' | 'weekly' | 'monthly'
   hourlyWage      Int?
   dailyWage       Int?
+  weeklyWage      Int?
+  monthlyWage     Int?
   dailyWorkHours  Int
   weeklyWorkDays  Int
   workStartTime   String?
   workEndTime     String?
   workDaysOfWeek  Int[]    // array of numbers: 0=월, 6=일
   breakMinutes    Int?
+  hireDate        DateTime? // 입사일자
+  memo            String?   // 기업 메모 (급여일, 담당자 등)
   isPrimary       Boolean  @default(false)
   isActive        Boolean  @default(true)
   endedAt         DateTime?
