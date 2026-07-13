@@ -83,23 +83,31 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     final user = await _storage.getUser();
 
     if (token != null && user != null) {
-      // 기존 토큰 있음 → 바로 복원
-      final activeEmployments = user.employments.where((e) => e.isActive).toList();
-      final primary = activeEmployments.firstWhereOrNull((e) => e.isPrimary) ??
-          activeEmployments.firstOrNull ??
-          user.employments.firstOrNull;
+      try {
+        // 기존 토큰이 새 DB에서도 여전히 유효한지 검증
+        await _api.get('/api/auth/me');
 
-      return AuthState(
-        token: token,
-        user: user,
-        isAuthenticated: true,
-        onboardingCompleted: user.onboardingCompleted,
-        currentCompanyId: primary?.companyId,
-        currentEmploymentId: primary?.id,
-      );
+        // 유효하다면 복원 진행
+        final activeEmployments = user.employments.where((e) => e.isActive).toList();
+        final primary = activeEmployments.firstWhereOrNull((e) => e.isPrimary) ??
+            activeEmployments.firstOrNull ??
+            user.employments.firstOrNull;
+
+        return AuthState(
+          token: token,
+          user: user,
+          isAuthenticated: true,
+          onboardingCompleted: user.onboardingCompleted,
+          currentCompanyId: primary?.companyId,
+          currentEmploymentId: primary?.id,
+        );
+      } catch (e) {
+        debugPrint('기존 토큰 무효화 감지 (DB 초기화 등으로 인한 401): $e');
+        await _storage.clearAll();
+      }
     }
 
-    // 토큰 없음 → 기기 UUID로 자동 신규 로그인
+    // 토큰 없음 또는 무효화됨 → 기기 UUID로 자동 신규 로그인
     return _loginWithDeviceId();
   }
 
