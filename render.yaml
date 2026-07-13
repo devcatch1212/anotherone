@@ -48,6 +48,10 @@ services:
       - key: PORT
         value: "3001"
 
+      # Self-Ping(Keep-Alive)을 위한 서버 외부 URL
+      - key: RENDER_EXTERNAL_URL
+        value: "https://anotherone-tjgi.onrender.com"
+
 # ─── PostgreSQL 데이터베이스 ─────────────────────────────
 databases:
   - name: anotherone-db

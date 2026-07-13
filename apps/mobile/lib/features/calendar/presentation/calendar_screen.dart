@@ -165,9 +165,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ),
 
             Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+              child: RefreshIndicator(
+                onRefresh: () => _load(_focusedDay),
+                color: const Color(0xFF3E6872),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -487,6 +490,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 ),
               ),
             ),
+          ),
           ],
         ),
       ),

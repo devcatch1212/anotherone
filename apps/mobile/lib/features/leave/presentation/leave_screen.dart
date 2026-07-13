@@ -124,8 +124,12 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
                             ],
                           ),
                         )
-                      : SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+                      : RefreshIndicator(
+                          onRefresh: _load,
+                          color: const Color(0xFF3E6872),
+                          child: SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
                           child: Column(
                             children: [
                           // 연차 현황 카드
@@ -260,6 +264,7 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
                         ],
                       ),
                     ),
+                  ),
             ),
           ],
         ),

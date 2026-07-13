@@ -92,8 +92,11 @@ class _PayrollScreenState extends ConsumerState<PayrollScreen> {
                         )
                       : _records.isEmpty
                           ? const Center(child: Text('급여 내역이 없습니다', style: TextStyle(color: AppColors.textMuted)))
-                      : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+                      : RefreshIndicator(
+                          onRefresh: _load,
+                          color: const Color(0xFF3E6872),
+                          child: ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
                           itemCount: _records.length,
                           itemBuilder: (_, i) {
                             final r = _records[i];
@@ -160,6 +163,7 @@ class _PayrollScreenState extends ConsumerState<PayrollScreen> {
                             );
                           },
                         ),
+                      ),
             ),
           ],
         ),

@@ -111,7 +111,8 @@ export class LeaveService {
 
         const absentCount = await this.prisma.attendanceRecord.count({
           where: {
-            employmentId,
+            userId,
+            companyId: employment.companyId,
             status: 'absent',
             date: {
               gte: checkDate.toISOString().substring(0, 10),
@@ -157,7 +158,8 @@ export class LeaveService {
         // 실제 출근일수 (normal, late)
         const attendedDays = await this.prisma.attendanceRecord.count({
           where: {
-            employmentId,
+            userId,
+            companyId: employment.companyId,
             status: { in: ['normal', 'late'] },
             date: {
               gte: yearStartDate.toISOString().substring(0, 10),
@@ -180,7 +182,8 @@ export class LeaveService {
 
             const absentCount = await this.prisma.attendanceRecord.count({
               where: {
-                employmentId,
+                userId,
+                companyId: employment.companyId,
                 status: 'absent',
                 date: {
                   gte: checkDate.toISOString().substring(0, 10),

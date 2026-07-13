@@ -90,8 +90,12 @@ class _PayrollDetailScreenState extends ConsumerState<PayrollDetailScreen> {
                                 ],
                               ),
                             )
-                          : SingleChildScrollView(
-                              padding: const EdgeInsets.all(16),
+                          : RefreshIndicator(
+                              onRefresh: _load,
+                              color: const Color(0xFF3E6872),
+                              child: SingleChildScrollView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.all(16),
                               child: Column(
                                 children: [
                                   // 실수령액 강조
@@ -139,6 +143,7 @@ class _PayrollDetailScreenState extends ConsumerState<PayrollDetailScreen> {
                                 ],
                               ),
                             ),
+                          ),
                 ),
             ],
           ),

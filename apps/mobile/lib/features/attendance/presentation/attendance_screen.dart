@@ -139,52 +139,56 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                         )
                       : _records.isEmpty
                       ? const Center(child: Text('출퇴근 기록이 없습니다', style: TextStyle(color: AppColors.textMuted)))
-                      : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                          itemCount: _records.length,
-                          itemBuilder: (_, i) {
-                            final r = _records[i];
-                            final s = AttendanceUtils.getStyle(r.status);
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.7),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: Colors.white.withOpacity(0.5)),
-                              ),
-                              child: Row(
-                                children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                      : RefreshIndicator(
+                          onRefresh: _load,
+                          color: const Color(0xFF3E6872),
+                          child: ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                              itemCount: _records.length,
+                              itemBuilder: (_, i) {
+                                final r = _records[i];
+                                final s = AttendanceUtils.getStyle(r.status);
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.7),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: Colors.white.withOpacity(0.5)),
+                                  ),
+                                  child: Row(
                                     children: [
-                                      Text(
-                                        DateFormat('M/d (E)', 'ko').format(DateTime.parse(r.date)),
-                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            DateFormat('M/d (E)', 'ko').format(DateTime.parse(r.date)),
+                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '${r.checkIn != null ? _fmt(r.checkIn!) : '--:--'}${r.checkOut != null ? ' ~ ${_fmt(r.checkOut!)}' : r.checkIn != null ? ' ~ 근무 중' : ''}',
+                                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '${r.checkIn != null ? _fmt(r.checkIn!) : '--:--'}${r.checkOut != null ? ' ~ ${_fmt(r.checkOut!)}' : r.checkIn != null ? ' ~ 근무 중' : ''}',
-                                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                      const Spacer(),
+                                      if (r.workedMinutes != null)
+                                        Text(
+                                          '${r.workedMinutes! ~/ 60}h ${r.workedMinutes! % 60}m',
+                                          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                                        ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(color: s.bg, borderRadius: BorderRadius.circular(99)),
+                                        child: Text(s.label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: s.color)),
                                       ),
                                     ],
                                   ),
-                                  const Spacer(),
-                                  if (r.workedMinutes != null)
-                                    Text(
-                                      '${r.workedMinutes! ~/ 60}h ${r.workedMinutes! % 60}m',
-                                      style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
-                                    ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(color: s.bg, borderRadius: BorderRadius.circular(99)),
-                                    child: Text(s.label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: s.color)),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+                                );
+                              },
+                            ),
                         ),
             ),
           ],

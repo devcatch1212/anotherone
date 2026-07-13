@@ -432,6 +432,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  Future<void> _onRefresh() async {
+    setState(() => _loadError = null);
+    await _loadData();
+    _startGps();
+  }
+
   void _showSnackBar(String msg, Color color) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -688,8 +694,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
 
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+              child: RefreshIndicator(
+                onRefresh: _onRefresh,
+                color: const Color(0xFF3E6872),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
                 child: Column(
                   children: [
                      if (_loadError != null)
@@ -1023,6 +1033,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ),
+          ),
           ],
         ),
       ),

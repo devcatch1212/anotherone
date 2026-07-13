@@ -119,8 +119,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                           SizedBox(height: 12),
                           Text('알림이 없습니다', style: TextStyle(color: AppColors.textMuted, fontSize: 14)),
                         ]))
-                      : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                      : RefreshIndicator(
+                          onRefresh: _load,
+                          color: const Color(0xFF3E6872),
+                          child: ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                           itemCount: _notifications.length,
                           itemBuilder: (_, i) {
                             final n = _notifications[i];
@@ -173,6 +176,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                             );
                           },
                         ),
+                      ),
             ),
           ],
         ),

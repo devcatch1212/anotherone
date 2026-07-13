@@ -1,9 +1,13 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
+import { PrismaService } from './prisma/prisma.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly prismaService: PrismaService,
+  ) {}
 
   @Get()
   getHello(): string {
@@ -11,7 +15,13 @@ export class AppController {
   }
 
   @Get('api/health')
-  health(): object {
-    return { status: 'ok', timestamp: new Date().toISOString() };
+  async health(): Promise<object> {
+    try {
+      await this.prismaService.$queryRaw`SELECT 1`;
+      return { status: 'ok', db: 'connected', timestamp: new Date().toISOString() };
+    } catch {
+      return { status: 'degraded', db: 'disconnected', timestamp: new Date().toISOString() };
+    }
   }
 }
+
