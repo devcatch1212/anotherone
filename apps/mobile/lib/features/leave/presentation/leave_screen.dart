@@ -118,6 +118,7 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
       LeaveStatus.pending: (label: '대기', color: AppColors.warning, bg: AppColors.warningLight),
       LeaveStatus.approved: (label: '승인', color: AppColors.success, bg: AppColors.successLight),
       LeaveStatus.rejected: (label: '반려', color: AppColors.danger, bg: AppColors.dangerLight),
+      LeaveStatus.cancelled: (label: '취소', color: AppColors.textMuted, bg: const Color(0xFFF0F0F0)),
     };
     final typeLabel = {
       LeaveType.annual: '연차',

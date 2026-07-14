@@ -10,7 +10,7 @@ interface LeaveRecord {
   endDate: string;
   days: number;
   reason: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
   appliedAt: string;
   user: {
     name: string;
@@ -27,7 +27,7 @@ interface AttendanceCorrection {
   proposedCheckIn: string | null;
   proposedCheckOut: string | null;
   reason: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
   createdAt: string;
   user: {
     name: string;
@@ -44,7 +44,7 @@ interface OvertimeRequest {
   startTime: string;
   endTime: string;
   reason: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
   createdAt: string;
   user: {
     name: string;
@@ -225,7 +225,7 @@ export default function RequestsPage() {
     official: '공가 🏫',
   };
 
-  const statusBadge = (status: 'pending' | 'approved' | 'rejected') => {
+  const statusBadge = (status: 'pending' | 'approved' | 'rejected' | 'cancelled') => {
     if (status === 'approved') {
       return (
         <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
@@ -237,6 +237,13 @@ export default function RequestsPage() {
       return (
         <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-500 border border-red-100">
           반려됨
+        </span>
+      );
+    }
+    if (status === 'cancelled') {
+      return (
+        <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-400 border border-gray-200">
+          취소됨
         </span>
       );
     }

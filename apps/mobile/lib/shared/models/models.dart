@@ -9,7 +9,7 @@ enum AttendanceState { before, working, done }
 
 enum LeaveType { annual, half, sick, official }
 
-enum LeaveStatus { pending, approved, rejected }
+enum LeaveStatus { pending, approved, rejected, cancelled }
 
 enum NotificationType {
   overtimeApproved,
@@ -342,6 +342,7 @@ class LeaveRecord {
       'pending': LeaveStatus.pending,
       'approved': LeaveStatus.approved,
       'rejected': LeaveStatus.rejected,
+      'cancelled': LeaveStatus.cancelled,
     };
     return LeaveRecord(
       id: json['id'] as String,
