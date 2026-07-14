@@ -93,15 +93,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
   }
 
-  // 월별 예상 급여 합산 계산 (Nullable hourlyWage 처리 완료)
+  // 월별 예상 급여 합산 계산 (월급제/일급제 대응 패치)
   double _calculateEstimatedPay() {
     final emp = ref.read(authProvider).value?.currentEmployment;
     if (emp == null) return 0;
     
     double total = 0;
     for (final r in _recordMap.values) {
-      final workedHours = (r.workedMinutes ?? 0) / 60.0;
-      total += workedHours * (emp.hourlyWage ?? 0.0);
+      if (emp.wageType == 'monthly' || emp.wageType == 'daily') {
+        // 월급제나 일급제는 이미 계산된 하루치 정산 금액(earnedPay)을 누적
+        total += (r.earnedPay ?? 0).toDouble();
+      } else {
+        // 시급제 등은 근무시간 * 시급으로 누적
+        final workedHours = (r.workedMinutes ?? 0) / 60.0;
+        total += workedHours * (emp.hourlyWage ?? 0.0);
+      }
     }
     return total;
   }
@@ -334,7 +340,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           return r != null ? [r] : [];
                         },
                         calendarBuilders: CalendarBuilders(
-                          // 레퍼런스 스타일의 커스텀 이모지 뱃지 데코레이터 빌더 적용
+                          // 이모지 대신 상태별 색상 원 + 날짜 숫자로 결합 표시
                           defaultBuilder: (context, day, focusedDay) {
                             final key = DateFormat('yyyy-MM-dd').format(day);
                             final r = _recordMap[key];
@@ -342,16 +348,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                               final th = _statusTheme(r);
                               return Center(
                                 child: Container(
-                                  width: 38,
-                                  height: 38,
+                                  width: 32,
+                                  height: 32,
                                   decoration: BoxDecoration(
                                     color: th.bg,
                                     shape: BoxShape.circle,
                                   ),
                                   child: Center(
                                     child: Text(
-                                      th.icon,
-                                      style: const TextStyle(fontSize: 18),
+                                      '${day.day}',
+                                      style: TextStyle(
+                                        color: th.text,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -408,7 +418,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         itemBuilder: (_, i) {
                           final r = sortedRecords[i];
                           final th = _statusTheme(r);
-                          final dailyWage = ((r.workedMinutes ?? 0) / 60 * (emp?.hourlyWage ?? 0)).round();
+                          final dailyWage = (emp?.wageType == 'monthly' || emp?.wageType == 'daily')
+                              ? (r.earnedPay ?? 0)
+                              : ((r.workedMinutes ?? 0) / 60 * (emp?.hourlyWage ?? 0)).round();
 
                           return Container(
                             padding: const EdgeInsets.all(14),
@@ -418,33 +430,24 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                             ),
                             child: Row(
                               children: [
-                                // 좌측 원형 상태 이모지 뱃지
-                                Column(
-                                  children: [
-                                    Container(
-                                      width: 36,
-                                      height: 36,
-                                      decoration: BoxDecoration(
-                                        color: th.bg,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          th.icon,
-                                          style: const TextStyle(fontSize: 16),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
+                                // 좌측 원형 상태 텍스트 뱃지 (이모지 걷어내고 심플하게)
+                                Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: th.bg,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
                                       th.label,
                                       style: TextStyle(
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.w700,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
                                         color: th.text,
                                       ),
                                     ),
-                                  ],
+                                  ),
                                 ),
                                 const SizedBox(width: 14),
                                 // 날짜 및 시간

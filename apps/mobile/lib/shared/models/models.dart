@@ -200,6 +200,8 @@ class AttendanceRecord {
   final int? overtimeMinutes;
   final int? nightMinutes;
   final double? distance;
+  final int? basePay;
+  final int? earnedPay;
 
   AttendanceRecord({
     required this.id,
@@ -212,6 +214,8 @@ class AttendanceRecord {
     this.overtimeMinutes,
     this.nightMinutes,
     this.distance,
+    this.basePay,
+    this.earnedPay,
   });
 
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
@@ -234,6 +238,8 @@ class AttendanceRecord {
       overtimeMinutes: json['overtimeMinutes'] as int?,
       nightMinutes: json['nightMinutes'] as int?,
       distance: (json['distance'] as num?)?.toDouble(),
+      basePay: json['basePay'] as int?,
+      earnedPay: json['earnedPay'] as int?,
     );
   }
 }

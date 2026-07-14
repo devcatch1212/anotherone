@@ -66,6 +66,42 @@ export default function RequestsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState('');
 
+  // 반려 사유 모달 상태
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState<{ id: string; type: 'leave' | 'attendance' | 'overtime' } | null>(null);
+  const [rejectReasonText, setRejectReasonText] = useState('');
+
+  // 반려 모달 열기
+  const openRejectModal = (id: string, type: 'leave' | 'attendance' | 'overtime') => {
+    setRejectTarget({ id, type });
+    setRejectReasonText('');
+    setRejectModalOpen(true);
+  };
+
+  // 반려 모달 닫기
+  const closeRejectModal = () => {
+    setRejectTarget(null);
+    setRejectReasonText('');
+    setRejectModalOpen(false);
+  };
+
+  // 반려 처리 수행
+  const submitReject = async () => {
+    if (!rejectTarget) return;
+    const { id, type } = rejectTarget;
+    const reason = rejectReasonText;
+    
+    closeRejectModal(); // 모달 닫기
+    
+    if (type === 'leave') {
+      await handleLeaveAction(id, 'reject', reason);
+    } else if (type === 'attendance') {
+      await handleCorrectionAction(id, 'reject', reason);
+    } else if (type === 'overtime') {
+      await handleOvertimeAction(id, 'reject', reason);
+    }
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -92,10 +128,13 @@ export default function RequestsPage() {
   }, [activeTab]);
 
   // 연차 승인/반려 액션
-  const handleLeaveAction = async (id: string, action: 'approve' | 'reject') => {
+  const handleLeaveAction = async (id: string, action: 'approve' | 'reject', rejectReason?: string) => {
     try {
       setActionLoading(`${id}-${action}`);
-      await apiFetch(`/api/admin/leaves/${id}/${action}`, { method: 'POST' });
+      await apiFetch(`/api/admin/leaves/${id}/${action}`, { 
+        method: 'POST',
+        body: action === 'reject' ? JSON.stringify({ rejectReason }) : undefined
+      });
       setLeaves((prev) =>
         prev.map((item) =>
           item.id === id ? { ...item, status: action === 'approve' ? 'approved' : 'rejected' } : item
@@ -109,10 +148,13 @@ export default function RequestsPage() {
   };
 
   // 출퇴근 수정 승인/반려 액션
-  const handleCorrectionAction = async (id: string, action: 'approve' | 'reject') => {
+  const handleCorrectionAction = async (id: string, action: 'approve' | 'reject', rejectReason?: string) => {
     try {
       setActionLoading(`${id}-${action}`);
-      await apiFetch(`/api/admin/attendance-corrections/${id}/${action}`, { method: 'POST' });
+      await apiFetch(`/api/admin/attendance-corrections/${id}/${action}`, { 
+        method: 'POST',
+        body: action === 'reject' ? JSON.stringify({ rejectReason }) : undefined
+      });
       setCorrections((prev) =>
         prev.map((item) =>
           item.id === id ? { ...item, status: action === 'approve' ? 'approved' : 'rejected' } : item
@@ -126,10 +168,13 @@ export default function RequestsPage() {
   };
 
   // 연장 근무 승인/반려 액션
-  const handleOvertimeAction = async (id: string, action: 'approve' | 'reject') => {
+  const handleOvertimeAction = async (id: string, action: 'approve' | 'reject', rejectReason?: string) => {
     try {
       setActionLoading(`${id}-${action}`);
-      await apiFetch(`/api/admin/overtimes/${id}/${action}`, { method: 'POST' });
+      await apiFetch(`/api/admin/overtimes/${id}/${action}`, { 
+        method: 'POST',
+        body: action === 'reject' ? JSON.stringify({ rejectReason }) : undefined
+      });
       setOvertimes((prev) =>
         prev.map((item) =>
           item.id === id ? { ...item, status: action === 'approve' ? 'approved' : 'rejected' } : item
@@ -362,7 +407,7 @@ export default function RequestsPage() {
                             </button>
                             <button
                               disabled={actionLoading !== null}
-                              onClick={() => handleLeaveAction(l.id, 'reject')}
+                              onClick={() => openRejectModal(l.id, 'leave')}
                               className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white transition cursor-pointer"
                               style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer' }}
                             >
@@ -441,7 +486,7 @@ export default function RequestsPage() {
                             </button>
                             <button
                               disabled={actionLoading !== null}
-                              onClick={() => handleCorrectionAction(c.id, 'reject')}
+                              onClick={() => openRejectModal(c.id, 'attendance')}
                               className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white transition cursor-pointer"
                               style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer' }}
                             >
@@ -520,7 +565,7 @@ export default function RequestsPage() {
                             </button>
                             <button
                               disabled={actionLoading !== null}
-                              onClick={() => handleOvertimeAction(o.id, 'reject')}
+                              onClick={() => openRejectModal(o.id, 'overtime')}
                               className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white transition cursor-pointer"
                               style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer' }}
                             >
@@ -539,6 +584,84 @@ export default function RequestsPage() {
           )
         )}
       </div>
+
+      {/* 반려 사유 입력 모달 */}
+      {rejectModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.4)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999
+          }}
+          onClick={closeRejectModal}
+        >
+          <div 
+            className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-2xl p-6"
+            style={{
+              backgroundColor: '#FFFFFF',
+              width: '100%',
+              maxWidth: '400px',
+              borderRadius: '24px',
+              border: '1px solid #E2E8F0',
+              padding: '24px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
+              boxSizing: 'border-box'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base font-black text-slate-800 mb-3" style={{ fontSize: '16px', fontWeight: '900', color: '#1E293B', margin: '0 0 12px 0' }}>
+              ❌ 반려 사유 기입
+            </h3>
+            <p className="text-xs text-slate-400 mb-4" style={{ fontSize: '12px', color: '#64748B', marginBottom: '16px', margin: '0 0 16px 0' }}>
+              근로자에게 보낼 반려 사유를 작성해주세요 (선택사항).
+            </p>
+            <textarea
+              value={rejectReasonText}
+              onChange={(e) => setRejectReasonText(e.target.value)}
+              placeholder="예: 업무 일정 조율 필요, 기재 오류 등..."
+              className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-700 outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/5 resize-none h-24 mb-6"
+              style={{
+                width: '100%',
+                height: '96px',
+                borderRadius: '12px',
+                border: '1px solid #CBD5E1',
+                padding: '12px',
+                fontSize: '13px',
+                color: '#1E293B',
+                boxSizing: 'border-box',
+                resize: 'none',
+                marginBottom: '20px',
+                outline: 'none'
+              }}
+            />
+            <div className="flex gap-3" style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={closeRejectModal}
+                className="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-50 text-slate-500 border border-slate-200 hover:bg-slate-100 transition cursor-pointer"
+                style={{ flex: 1, padding: '10px 0', borderRadius: '10px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', color: '#64748B', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+              >
+                취소
+              </button>
+              <button
+                onClick={submitReject}
+                className="flex-1 py-2 rounded-xl text-xs font-bold bg-red-500 text-white hover:bg-red-600 transition cursor-pointer"
+                style={{ flex: 1, padding: '10px 0', borderRadius: '10px', backgroundColor: '#EF4444', border: 'none', color: '#FFFFFF', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+              >
+                반려 확정
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -83,6 +83,81 @@ export default function PayrollPage() {
     loadPayrolls();
   }, [year, month, selectedCompanyId]);
 
+  // Excel(CSV) 내보내기 핸들러
+  const handleExportCSV = () => {
+    if (payrolls.length === 0) return;
+
+    // 헤더 설정
+    const headers = [
+      '성명', '이메일', '소속 근무지', '직급', '출근일수', 
+      '기본급', '주휴수당', '연장근로수당', '야간근로수당', '지급총액', 
+      '국민연금', '건강보험', '고용보험', '소득세', '공제총액', 
+      '실수령액', '발행상태'
+    ];
+
+    // 데이터 행 매핑
+    const rows = payrolls.map(p => [
+      p.userName,
+      p.userEmail,
+      p.companyName,
+      p.position,
+      `${p.workedDays}일`,
+      p.basePay,
+      p.holidayPay,
+      p.overtimePay,
+      p.nightPay,
+      p.totalGross,
+      p.nationalPension,
+      p.healthInsurance,
+      p.employmentInsurance,
+      p.incomeTax,
+      p.totalDeduction,
+      p.netPay,
+      p.confirmed ? '발행 완료' : '발행 대기'
+    ]);
+
+    // CSV 포맷 문자열 변환 (쉼표 및 따옴표 처리)
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(e => e.map(val => {
+        const stringVal = typeof val === 'number' ? val.toString() : `"${val}"`;
+        return stringVal;
+      }).join(','))
+    ].join('\n');
+
+    // UTF-8 BOM 헤더를 맨 앞에 붙여 엑셀 한글 깨짐 방지
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `급여대장_${year}년_${month}월.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // 개별 급여 명세서 발행 실행
+  const handleIssueSingle = async (item: PayrollItem) => {
+    const confirmMsg = `⚠️ [${item.userName}] 근로자의 [${year}년 ${month}월] 급여 명세서를 발행하시겠습니까?\n\n• 실수령액: ₩${item.netPay.toLocaleString()}원\n\n발행 즉시 근로자의 모바일 앱으로 급여 명세서 알림이 발송되며, 확정 데이터를 조회할 수 있게 됩니다.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      setActionLoading(true);
+      await apiFetch(`/api/admin/payrolls/issue?year=${year}&month=${month}${selectedCompanyId ? `&companyId=${selectedCompanyId}` : ''}`, {
+        method: 'POST',
+        body: JSON.stringify({ items: [item] }), // 단일 아이템을 배열로 패키징
+      });
+      alert(`🎉 [${item.userName}] 근로자의 급여 명세서가 정상적으로 발행되었습니다.`);
+      loadPayrolls();
+    } catch (err: any) {
+      alert(err.message || '발행 처리 중 오류가 발생했습니다.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // 급여 명세서 일괄 발행 실행
   const handleIssueAll = async () => {
     const pendingItems = payrolls.filter(p => !p.confirmed);
@@ -146,25 +221,48 @@ export default function PayrollPage() {
           </p>
         </div>
 
-        {/* 일괄 발행 버튼 */}
-        <button
-          onClick={handleIssueAll}
-          disabled={loading || actionLoading || payrolls.filter(p => !p.confirmed).length === 0}
-          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-500/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition"
-          style={{
-            padding: '10px 20px',
-            backgroundColor: payrolls.filter(p => !p.confirmed).length > 0 ? '#2563EB' : '#94A3B8',
-            color: '#FFFFFF',
-            border: 'none',
-            borderRadius: '12px',
-            fontSize: '14px',
-            fontWeight: '700',
-            cursor: payrolls.filter(p => !p.confirmed).length > 0 ? 'pointer' : 'not-allowed',
-            boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.15)'
-          }}
-        >
-          {actionLoading ? '일괄 발행 처리 중...' : '💵 급여 명세서 일괄 발행'}
-        </button>
+        {/* 버튼 영역 */}
+        <div className="flex items-center gap-3" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Excel 다운로드 버튼 */}
+          <button
+            onClick={handleExportCSV}
+            disabled={loading || payrolls.length === 0}
+            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-md shadow-emerald-500/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition"
+            style={{
+              padding: '10px 20px',
+              backgroundColor: payrolls.length > 0 ? '#10B981' : '#94A3B8',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '14px',
+              fontWeight: '700',
+              cursor: payrolls.length > 0 ? 'pointer' : 'not-allowed',
+              boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.15)'
+            }}
+          >
+            📊 Excel 다운로드
+          </button>
+
+          {/* 일괄 발행 버튼 */}
+          <button
+            onClick={handleIssueAll}
+            disabled={loading || actionLoading || payrolls.filter(p => !p.confirmed).length === 0}
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-500/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition"
+            style={{
+              padding: '10px 20px',
+              backgroundColor: payrolls.filter(p => !p.confirmed).length > 0 ? '#2563EB' : '#94A3B8',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '14px',
+              fontWeight: '700',
+              cursor: payrolls.filter(p => !p.confirmed).length > 0 ? 'pointer' : 'not-allowed',
+              boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.15)'
+            }}
+          >
+            {actionLoading ? '일괄 발행 처리 중...' : '💵 급여 명세서 일괄 발행'}
+          </button>
+        </div>
       </div>
 
       {/* 필터 바 */}
@@ -303,13 +401,25 @@ export default function PayrollPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-center" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9', textAlign: 'center' }}>
-                      <button
-                        onClick={() => setSelectedItem(p)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition cursor-pointer"
-                        style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', border: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}
-                      >
-                        🔎 열람
-                      </button>
+                      <div className="flex gap-2 justify-center" style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                        <button
+                          onClick={() => setSelectedItem(p)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition cursor-pointer"
+                          style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', border: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}
+                        >
+                          🔎 열람
+                        </button>
+                        {!p.confirmed && (
+                          <button
+                            onClick={() => handleIssueSingle(p)}
+                            disabled={actionLoading}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition cursor-pointer"
+                            style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', border: '1px solid #BFDBFE', backgroundColor: '#EFF6FF' }}
+                          >
+                            💵 발행
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

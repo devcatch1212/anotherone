@@ -262,7 +262,7 @@ export class AdminService {
   }
 
   // 연차 반려
-  async rejectLeave(id: string) {
+  async rejectLeave(id: string, rejectReason?: string) {
     const leave = await this.prisma.leaveRecord.findUnique({ where: { id } });
     if (!leave) throw new NotFoundException('연차 신청 기록을 찾을 수 없습니다.');
     if (leave.status !== 'pending') throw new Error('대기 중인 신청만 반려할 수 있습니다.');
@@ -278,7 +278,9 @@ export class AdminService {
         companyId: leave.companyId,
         type: 'leave_rejected',
         title: '연차 신청 반려',
-        body: `[${leave.startDate} ~ ${leave.endDate}] 연차 신청이 반려되었습니다.`,
+        body: `[${leave.startDate} ~ ${leave.endDate}] 연차 신청이 반려되었습니다.${
+          rejectReason && rejectReason.trim() ? ` (사유: ${rejectReason.trim()})` : ''
+        }`,
       },
     });
 
@@ -385,7 +387,7 @@ export class AdminService {
   }
 
   // 출퇴근 수정 요청 반려
-  async rejectAttendanceCorrection(id: string) {
+  async rejectAttendanceCorrection(id: string, rejectReason?: string) {
     const correction = await this.prisma.attendanceCorrection.findUnique({ where: { id } });
     if (!correction) throw new NotFoundException('수정 요청을 찾을 수 없습니다.');
     if (correction.status !== 'pending') throw new Error('대기 중인 요청만 반려할 수 있습니다.');
@@ -401,7 +403,9 @@ export class AdminService {
         companyId: correction.companyId,
         type: 'overtime_rejected',
         title: '출퇴근 수정 요청 반려',
-        body: `[${correction.date}] 출퇴근 정보 수정 요청이 반려되었습니다.`,
+        body: `[${correction.date}] 출퇴근 정보 수정 요청이 반려되었습니다.${
+          rejectReason && rejectReason.trim() ? ` (사유: ${rejectReason.trim()})` : ''
+        }`,
       },
     });
 
@@ -532,7 +536,7 @@ export class AdminService {
   }
 
   // 연장 근무 반려
-  async rejectOvertime(id: string) {
+  async rejectOvertime(id: string, rejectReason?: string) {
     const request = await this.prisma.overtimeRequest.findUnique({ where: { id } });
     if (!request) throw new NotFoundException('연장 근무 신청 기록을 찾을 수 없습니다.');
     if (request.status !== 'pending') throw new Error('대기 중인 신청만 반려할 수 있습니다.');
@@ -548,7 +552,9 @@ export class AdminService {
         companyId: request.companyId,
         type: 'overtime_rejected',
         title: '연장 근무 반려',
-        body: `[${request.date}] 연장 근무 신청이 반려되었습니다.`,
+        body: `[${request.date}] 연장 근무 신청이 반려되었습니다.${
+          rejectReason && rejectReason.trim() ? ` (사유: ${rejectReason.trim()})` : ''
+        }`,
       },
     });
 

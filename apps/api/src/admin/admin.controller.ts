@@ -75,8 +75,8 @@ export class AdminController {
   // 연차 반려
   @UseGuards(AdminAuthGuard)
   @Post('leaves/:id/reject')
-  rejectLeave(@Param('id') id: string) {
-    return this.adminService.rejectLeave(id);
+  rejectLeave(@Param('id') id: string, @Body() body: { rejectReason?: string }) {
+    return this.adminService.rejectLeave(id, body.rejectReason);
   }
 
   // 출퇴근 수정 요청 목록
@@ -96,8 +96,8 @@ export class AdminController {
   // 출퇴근 수정 요청 반려
   @UseGuards(AdminAuthGuard)
   @Post('attendance-corrections/:id/reject')
-  rejectAttendanceCorrection(@Param('id') id: string) {
-    return this.adminService.rejectAttendanceCorrection(id);
+  rejectAttendanceCorrection(@Param('id') id: string, @Body() body: { rejectReason?: string }) {
+    return this.adminService.rejectAttendanceCorrection(id, body.rejectReason);
   }
 
   // 설정 화면 통합 데이터 조회
@@ -138,8 +138,8 @@ export class AdminController {
   // 연장 근무 반려
   @UseGuards(AdminAuthGuard)
   @Post('overtimes/:id/reject')
-  rejectOvertime(@Param('id') id: string) {
-    return this.adminService.rejectOvertime(id);
+  rejectOvertime(@Param('id') id: string, @Body() body: { rejectReason?: string }) {
+    return this.adminService.rejectOvertime(id, body.rejectReason);
   }
 
   // 월별 급여 정산 대장 조회
