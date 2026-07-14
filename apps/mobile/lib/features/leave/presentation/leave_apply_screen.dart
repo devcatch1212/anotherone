@@ -54,10 +54,6 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
   }
 
   Future<void> _submit() async {
-    if (_reasonCtrl.text.trim().isEmpty) {
-      setState(() => _error = '사유를 입력해주세요');
-      return;
-    }
     setState(() { _loading = true; _error = ''; });
     final emp = ref.read(authProvider).value?.currentEmployment;
     if (emp == null) { setState(() => _loading = false); return; }
@@ -240,13 +236,13 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
                         const SizedBox(height: 8),
                         Text('총 $diffDays일', style: const TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 20),
-                        const Text('사유', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                        const Text('사유 (선택)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
                         const SizedBox(height: 10),
                         TextField(
                           controller: _reasonCtrl,
                           maxLines: 4,
                           decoration: InputDecoration(
-                            hintText: '휴가 사유를 입력해주세요',
+                            hintText: '휴가 사유를 입력해주세요 (선택사항)',
                             filled: true,
                             fillColor: Colors.white,
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),

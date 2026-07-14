@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApplyLeaveDto } from './dto/leave.dto';
 
@@ -24,7 +24,7 @@ export class LeaveService {
         startDate: data.startDate,
         endDate: data.endDate,
         days: data.days,
-        reason: data.reason,
+        reason: data.reason ?? '',
         status: 'pending',
       },
     });
@@ -50,6 +50,20 @@ export class LeaveService {
     });
 
     return { records };
+  }
+
+  async cancelLeave(userId: string, leaveId: string) {
+    const leave = await this.prisma.leaveRecord.findUnique({
+      where: { id: leaveId },
+    });
+
+    if (!leave) throw new NotFoundException('휴가 신청 내역을 찾을 수 없습니다.');
+    if (leave.userId !== userId) throw new ForbiddenException('본인의 휴가만 취소할 수 있습니다.');
+    if (leave.status !== 'pending') throw new BadRequestException('대기 중인 휴가 신청만 취소할 수 있습니다.');
+
+    await this.prisma.leaveRecord.delete({ where: { id: leaveId } });
+
+    return { message: '휴가 신청이 취소되었습니다.' };
   }
 
   async recalculateAnnualLeaveBalance(userId: string, employmentId: string) {

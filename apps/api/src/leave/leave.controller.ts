@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Query, Param, UseGuards, Request } from '@nestjs/common';
 import { LeaveService } from './leave.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApplyLeaveDto, GetLeaveDto } from './dto/leave.dto';
@@ -16,5 +16,10 @@ export class LeaveController {
   @Get()
   async getLeaves(@Request() req: any, @Query() query: GetLeaveDto) {
     return this.leaveService.getLeaves(req.user.id, query.employmentId);
+  }
+
+  @Delete(':id')
+  async cancelLeave(@Request() req: any, @Param('id') id: string) {
+    return this.leaveService.cancelLeave(req.user.id, id);
   }
 }

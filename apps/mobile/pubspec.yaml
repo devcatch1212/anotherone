@@ -1,7 +1,7 @@
 name: geumumu
 description: "AnotherOne 근무관리 - 출퇴근 & 급여 확인"
 publish_to: 'none'
-version: 1.1.4+13
+version: 1.1.8+17
 
 environment:
   sdk: ^3.9.2

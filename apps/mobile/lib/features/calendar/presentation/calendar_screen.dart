@@ -100,7 +100,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     
     double total = 0;
     for (final r in _recordMap.values) {
-      if (emp.wageType == 'monthly' || emp.wageType == 'daily') {
+      if (emp.wageType == WageType.monthly || emp.wageType == WageType.daily) {
         // 월급제나 일급제는 이미 계산된 하루치 정산 금액(earnedPay)을 누적
         total += (r.earnedPay ?? 0).toDouble();
       } else {
@@ -335,11 +335,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           outsideDaysVisible: false,
                         ),
                         eventLoader: (day) {
-                          final key = DateFormat('yyyy-MM-dd').format(day);
-                          final r = _recordMap[key];
-                          return r != null ? [r] : [];
+                          return [];
                         },
                         calendarBuilders: CalendarBuilders(
+                          // 검정색 점(이벤트 마커) 숨김 처리
+                          markerBuilder: (context, date, events) => const SizedBox(),
                           // 이모지 대신 상태별 색상 원 + 날짜 숫자로 결합 표시
                           defaultBuilder: (context, day, focusedDay) {
                             final key = DateFormat('yyyy-MM-dd').format(day);
@@ -418,7 +418,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         itemBuilder: (_, i) {
                           final r = sortedRecords[i];
                           final th = _statusTheme(r);
-                          final dailyWage = (emp?.wageType == 'monthly' || emp?.wageType == 'daily')
+                          final dailyWage = (emp?.wageType == WageType.monthly || emp?.wageType == WageType.daily)
                               ? (r.earnedPay ?? 0)
                               : ((r.workedMinutes ?? 0) / 60 * (emp?.hourlyWage ?? 0)).round();
 

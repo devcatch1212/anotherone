@@ -62,6 +62,56 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
     }
   }
 
+  Future<void> _cancelLeave(String leaveId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('휴가 취소', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+        content: const Text('해당 휴가 신청을 취소하시겠습니까?', style: TextStyle(fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('닫기', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('취소', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    try {
+      await ref.read(apiClientProvider).delete<dynamic>('/api/leave/$leaveId');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('휴가 신청이 취소되었습니다', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            backgroundColor: AppColors.textSecondary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+        _load();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(parseApiError(e), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final statusStyle = {
@@ -228,35 +278,59 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
                                   color: AppColors.surface,
                                   borderRadius: BorderRadius.circular(16),
                                 ),
-                                child: Row(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Text(typeLabel[r.type] ?? '연차',
-                                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                                              const SizedBox(width: 6),
-                                              Text('${r.days}일',
-                                                  style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                                              Row(
+                                                children: [
+                                                  Text(typeLabel[r.type] ?? '연차',
+                                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                                                  const SizedBox(width: 6),
+                                                  Text('${r.days}일',
+                                                      style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                                                ],
+                                              ),
+                                              Text(
+                                                '${r.startDate} ~ ${r.endDate}',
+                                                style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                                              ),
+                                              if (r.reason.isNotEmpty)
+                                                Text(r.reason, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
                                             ],
                                           ),
-                                          Text(
-                                            '${r.startDate} ~ ${r.endDate}',
-                                            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(color: s.bg, borderRadius: BorderRadius.circular(99)),
+                                          child: Text(s.label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: s.color)),
+                                        ),
+                                      ],
+                                    ),
+                                    if (r.status == LeaveStatus.pending) ...[
+                                      const SizedBox(height: 10),
+                                      const Divider(height: 1, color: AppColors.border),
+                                      const SizedBox(height: 8),
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: GestureDetector(
+                                          onTap: () => _cancelLeave(r.id),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.dangerLight,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: const Text('신청 취소', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.danger)),
                                           ),
-                                          if (r.reason.isNotEmpty)
-                                            Text(r.reason, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                        ],
+                                        ),
                                       ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(color: s.bg, borderRadius: BorderRadius.circular(99)),
-                                      child: Text(s.label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: s.color)),
-                                    ),
+                                    ],
                                   ],
                                 ),
                               );
