@@ -16,13 +16,25 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Firebase 초기화
-  await Firebase.initializeApp();
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase 초기화 오류: $e');
+  }
 
   // 로컬 알림 초기화 (알림 채널 설정 + 권한 요청)
-  await NotificationService().init();
+  try {
+    await NotificationService().init();
+  } catch (e) {
+    debugPrint('NotificationService 초기화 오류: $e');
+  }
 
   // 한국어 날짜 로케일 초기화
-  await initializeDateFormatting('ko', null);
+  try {
+    await initializeDateFormatting('ko', null);
+  } catch (e) {
+    debugPrint('날짜 포맷팅 초기화 오류: $e');
+  }
 
   // 세로 모드 고정
   await SystemChrome.setPreferredOrientations([
