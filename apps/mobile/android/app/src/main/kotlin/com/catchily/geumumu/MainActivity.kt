@@ -1,4 +1,4 @@
-package com.example.geumumapp
+package com.catchily.geumumu
 
 import io.flutter.embedding.android.FlutterActivity
 

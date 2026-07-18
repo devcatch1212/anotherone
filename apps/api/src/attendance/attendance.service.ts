@@ -1,7 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CheckInDto, CheckOutDto, OvertimeRequestDto } from './dto/attendance.dto';
-import { differenceInMinutes, format } from 'date-fns';
+import { differenceInMinutes } from 'date-fns';
+import { AttendanceRecord, Employment } from '@prisma/client';
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371e3; // 지구 반지름 (미터 단위)
@@ -30,6 +31,8 @@ function getKSTDateString(date: Date = new Date()): string {
 
 @Injectable()
 export class AttendanceService {
+  private readonly logger = new Logger(AttendanceService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async checkIn(userId: string, data: CheckInDto) {
@@ -64,6 +67,33 @@ export class AttendanceService {
     if (existing) {
       throw new BadRequestException('이미 오늘의 출근 기록이 존재합니다.');
     }
+
+    // ─── 전일 미퇴근 자동 처리 ───────────────────────────────────────────────
+    // 오늘 이전에 출근(checkIn)은 했지만 퇴근(checkOut)이 없는 기록을 조회하여 자동 퇴근 처리
+    const previousUnfinished = await this.prisma.attendanceRecord.findFirst({
+      where: {
+        userId,
+        companyId: employment.companyId,
+        date: { lt: dateStr },      // 오늘보다 이전 날짜
+        checkIn: { not: null },      // 출근 기록 있음
+        checkOut: null,              // 퇴근 기록 없음
+      },
+      orderBy: { date: 'desc' },
+    });
+
+    if (previousUnfinished && previousUnfinished.checkIn) {
+      // 계약 퇴근 시간(workEndTime)을 기준으로 자동 퇴근 시각 계산
+      const autoCheckoutTime = this.calcAutoCheckoutTime(
+        previousUnfinished.checkIn,
+        previousUnfinished.date,
+        employment,
+      );
+      await this.processAutoCheckout(previousUnfinished, employment, autoCheckoutTime, 'auto_checkout');
+      this.logger.log(
+        `[자동퇴근] userId=${userId} date=${previousUnfinished.date} → ${autoCheckoutTime.toISOString()} 자동 퇴근 처리`,
+      );
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     // 지각 여부 판별: workStartTime(HH:mm)과 실제 출근 시간 비교
     let status = 'normal';
@@ -235,5 +265,118 @@ export class AttendanceService {
     });
 
     return { message: '초과근무 신청이 완료되었습니다.', overtimeRequest };
+  }
+
+  // ─── 자동 퇴근 공통 처리 (스케줄러 + checkIn에서 공유) ────────────────────
+
+  /**
+   * 자동 퇴근 처리 메서드 (외부에서도 호출 가능 - 스케줄러용)
+   * @param record    대상 AttendanceRecord
+   * @param employment 근로 계약 정보
+   * @param checkOutTime 퇴근으로 기록할 시각
+   * @param autoStatus  기록될 status ('auto_checkout' | 'overtime_auto_checkout')
+   */
+  async processAutoCheckout(
+    record: AttendanceRecord,
+    employment: Employment,
+    checkOutTime: Date,
+    autoStatus: string,
+  ) {
+    const checkInTime = record.checkIn!;
+    const workMinutes = differenceInMinutes(checkOutTime, checkInTime);
+
+    // 음수 방지: 퇴근 시각이 출근 시각보다 이전이면 최소 0분 처리
+    const safeWorkMinutes = Math.max(0, workMinutes);
+
+    // 동적 휴게 시간 책정
+    let breakTime = 0;
+    if (safeWorkMinutes >= 8 * 60) {
+      breakTime = employment.breakMinutes ?? 60;
+    } else if (safeWorkMinutes >= 4 * 60) {
+      breakTime = 30;
+    }
+
+    let actualWorkMinutes = Math.max(0, safeWorkMinutes - breakTime);
+    // 30분 단위 내림 정산
+    actualWorkMinutes = Math.floor(actualWorkMinutes / 30) * 30;
+
+    // 야간근로시간 계산 (22:00 ~ 06:00)
+    let nightMinutes = 0;
+    let cur = new Date(checkInTime);
+    while (cur < checkOutTime) {
+      const h = cur.getHours();
+      if (h >= 22 || h < 6) nightMinutes++;
+      cur.setMinutes(cur.getMinutes() + 1);
+    }
+    nightMinutes = Math.floor(nightMinutes / 30) * 30;
+    nightMinutes = Math.min(nightMinutes, actualWorkMinutes);
+
+    // 연장 근로 계산
+    const contractWorkMinutes = (employment.dailyWorkHours || 8) * 60;
+    const overtimeMinutes = Math.max(0, actualWorkMinutes - contractWorkMinutes);
+
+    // 시급 산출
+    let hourlyWage = employment.hourlyWage ?? 0;
+    if (employment.wageType === 'daily') {
+      const dailyWorkHours = employment.dailyWorkHours || 8;
+      hourlyWage = (employment.dailyWage ?? 0) / dailyWorkHours;
+    }
+
+    // 기본급
+    let basePay = 0;
+    if (employment.wageType === 'daily') {
+      basePay = employment.dailyWage ?? 0;
+    } else {
+      basePay = Math.floor((actualWorkMinutes / 60) * hourlyWage);
+    }
+
+    const overtimePay = Math.floor((overtimeMinutes / 60) * hourlyWage * 0.5);
+    const nightPay = Math.floor((nightMinutes / 60) * hourlyWage * 0.5);
+    const earnedPay = basePay + overtimePay + nightPay;
+
+    await this.prisma.attendanceRecord.update({
+      where: { id: record.id },
+      data: {
+        checkOut: checkOutTime,
+        status: autoStatus,
+        workedMinutes: actualWorkMinutes,
+        overtimeMinutes,
+        nightMinutes,
+        basePay,
+        overtimePay,
+        nightPay,
+        earnedPay,
+      },
+    });
+  }
+
+  /**
+   * 전일 미퇴근 자동 퇴근 시각 계산
+   * workEndTime이 있으면 해당 날짜의 workEndTime으로,
+   * 없으면 checkIn + dailyWorkHours로 계산
+   */
+  private calcAutoCheckoutTime(
+    checkIn: Date,
+    dateStr: string,             // YYYY-MM-DD
+    employment: Employment,
+  ): Date {
+    if (employment.workEndTime) {
+      const [endH, endM] = employment.workEndTime.split(':').map(Number);
+      // 해당 날짜(KST) 기준으로 퇴근 시각 생성
+      const [year, month, day] = dateStr.split('-').map(Number);
+      // KST 시각을 UTC로 변환 (KST = UTC+9)
+      const checkoutUTC = new Date(
+        Date.UTC(year, month - 1, day, endH - 9 < 0 ? endH - 9 + 24 : endH - 9, endM, 0),
+      );
+      // endH < 9인 경우 날짜 보정 (예: 02:00 KST → 전날 17:00 UTC)
+      if (endH < 9) {
+        checkoutUTC.setUTCDate(checkoutUTC.getUTCDate() + 1);
+      }
+      return checkoutUTC;
+    }
+
+    // workEndTime이 없으면 checkIn + dailyWorkHours
+    const dailyWorkMs = (employment.dailyWorkHours || 8) * 60 * 60 * 1000;
+    return new Date(checkIn.getTime() + dailyWorkMs);
   }
 }

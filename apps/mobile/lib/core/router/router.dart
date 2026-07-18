@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import '../../shared/models/models.dart';
 import '../../features/auth/auth_provider.dart';
 import '../../features/home/presentation/home_screen.dart';
@@ -23,8 +24,10 @@ import '../../features/splash/presentation/splash_screen.dart';
 import '../widgets/main_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
+  final analytics = FirebaseAnalytics.instance;
   final router = GoRouter(
     initialLocation: '/',
+    observers: [FirebaseAnalyticsObserver(analytics: analytics)],
     redirect: (context, state) {
       final authAsync = ref.read(authProvider);
       final loc = state.uri.path;

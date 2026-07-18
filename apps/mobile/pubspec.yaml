@@ -1,7 +1,7 @@
 name: geumumu
 description: "AnotherOne 근무관리 - 출퇴근 & 급여 확인"
 publish_to: 'none'
-version: 1.1.9+18
+version: 1.2.0+19
 
 environment:
   sdk: ^3.9.2
@@ -54,6 +54,14 @@ dependencies:
   # 웹뷰 (주소 및 지도)
   webview_flutter: ^4.10.0
   uuid: ^4.5.3
+
+  # Firebase Analytics
+  firebase_core: ^3.13.1
+  firebase_analytics: ^11.4.6
+
+  # 로컬 알림 (출퇴근 알림)
+  flutter_local_notifications: ^18.0.0
+  timezone: ^0.10.0
 
 dev_dependencies:
   flutter_test:

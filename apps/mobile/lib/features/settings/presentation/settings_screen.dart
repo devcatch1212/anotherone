@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/auth/auth_provider.dart';
+import '../../../core/providers/alarm_settings_provider.dart';
+import '../../../core/services/alarm_scheduler.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -12,6 +14,7 @@ class SettingsScreen extends ConsumerWidget {
     final auth = ref.watch(authProvider).value;
     final user = auth?.user;
     final employments = user?.employments ?? [];
+    final alarmAsync = ref.watch(alarmSettingsProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -172,6 +175,92 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 32),
 
+                    const Text('알림 설정', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                    const SizedBox(height: 10),
+                    alarmAsync.when(
+                      loading: () => const SizedBox(height: 80, child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
+                      error: (_, __) => const SizedBox.shrink(),
+                      data: (settings) => Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Column(
+                          children: [
+                            // 출근 알림 토글
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.login_rounded, color: AppColors.textSecondary, size: 20),
+                                  const SizedBox(width: 12),
+                                  const Expanded(
+                                    child: Text('출근 알림', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                                  ),
+                                  Switch(
+                                    value: settings.checkInEnabled,
+                                    activeThumbColor: const Color(0xFF3E6872),
+                                    onChanged: (value) async {
+                                      await ref.read(alarmSettingsProvider.notifier).setCheckInEnabled(value);
+                                      _rescheduleAlarms(ref, employments);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Divider(height: 1, indent: 48),
+                            // 퇴근 알림 토글
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.logout_rounded, color: AppColors.textSecondary, size: 20),
+                                  const SizedBox(width: 12),
+                                  const Expanded(
+                                    child: Text('퇴근 알림', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                                  ),
+                                  Switch(
+                                    value: settings.checkOutEnabled,
+                                    activeThumbColor: const Color(0xFF3E6872),
+                                    onChanged: (value) async {
+                                      await ref.read(alarmSettingsProvider.notifier).setCheckOutEnabled(value);
+                                      _rescheduleAlarms(ref, employments);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // 알림 시간 선택 (출근 또는 퇴근 알림이 하나라도 켜진 경우만 표시)
+                            if (settings.checkInEnabled || settings.checkOutEnabled) ...[
+                              const Divider(height: 1, indent: 48),
+                              GestureDetector(
+                                onTap: () => _showMinutesPickerSheet(context, ref, settings.minutesBefore, employments),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.timer_outlined, color: AppColors.textSecondary, size: 20),
+                                      const SizedBox(width: 12),
+                                      const Expanded(
+                                        child: Text('알림 시간', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                                      ),
+                                      Text(
+                                        '${settings.minutesBefore}분 전',
+                                        style: const TextStyle(fontSize: 14, color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
                     // 데이터 초기화 버튼 (눈에 띄지 않게 텍스트 형태로 하단 배치)
                     Center(
                       child: TextButton(
@@ -287,5 +376,71 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _showMinutesPickerSheet(
+    BuildContext context,
+    WidgetRef ref,
+    int currentMinutes,
+    List<dynamic> employments,
+  ) {
+    const options = [5, 10, 15, 20, 30];
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.textMuted.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8, left: 20),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('알림 시간 선택', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                ),
+              ),
+              ...options.map((min) => ListTile(
+                    title: Text('$min분 전', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                    trailing: min == currentMinutes
+                        ? const Icon(Icons.check_rounded, color: Color(0xFF3E6872))
+                        : null,
+                    onTap: () async {
+                      Navigator.pop(ctx);
+                      await ref.read(alarmSettingsProvider.notifier).setMinutesBefore(min);
+                      _rescheduleAlarms(ref, employments);
+                    },
+                  )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _rescheduleAlarms(WidgetRef ref, List<dynamic> employments) {
+    Future(() async {
+      try {
+        final settings = await ref.read(alarmSettingsProvider.future);
+        await AlarmScheduler().reschedule(
+          employments: employments.cast(),
+          settings: settings,
+        );
+      } catch (e) {
+        debugPrint('설정 화면 알람 재예약 실패: $e');
+      }
+    });
   }
 }

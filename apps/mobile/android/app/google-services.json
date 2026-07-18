@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "837968931430",
+    "project_id": "anotherone-61000",
+    "storage_bucket": "anotherone-61000.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:837968931430:android:593196e62d58e624255ba7",
+        "android_client_info": {
+          "package_name": "com.catchily.geumumu"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0B79--KqQhJA22B0lYX76mX7w00z_4uQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

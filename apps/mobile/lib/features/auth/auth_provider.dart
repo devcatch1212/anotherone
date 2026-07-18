@@ -7,6 +7,8 @@ import '../../shared/models/models.dart';
 import '../../core/storage/auth_storage.dart';
 import '../../core/api/api_client.dart';
 import '../../core/services/device_id_service.dart';
+import '../../core/services/alarm_scheduler.dart';
+import '../../core/providers/alarm_settings_provider.dart';
 
 // ── 인증 상태 ──
 class AuthState {
@@ -93,6 +95,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
             activeEmployments.firstOrNull ??
             user.employments.firstOrNull;
 
+        // 알림 재예약
+        _rescheduleAlarms(user.employments);
+
         return AuthState(
           token: token,
           user: user,
@@ -132,6 +137,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       await _storage.saveCurrentCompanyId(primary?.companyId);
       await _storage.saveCurrentEmploymentId(primary?.id);
 
+      // 알림 재예약
+      _rescheduleAlarms(user.employments);
+
       return AuthState(
         token: token,
         user: user,
@@ -147,6 +155,8 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    // 알림 취소
+    await AlarmScheduler().cancelAll();
     await _storage.clearAll();
     // 로그아웃 시에도 바로 기기 UUID로 재로그인
     state = const AsyncValue.loading();
@@ -212,6 +222,21 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       debugPrint('이름 업데이트 실패: $e');
       rethrow;
     }
+  }
+
+  /// 알람 재예약 헬퍼 (비동기 fire-and-forget)
+  void _rescheduleAlarms(List<Employment> employments) {
+    Future(() async {
+      try {
+        final settings = await ref.read(alarmSettingsProvider.future);
+        await AlarmScheduler().reschedule(
+          employments: employments,
+          settings: settings,
+        );
+      } catch (e) {
+        debugPrint('알람 재예약 실패: $e');
+      }
+    });
   }
 }
 

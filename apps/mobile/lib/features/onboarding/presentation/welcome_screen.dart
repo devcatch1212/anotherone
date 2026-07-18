@@ -80,7 +80,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'AnotherOne',
+                  '오출완',
                   style: TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w900,
