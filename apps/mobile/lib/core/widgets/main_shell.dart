@@ -14,7 +14,7 @@ class MainShell extends StatelessWidget {
   static const _tabs = [
     _TabItem(icon: Icons.home_rounded, label: '홈', path: '/home'),
     _TabItem(icon: Icons.calendar_month_rounded, label: '캘린더', path: '/calendar'),
-    _TabItem(icon: Icons.beach_access_rounded, label: '휴가', path: '/leave'),
+    _TabItem(icon: Icons.beach_access_rounded, label: '휴가/외근', path: '/leave'),
     _TabItem(icon: Icons.payments_rounded, label: '급여', path: '/payroll'),
     _TabItem(icon: Icons.person_rounded, label: '설정', path: '/settings'),
   ];

@@ -2,6 +2,7 @@
 // JWT 토큰 및 인증 정보 보안 저장소
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,38 +22,65 @@ class AuthStorage {
   );
 
   // ── 토큰 ──
-  Future<void> saveToken(String token) =>
-      _secure.write(key: _tokenKey, value: token);
+  Future<void> saveToken(String token) async {
+    try {
+      await _secure.write(key: _tokenKey, value: token).timeout(const Duration(seconds: 2));
+    } catch (e) {
+      debugPrint('[AuthStorage] saveToken 오류: $e');
+    }
+  }
 
-  Future<String?> getToken() => _secure.read(key: _tokenKey);
+  Future<String?> getToken() async {
+    try {
+      return await _secure.read(key: _tokenKey).timeout(const Duration(seconds: 2));
+    } catch (e) {
+      debugPrint('[AuthStorage] getToken 오류: $e');
+      return null;
+    }
+  }
 
-  Future<void> deleteToken() => _secure.delete(key: _tokenKey);
+  Future<void> deleteToken() async {
+    try {
+      await _secure.delete(key: _tokenKey).timeout(const Duration(seconds: 2));
+    } catch (e) {
+      debugPrint('[AuthStorage] deleteToken 오류: $e');
+    }
+  }
 
   // ── 유저 ──
   Future<void> saveUser(User user) async {
-    final json = {
-      'id': user.id,
-      'name': user.name,
-      'email': user.email,
-      'image': user.image,
-      'onboardingCompleted': user.onboardingCompleted,
-      'employments': user.employments.map((e) => _employmentToJson(e)).toList(),
-    };
-    await _secure.write(key: _userKey, value: jsonEncode(json));
+    try {
+      final json = {
+        'id': user.id,
+        'name': user.name,
+        'email': user.email,
+        'image': user.image,
+        'onboardingCompleted': user.onboardingCompleted,
+        'employments': user.employments.map((e) => _employmentToJson(e)).toList(),
+      };
+      await _secure.write(key: _userKey, value: jsonEncode(json)).timeout(const Duration(seconds: 2));
+    } catch (e) {
+      debugPrint('[AuthStorage] saveUser 오류: $e');
+    }
   }
 
   Future<User?> getUser() async {
-    final str = await _secure.read(key: _userKey);
-    if (str == null) return null;
     try {
+      final str = await _secure.read(key: _userKey).timeout(const Duration(seconds: 2));
+      if (str == null) return null;
       return User.fromJson(jsonDecode(str) as Map<String, dynamic>);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[AuthStorage] getUser 오류: $e');
       return null;
     }
   }
 
   Future<void> deleteUser() async {
-    await _secure.delete(key: _userKey);
+    try {
+      await _secure.delete(key: _userKey).timeout(const Duration(seconds: 2));
+    } catch (e) {
+      debugPrint('[AuthStorage] deleteUser 오류: $e');
+    }
   }
 
   // ── 기타 설정 ──
@@ -96,9 +124,17 @@ class AuthStorage {
 
   // ── 전체 삭제 ──
   Future<void> clearAll() async {
-    await _secure.deleteAll();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    try {
+      await _secure.deleteAll().timeout(const Duration(seconds: 2));
+    } catch (e) {
+      debugPrint('[AuthStorage] clearAll secure storage 오류: $e');
+    }
+    try {
+      final prefs = await SharedPreferences.getInstance().timeout(const Duration(seconds: 2));
+      await prefs.clear();
+    } catch (e) {
+      debugPrint('[AuthStorage] clearAll shared preferences 오류: $e');
+    }
   }
 
   // ── 헬퍼 ──

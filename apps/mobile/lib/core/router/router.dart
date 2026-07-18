@@ -14,7 +14,6 @@ import '../../features/payroll/presentation/payroll_detail_screen.dart';
 import '../../features/calendar/presentation/calendar_screen.dart';
 import '../../features/leave/presentation/leave_screen.dart';
 import '../../features/leave/presentation/leave_apply_screen.dart';
-import '../../features/outwork/presentation/outwork_screen.dart';
 import '../../features/outwork/presentation/outwork_apply_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
@@ -26,10 +25,18 @@ import '../../features/splash/presentation/splash_screen.dart';
 import '../widgets/main_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final analytics = FirebaseAnalytics.instance;
+  FirebaseAnalytics? analytics;
+  final List<NavigatorObserver> observers = [];
+  try {
+    analytics = FirebaseAnalytics.instance;
+    observers.add(FirebaseAnalyticsObserver(analytics: analytics));
+  } catch (e) {
+    debugPrint('Firebase Analytics 초기화 실패 (무시하고 계속 진행): $e');
+  }
+
   final router = GoRouter(
     initialLocation: '/',
-    observers: [FirebaseAnalyticsObserver(analytics: analytics)],
+    observers: observers,
     redirect: (context, state) {
       final authAsync = ref.read(authProvider);
       final loc = state.uri.path;
@@ -106,12 +113,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/leave/apply',
             builder: (_, __) => const LeaveApplyScreen(),
-          ),
-          GoRoute(
-            path: '/outwork',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: OutworkScreen(),
-            ),
           ),
           GoRoute(
             path: '/outwork/apply',

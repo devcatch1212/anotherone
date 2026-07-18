@@ -1027,17 +1027,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     // const SizedBox(height: 16),
 
                     // 빠른 메뉴
-                    Row(
-                      children: [
-                        _quickMenu('🌴', '휴가 신청', '/leave'),
-                        const SizedBox(width: 8),
-                        _quickMenu('💼', '외근/출장', '/outwork'),
-                        const SizedBox(width: 8),
-                        _quickMenu('💰', '급여 명세', '/payroll'),
-                        const SizedBox(width: 8),
-                        _quickMenu('📅', '근무 달력', '/calendar'),
-                      ],
-                    ),
+                    // Row(
+                    //   children: [
+                    //     _quickMenu('🌴', '휴가 신청', '/leave'),
+                    //     const SizedBox(width: 8),
+                    //     _quickMenu('💼', '외근/출장', '/outwork'),
+                    //     const SizedBox(width: 8),
+                    //     _quickMenu('💰', '급여 명세', '/payroll'),
+                    //     const SizedBox(width: 8),
+                    //     _quickMenu('📅', '근무 달력', '/calendar'),
+                    //   ],
+                    // ),
                   ],
                 ),
               ),
