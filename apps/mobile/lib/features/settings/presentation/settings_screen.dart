@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/auth/auth_provider.dart';
 import '../../../core/providers/alarm_settings_provider.dart';
 import '../../../core/services/alarm_scheduler.dart';
+import '../../../core/services/notification_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -201,6 +203,17 @@ class SettingsScreen extends ConsumerWidget {
                                     value: settings.checkInEnabled,
                                     activeThumbColor: const Color(0xFF3E6872),
                                     onChanged: (value) async {
+                                      if (value) {
+                                        // 토글 ON 시 권한 확인 및 요청
+                                        final granted = await NotificationService().requestPermission();
+                                        if (!granted) {
+                                          // 영구 거부 시 설정 앱 안내
+                                          if (context.mounted) {
+                                            _showPermissionDeniedSnackBar(context);
+                                          }
+                                          return; // 토글 ON 취소
+                                        }
+                                      }
                                       await ref.read(alarmSettingsProvider.notifier).setCheckInEnabled(value);
                                       _rescheduleAlarms(ref, employments);
                                     },
@@ -223,6 +236,15 @@ class SettingsScreen extends ConsumerWidget {
                                     value: settings.checkOutEnabled,
                                     activeThumbColor: const Color(0xFF3E6872),
                                     onChanged: (value) async {
+                                      if (value) {
+                                        final granted = await NotificationService().requestPermission();
+                                        if (!granted) {
+                                          if (context.mounted) {
+                                            _showPermissionDeniedSnackBar(context);
+                                          }
+                                          return;
+                                        }
+                                      }
                                       await ref.read(alarmSettingsProvider.notifier).setCheckOutEnabled(value);
                                       _rescheduleAlarms(ref, employments);
                                     },
@@ -443,4 +465,21 @@ class SettingsScreen extends ConsumerWidget {
       }
     });
   }
+
+  /// 알림 권한 영구 거부 시 설정 앱으로 안내하는 스낵바 표시
+  void _showPermissionDeniedSnackBar(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          '알림 권한이 거부되었습니다.\n설정 > 앱 > 알림에서 직접 허용해주세요.',
+        ),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: '설정 열기',
+          onPressed: () => openAppSettings(), // permission_handler 제공
+        ),
+      ),
+    );
+  }
 }
+
