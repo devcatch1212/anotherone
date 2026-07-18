@@ -31,6 +31,7 @@ model User {
   notifications       Notification[]
   overtimeRequests    OvertimeRequest[]
   attendanceCorrections AttendanceCorrection[]
+  outworkRequests     OutworkRequest[]
 
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
@@ -53,6 +54,7 @@ model Company {
   notifications       Notification[]
   overtimeRequests    OvertimeRequest[]
   attendanceCorrections AttendanceCorrection[]
+  outworkRequests     OutworkRequest[]
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -275,4 +277,20 @@ model AttendanceCorrection {
   
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+}
+
+model OutworkRequest {
+  id        String   @id @default(uuid())
+  date      String   // YYYY-MM-DD
+  type      String   // 'outside' | 'trip'
+  reason    String   // 업무 내용 / 사유
+  status    String   @default("pending") // pending, approved, rejected
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

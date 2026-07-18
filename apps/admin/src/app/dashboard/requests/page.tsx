@@ -55,13 +55,30 @@ interface OvertimeRequest {
   };
 }
 
+interface OutworkRequest {
+  id: string;
+  date: string;
+  type: 'outside' | 'trip';
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  user: {
+    name: string;
+    email: string;
+  };
+  company: {
+    name: string;
+  };
+}
+
 export default function RequestsPage() {
-  const [activeTab, setActiveTab] = useState<'leave' | 'attendance' | 'overtime'>('leave');
+  const [activeTab, setActiveTab] = useState<'leave' | 'attendance' | 'overtime' | 'outwork'>('leave');
   
   // 데이터 상태
   const [leaves, setLeaves] = useState<LeaveRecord[]>([]);
   const [corrections, setCorrections] = useState<AttendanceCorrection[]>([]);
   const [overtimes, setOvertimes] = useState<OvertimeRequest[]>([]);
+  const [outworks, setOutworks] = useState<OutworkRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -112,9 +129,12 @@ export default function RequestsPage() {
       } else if (activeTab === 'attendance') {
         const data = await apiFetch<AttendanceCorrection[]>('/api/admin/attendance-corrections');
         setCorrections(data);
-      } else {
+      } else if (activeTab === 'overtime') {
         const data = await apiFetch<OvertimeRequest[]>('/api/admin/overtimes');
         setOvertimes(data);
+      } else {
+        const data = await apiFetch<OutworkRequest[]>('/api/admin/outworks');
+        setOutworks(data);
       }
     } catch (err: any) {
       setError(err.message || '요청 목록을 불러오지 못했습니다.');
@@ -176,6 +196,25 @@ export default function RequestsPage() {
         body: action === 'reject' ? JSON.stringify({ rejectReason }) : undefined
       });
       setOvertimes((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, status: action === 'approve' ? 'approved' : 'rejected' } : item
+        )
+      );
+    } catch (err: any) {
+      alert(err.message || '작업 처리 중 오류가 발생했습니다.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // 외근/출장 승인/반려 액션
+  const handleOutworkAction = async (id: string, action: 'approve' | 'reject') => {
+    try {
+      setActionLoading(`${id}-${action}`);
+      await apiFetch(`/api/admin/outworks/${id}/${action}`, { 
+        method: 'POST'
+      });
+      setOutworks((prev) =>
         prev.map((item) =>
           item.id === id ? { ...item, status: action === 'approve' ? 'approved' : 'rejected' } : item
         )
@@ -331,6 +370,26 @@ export default function RequestsPage() {
           }}
         >
           💼 연장 근무 신청
+        </button>
+        <button
+          onClick={() => setActiveTab('outwork')}
+          className={`pb-3 text-sm font-bold transition cursor-pointer border-b-2 ${
+            activeTab === 'outwork'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-400 hover:text-slate-600'
+          }`}
+          style={{
+            paddingBottom: '12px',
+            fontSize: '14px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            backgroundColor: 'transparent',
+            border: 'none',
+            borderBottom: activeTab === 'outwork' ? '2px solid #2563EB' : '2px solid transparent',
+            color: activeTab === 'outwork' ? '#2563EB' : '#94A3B8'
+          }}
+        >
+          ✈️ 외근/출장 신청
         </button>
       </div>
 
@@ -510,7 +569,7 @@ export default function RequestsPage() {
               </table>
             </div>
           )
-        ) : (
+        ) : activeTab === 'overtime' ? (
           /* ========================================================
              3. 연장 근무 신청 목록 탭
              ======================================================== */
@@ -577,6 +636,80 @@ export default function RequestsPage() {
                               style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer' }}
                             >
                               {actionLoading === `${o.id}-reject` ? '반려중...' : '반려'}
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400" style={{ fontSize: '12px', color: '#94A3B8' }}>처리 완료</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        ) : (
+          /* ========================================================
+             4. 외근/출장 신청 목록 탭
+             ======================================================== */
+          outworks.length === 0 ? (
+            <div className="p-12 text-center text-slate-400 text-sm" style={{ padding: '48px', textAlign: 'center', color: '#94A3B8' }}>
+              외근/출장 신청 내역이 존재하지 않습니다.
+            </div>
+          ) : (
+            <div className="w-full overflow-x-auto" style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table className="w-full border-collapse text-left text-sm text-slate-600" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
+                <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase border-b border-slate-100" style={{ backgroundColor: '#F8FAFC', fontSize: '11px', color: '#64748B' }}>
+                  <tr>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>근로자 (이메일)</th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>근무지</th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>대상 일자</th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>구분</th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>업무 내용 / 사유</th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>상태</th>
+                    <th className="px-6 py-4 text-center" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0', textAlign: 'center' }}>결재 처리</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100" style={{ backgroundColor: '#FFFFFF' }}>
+                  {outworks.map((w) => (
+                    <tr key={w.id} className="hover:bg-slate-50/50 transition">
+                      <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
+                        <div className="font-bold text-slate-800" style={{ fontSize: '14px', fontWeight: '700', color: '#1E293B' }}>{w.user.name}</div>
+                        <div className="text-xs text-slate-400 mt-1" style={{ fontSize: '11px', color: '#94A3B8' }}>{w.user.email || `(기기 계정) ${w.user.name}`}</div>
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-slate-700" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
+                        {w.company.name}
+                      </td>
+                      <td className="px-6 py-4 font-bold text-slate-800" style={{ padding: '16px 24px', fontSize: '13px', color: '#1E293B', borderBottom: '1px solid #F1F5F9' }}>
+                        📍 {w.date}
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-slate-700" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
+                        {w.type === 'outside' ? '외근' : '출장'}
+                      </td>
+                      <td className="px-6 py-4 text-xs text-slate-500 max-w-[250px] truncate" style={{ padding: '16px 24px', fontSize: '12px', color: '#64748B', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderBottom: '1px solid #F1F5F9' }} title={w.reason}>
+                        {w.reason || '-'}
+                      </td>
+                      <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
+                        {statusBadge(w.status)}
+                      </td>
+                      <td className="px-6 py-4 text-center" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9', textAlign: 'center' }}>
+                        {w.status === 'pending' ? (
+                          <div className="flex gap-2 justify-center" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                            <button
+                              disabled={actionLoading !== null}
+                              onClick={() => handleOutworkAction(w.id, 'approve')}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-600 hover:text-white transition cursor-pointer"
+                              style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer' }}
+                            >
+                              {actionLoading === `${w.id}-approve` ? '승인중...' : '승인'}
+                            </button>
+                            <button
+                              disabled={actionLoading !== null}
+                              onClick={() => handleOutworkAction(w.id, 'reject')}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white transition cursor-pointer"
+                              style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer' }}
+                            >
+                              {actionLoading === `${w.id}-reject` ? '반려중...' : '반려'}
                             </button>
                           </div>
                         ) : (

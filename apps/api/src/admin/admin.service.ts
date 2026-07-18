@@ -736,4 +736,39 @@ export class AdminService {
       return { success: true, count: issuedRecords.length };
     });
   }
+
+  // 외근/출장 신청 목록 조회
+  async getOutworks() {
+    return this.prisma.outworkRequest.findMany({
+      include: {
+        user: { select: { name: true, email: true } },
+        company: { select: { name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // 외근/출장 승인
+  async approveOutwork(id: string) {
+    const request = await this.prisma.outworkRequest.findUnique({ where: { id } });
+    if (!request) throw new NotFoundException('외근/출장 신청 기록을 찾을 수 없습니다.');
+    if (request.status !== 'pending') throw new Error('대기 중인 신청만 승인할 수 있습니다.');
+
+    return this.prisma.outworkRequest.update({
+      where: { id },
+      data: { status: 'approved' },
+    });
+  }
+
+  // 외근/출장 반려
+  async rejectOutwork(id: string) {
+    const request = await this.prisma.outworkRequest.findUnique({ where: { id } });
+    if (!request) throw new NotFoundException('외근/출장 신청 기록을 찾을 수 없습니다.');
+    if (request.status !== 'pending') throw new Error('대기 중인 신청만 반려할 수 있습니다.');
+
+    return this.prisma.outworkRequest.update({
+      where: { id },
+      data: { status: 'rejected' },
+    });
+  }
 }

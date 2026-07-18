@@ -175,4 +175,25 @@ export class AdminController {
       body.items,
     );
   }
+
+  // 외근/출장 신청 목록 조회
+  @UseGuards(AdminAuthGuard)
+  @Get('outworks')
+  getOutworks() {
+    return this.adminService.getOutworks();
+  }
+
+  // 외근/출장 승인
+  @UseGuards(AdminAuthGuard)
+  @Post('outworks/:id/approve')
+  approveOutwork(@Param('id') id: string) {
+    return this.adminService.approveOutwork(id);
+  }
+
+  // 외근/출장 반려
+  @UseGuards(AdminAuthGuard)
+  @Post('outworks/:id/reject')
+  rejectOutwork(@Param('id') id: string) {
+    return this.adminService.rejectOutwork(id);
+  }
 }

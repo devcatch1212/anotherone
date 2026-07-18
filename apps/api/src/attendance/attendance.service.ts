@@ -130,11 +130,25 @@ export class AttendanceService {
     if (!employment) throw new NotFoundException('유효하지 않은 근로계약입니다.');
     if (!employment.isActive) throw new BadRequestException('이미 근무가 종료된 근무지입니다. 퇴근 체크를 할 수 없습니다.');
 
+    const checkOutTime = new Date();
+    const dateStr = getKSTDateString(checkOutTime);
+
+    const approvedOutwork = await this.prisma.outworkRequest.findFirst({
+      where: {
+        userId,
+        companyId: employment.companyId,
+        date: dateStr,
+        status: 'approved',
+      },
+    });
+
+    const isOutwork = approvedOutwork !== null;
+
     const company = employment.company;
     const distance = getDistance(data.latitude, data.longitude, company.latitude, company.longitude);
     const allowedRadius = company.radiusMeters || 100;
 
-    if (distance > allowedRadius) {
+    if (distance > allowedRadius && !isOutwork) {
       throw new BadRequestException(
         `📍 근무지 인증 실패! 반경 ${allowedRadius}m 밖입니다. (현재 거리: ${Math.round(distance)}m)`
       );
@@ -156,7 +170,6 @@ export class AttendanceService {
       throw new BadRequestException('최근 24시간 내의 출근 기록이 없거나 이미 퇴근 처리되었습니다.');
     }
 
-    const checkOutTime = new Date();
     const checkInTime = existing.checkIn;
     const workMinutes = differenceInMinutes(checkOutTime, checkInTime);
 
@@ -243,7 +256,38 @@ export class AttendanceService {
       orderBy: { date: 'asc' },
     });
 
-    return { records };
+    const outworkRequests = await this.prisma.outworkRequest.findMany({
+      where: {
+        userId,
+        companyId: employment.companyId,
+        date: { startsWith: monthStr },
+        status: 'approved',
+      },
+    });
+
+    const outworkMap = new Map(outworkRequests.map(r => [r.date, r.type]));
+
+    const recordsWithOutwork = records.map(r => ({
+      ...r,
+      hasOutwork: outworkMap.has(r.date),
+      outworkType: outworkMap.get(r.date) || null,
+    }));
+
+    const todayStr = getKSTDateString(new Date());
+    const todayOutwork = await this.prisma.outworkRequest.findFirst({
+      where: {
+        userId,
+        companyId: employment.companyId,
+        date: todayStr,
+        status: 'approved',
+      },
+    });
+
+    return {
+      records: recordsWithOutwork,
+      hasTodayOutwork: todayOutwork !== null,
+      todayOutworkType: todayOutwork?.type || null,
+    };
   }
 
   async requestOvertime(userId: string, data: OvertimeRequestDto) {

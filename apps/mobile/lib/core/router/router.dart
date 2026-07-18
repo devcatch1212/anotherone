@@ -14,6 +14,8 @@ import '../../features/payroll/presentation/payroll_detail_screen.dart';
 import '../../features/calendar/presentation/calendar_screen.dart';
 import '../../features/leave/presentation/leave_screen.dart';
 import '../../features/leave/presentation/leave_apply_screen.dart';
+import '../../features/outwork/presentation/outwork_screen.dart';
+import '../../features/outwork/presentation/outwork_apply_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/settings/presentation/workplace_edit_screen.dart';
@@ -104,6 +106,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/leave/apply',
             builder: (_, __) => const LeaveApplyScreen(),
+          ),
+          GoRoute(
+            path: '/outwork',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: OutworkScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/outwork/apply',
+            builder: (_, __) => const OutworkApplyScreen(),
           ),
           GoRoute(
             path: '/payroll',

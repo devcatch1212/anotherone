@@ -202,6 +202,8 @@ class AttendanceRecord {
   final double? distance;
   final int? basePay;
   final int? earnedPay;
+  final bool hasOutwork;
+  final String? outworkType;
 
   AttendanceRecord({
     required this.id,
@@ -216,6 +218,8 @@ class AttendanceRecord {
     this.distance,
     this.basePay,
     this.earnedPay,
+    this.hasOutwork = false,
+    this.outworkType,
   });
 
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
@@ -240,6 +244,8 @@ class AttendanceRecord {
       distance: (json['distance'] as num?)?.toDouble(),
       basePay: json['basePay'] as int?,
       earnedPay: json['earnedPay'] as int?,
+      hasOutwork: json['hasOutwork'] as bool? ?? false,
+      outworkType: json['outworkType'] as String?,
     );
   }
 }
@@ -387,4 +393,52 @@ class AppNotification {
         read: json['read'] as bool? ?? false,
         createdAt: json['createdAt'] as String,
       );
+}
+
+enum OutworkType { outside, trip }
+enum OutworkStatus { pending, approved, rejected }
+
+class OutworkRequest {
+  final String id;
+  final String companyId;
+  final String date;
+  final OutworkType type;
+  final String reason;
+  final OutworkStatus status;
+  final String createdAt;
+
+  OutworkRequest({
+    required this.id,
+    required this.companyId,
+    required this.date,
+    required this.type,
+    required this.reason,
+    required this.status,
+    required this.createdAt,
+  });
+
+  factory OutworkRequest.fromJson(Map<String, dynamic> json) {
+    final typeStr = json['type'] as String? ?? 'outside';
+    final statusStr = json['status'] as String? ?? 'pending';
+
+    final typeMap = {
+      'outside': OutworkType.outside,
+      'trip': OutworkType.trip,
+    };
+    final statusMap = {
+      'pending': OutworkStatus.pending,
+      'approved': OutworkStatus.approved,
+      'rejected': OutworkStatus.rejected,
+    };
+
+    return OutworkRequest(
+      id: json['id'] as String,
+      companyId: json['companyId'] as String? ?? '',
+      date: json['date'] as String,
+      type: typeMap[typeStr] ?? OutworkType.outside,
+      reason: json['reason'] as String? ?? '',
+      status: statusMap[statusStr] ?? OutworkStatus.pending,
+      createdAt: json['createdAt'] as String? ?? '',
+    );
+  }
 }

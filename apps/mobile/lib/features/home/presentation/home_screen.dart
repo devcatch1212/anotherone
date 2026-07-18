@@ -27,6 +27,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<AttendanceRecord> _records = [];
   double _leaveRemaining = 0;
   bool _checkingIn = false;
+  bool _hasTodayOutwork = false;
   String? _loadError;
   Timer? _timer;
   DateTime _now = DateTime.now();
@@ -90,11 +91,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
       final today = recs.where((r) => r.date == todayStr).firstOrNull;
+      final hasTodayOutwork = res['hasTodayOutwork'] as bool? ?? false;
 
       if (mounted) {
         setState(() {
           _records = recs;
           _todayRecord = today;
+          _hasTodayOutwork = hasTodayOutwork;
           if (today != null) {
             _workState = today.checkOut != null
                 ? AttendanceState.done
@@ -395,16 +398,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (mounted) {
         setState(() {
           _distance = d;
-          _gpsStatus = d <= emp.company.radiusMeters ? GpsStatus.ok : GpsStatus.far;
+          _gpsStatus = (d <= emp.company.radiusMeters || _hasTodayOutwork) ? GpsStatus.ok : GpsStatus.far;
         });
       }
 
-      if (d > emp.company.radiusMeters) {
+      if (d > emp.company.radiusMeters && !_hasTodayOutwork) {
         _showSnackBar(
           '📍 근무지 인증 실패! 반경 ${emp.company.radiusMeters}m 밖입니다. (현재 거리: ${d.round()}m)',
           AppColors.danger,
         );
         return;
+      }
+
+      if (_hasTodayOutwork) {
+        _showSnackBar('ℹ️ 외근/출장 승인 상태이므로 위치 제한 없이 퇴근합니다.', AppColors.primary);
       }
 
       // 3. API 호출
@@ -1020,15 +1027,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     // const SizedBox(height: 16),
 
                     // 빠른 메뉴
-                    // Row(
-                    //   children: [
-                    //     _quickMenu('💰', '급여명세서', '/payroll'),
-                    //     const SizedBox(width: 10),
-                    //     _quickMenu('📅', '근무 캘린더', '/calendar'),
-                    //     const SizedBox(width: 10),
-                    //     _quickMenu('🌴', '휴가 신청', '/leave/apply'),
-                    //   ],
-                    // ),
+                    Row(
+                      children: [
+                        _quickMenu('🌴', '휴가 신청', '/leave'),
+                        const SizedBox(width: 8),
+                        _quickMenu('💼', '외근/출장', '/outwork'),
+                        const SizedBox(width: 8),
+                        _quickMenu('💰', '급여 명세', '/payroll'),
+                        const SizedBox(width: 8),
+                        _quickMenu('📅', '근무 달력', '/calendar'),
+                      ],
+                    ),
                   ],
                 ),
               ),
