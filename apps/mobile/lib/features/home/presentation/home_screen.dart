@@ -461,152 +461,172 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _showOvertimeSheet() {
-    final startCtrl = TextEditingController();
-    final endCtrl = TextEditingController();
+    TimeOfDay startTime = const TimeOfDay(hour: 18, minute: 0);
+    TimeOfDay endTime = const TimeOfDay(hour: 21, minute: 0);
     final reasonCtrl = TextEditingController();
+
+    String fmtTime(TimeOfDay t) =>
+        '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(2),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36, height: 4,
+                    decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              const Text('연장근로 신청',
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('시작 시각',
-                            style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textSecondary)),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: startCtrl,
-                          keyboardType: TextInputType.datetime,
-                          decoration: const InputDecoration(hintText: '18:00'),
-                        ),
-                      ],
+                const SizedBox(height: 16),
+                const Text('연장근로 신청', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('시작 시각', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                          const SizedBox(height: 6),
+                          GestureDetector(
+                            onTap: () async {
+                              final picked = await showTimePicker(
+                                context: ctx,
+                                initialTime: startTime,
+                                builder: (c, child) => MediaQuery(
+                                  data: MediaQuery.of(c).copyWith(alwaysUse24HourFormat: true),
+                                  child: child!,
+                                ),
+                              );
+                              if (picked != null) setSheetState(() => startTime = picked);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF5F5F7),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.access_time_rounded, size: 16, color: AppColors.textMuted),
+                                  const SizedBox(width: 8),
+                                  Text(fmtTime(startTime), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('종료 시각',
-                            style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textSecondary)),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: endCtrl,
-                          keyboardType: TextInputType.datetime,
-                          decoration: const InputDecoration(hintText: '21:00'),
-                        ),
-                      ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('종료 시각', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                          const SizedBox(height: 6),
+                          GestureDetector(
+                            onTap: () async {
+                              final picked = await showTimePicker(
+                                context: ctx,
+                                initialTime: endTime,
+                                builder: (c, child) => MediaQuery(
+                                  data: MediaQuery.of(c).copyWith(alwaysUse24HourFormat: true),
+                                  child: child!,
+                                ),
+                              );
+                              if (picked != null) setSheetState(() => endTime = picked);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF5F5F7),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.access_time_rounded, size: 16, color: AppColors.textMuted),
+                                  const SizedBox(width: 8),
+                                  Text(fmtTime(endTime), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Text('사유',
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textSecondary)),
-              const SizedBox(height: 6),
-              TextField(
-                controller: reasonCtrl,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: '연장근로 사유를 입력해주세요',
+                  ],
                 ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                        colors: [AppColors.primary, AppColors.info]),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      final emp = _employment;
-                      if (emp == null) return;
-                      try {
-                        await ref.read(apiClientProvider).post<dynamic>(
-                          '/api/attendance/overtime',
-                          data: {
-                            'employmentId': emp.id,
-                            'start': startCtrl.text,
-                            'end': endCtrl.text,
-                            'reason': reasonCtrl.text,
-                          },
-                        );
-                        if (ctx.mounted) Navigator.pop(ctx);
-                        _showSnackBar('연장근로 신청이 완료되었습니다', AppColors.success);
-                      } catch (e) {
-                        _showSnackBar(parseApiError(e), AppColors.danger);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                const SizedBox(height: 12),
+                const Text('사유', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: reasonCtrl,
+                  maxLines: 3,
+                  decoration: const InputDecoration(hintText: '연장근로 사유를 입력해주세요'),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [AppColors.primary, AppColors.info]),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Text('신청하기',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700)),
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        final emp = _employment;
+                        if (emp == null) return;
+                        try {
+                          await ref.read(apiClientProvider).post<dynamic>(
+                            '/api/attendance/overtime',
+                            data: {
+                              'employmentId': emp.id,
+                              'start': fmtTime(startTime),
+                              'end': fmtTime(endTime),
+                              'reason': reasonCtrl.text,
+                            },
+                          );
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          _showSnackBar('연장근로 신청이 완료되었습니다', AppColors.success);
+                        } catch (e) {
+                          _showSnackBar(parseApiError(e), AppColors.danger);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Text('신청하기', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ).then((_) {
-      // 바텀시트가 닫힌 후 컨트롤러를 안전하게 dispose
-      startCtrl.dispose();
-      endCtrl.dispose();
-      reasonCtrl.dispose();
-    });
+    ).then((_) => reasonCtrl.dispose());
   }
+
 
   @override
   Widget build(BuildContext context) {

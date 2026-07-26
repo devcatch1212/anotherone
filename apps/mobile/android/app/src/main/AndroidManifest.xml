@@ -14,7 +14,7 @@
 
 
     <application
-        android:label="근무관리"
+        android:label="오출완"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

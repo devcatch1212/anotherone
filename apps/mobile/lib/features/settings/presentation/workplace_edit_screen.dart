@@ -489,7 +489,7 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
                                   context: context,
                                   initialDate: _hireDate ?? DateTime.now(),
                                   firstDate: DateTime(2000),
-                                  lastDate: DateTime.now(),
+                                  lastDate: DateTime(2100),
                                   locale: const Locale('ko', 'KR'),
                                 );
                                 if (picked != null) setState(() => _hireDate = picked);

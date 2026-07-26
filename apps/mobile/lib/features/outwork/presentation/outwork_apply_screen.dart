@@ -77,7 +77,7 @@ class _OutworkApplyScreenState extends ConsumerState<OutworkApplyScreen> {
             margin: const EdgeInsets.all(16),
           ),
         );
-        context.go('/outwork');
+        context.go('/leave');
       }
     } catch (e) {
       setState(() => _error = parseApiError(e));
@@ -94,7 +94,7 @@ class _OutworkApplyScreenState extends ConsumerState<OutworkApplyScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        context.go('/outwork');
+        context.go('/leave');
       },
       child: Scaffold(
         backgroundColor: AppColors.bg,
@@ -109,7 +109,7 @@ class _OutworkApplyScreenState extends ConsumerState<OutworkApplyScreen> {
                     child: Row(
                       children: [
                         IconButton(
-                          onPressed: () => context.go('/outwork'),
+                          onPressed: () => context.go('/leave'),
                           icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
                         ),
                         const Text('외근/출장 신청', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),

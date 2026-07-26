@@ -67,7 +67,7 @@ class GeumumApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: '근무관리',
+      title: '오출완',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       routerConfig: router,
