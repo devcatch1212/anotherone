@@ -599,6 +599,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             '/api/attendance/overtime',
                             data: {
                               'employmentId': emp.id,
+                              'date': DateFormat('yyyy-MM-dd').format(DateTime.now()),
                               'start': fmtTime(startTime),
                               'end': fmtTime(endTime),
                               'reason': reasonCtrl.text,

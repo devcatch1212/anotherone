@@ -481,7 +481,7 @@ export class AdminService {
       // startTime, endTime (HH:mm) 파싱하여 분 차이 계산
       const [startH, startM] = request.startTime.split(':').map(Number);
       const [endH, endM] = request.endTime.split(':').map(Number);
-      
+
       let overtimeMinutes = (endH * 60 + endM) - (startH * 60 + startM);
       if (overtimeMinutes < 0) {
         overtimeMinutes += 24 * 60; // 자정 넘김 대응
@@ -505,7 +505,8 @@ export class AdminService {
             hourlyWage = (employment.dailyWage ?? 0) / dailyWorkHours;
           }
 
-          // 연장 근무 수당 정산 (통상 시급의 1.5배 기준)
+          // 연장 근무 수당 정산: 통상 시급 1.5배 기준으로 계산
+          // (퇴근 시 자동 계산된 0.5배 가산분을 1.5배 전체로 덮어씀)
           const overtimePay = Math.floor((overtimeMinutes / 60) * hourlyWage * 1.5);
           const earnedPay = (record.basePay ?? 0) + overtimePay + (record.nightPay ?? 0);
 
@@ -537,28 +538,50 @@ export class AdminService {
 
   // 연장 근무 반려
   async rejectOvertime(id: string, rejectReason?: string) {
-    const request = await this.prisma.overtimeRequest.findUnique({ where: { id } });
-    if (!request) throw new NotFoundException('연장 근무 신청 기록을 찾을 수 없습니다.');
-    if (request.status !== 'pending') throw new Error('대기 중인 신청만 반려할 수 있습니다.');
+    return this.prisma.$transaction(async (tx) => {
+      const request = await tx.overtimeRequest.findUnique({ where: { id } });
+      if (!request) throw new NotFoundException('연장 근무 신청 기록을 찾을 수 없습니다.');
+      if (request.status !== 'pending') throw new Error('대기 중인 신청만 반려할 수 있습니다.');
 
-    const updatedRequest = await this.prisma.overtimeRequest.update({
-      where: { id },
-      data: { status: 'rejected' },
+      // 1. 상태 변경
+      const updatedRequest = await tx.overtimeRequest.update({
+        where: { id },
+        data: { status: 'rejected' },
+      });
+
+      // 2. 해당 일자 AttendanceRecord의 자동 계산된 연장수당 복구 (0으로 초기화)
+      // 반려 시 퇴근 시 자동 계산된 overtimeMinutes/overtimePay가 급여에 반영되지 않도록 제거
+      const record = await tx.attendanceRecord.findFirst({
+        where: { userId: request.userId, companyId: request.companyId, date: request.date },
+      });
+
+      if (record && (record.overtimeMinutes ?? 0) > 0) {
+        const earnedPayWithoutOvertime = (record.basePay ?? 0) + (record.nightPay ?? 0);
+        await tx.attendanceRecord.update({
+          where: { id: record.id },
+          data: {
+            overtimeMinutes: 0,
+            overtimePay: 0,
+            earnedPay: earnedPayWithoutOvertime,
+          },
+        });
+      }
+
+      // 3. 알림 발송
+      await tx.notification.create({
+        data: {
+          userId: request.userId,
+          companyId: request.companyId,
+          type: 'overtime_rejected',
+          title: '연장 근무 반려',
+          body: `[${request.date}] 연장 근무 신청이 반려되었습니다.${
+            rejectReason && rejectReason.trim() ? ` 사유: ${rejectReason.trim()}` : ''
+          }`,
+        },
+      });
+
+      return updatedRequest;
     });
-
-    await this.prisma.notification.create({
-      data: {
-        userId: request.userId,
-        companyId: request.companyId,
-        type: 'overtime_rejected',
-        title: '연장 근무 반려',
-        body: `[${request.date}] 연장 근무 신청이 반려되었습니다.${
-          rejectReason && rejectReason.trim() ? ` (사유: ${rejectReason.trim()})` : ''
-        }`,
-      },
-    });
-
-    return updatedRequest;
   }
 
   // 월별 급여 대장 집계 및 조회
