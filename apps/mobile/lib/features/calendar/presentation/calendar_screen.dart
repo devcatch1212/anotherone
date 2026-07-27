@@ -112,17 +112,27 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     return total;
   }
 
-  // 입사 D+Day 계산 (가장 빠른 출퇴근 기록일 기준 연산)
-  int _getDDay() {
-    if (_recordMap.isEmpty) return 1;
+  // 입사 D+Day 계산: hireDate 우선, 없으면 가장 빠른 출퇴근 기록일 기준
+  int _getDDay(Employment? emp) {
     try {
+      // 1순위: employment의 hireDate 사용
+      if (emp?.hireDate != null) {
+        final hire = DateTime.parse(emp!.hireDate!);
+        final today = DateTime.now();
+        final diff = DateTime(today.year, today.month, today.day)
+            .difference(DateTime(hire.year, hire.month, hire.day))
+            .inDays;
+        return diff >= 0 ? diff + 1 : 1;
+      }
+      // 2순위: 출퇴근 기록 중 가장 오래된 날짜 폴백
+      if (_recordMap.isEmpty) return 1;
       final dates = _recordMap.keys.map((k) => DateTime.parse(k)).toList()
         ..sort((a, b) => a.compareTo(b));
       final earliest = dates.first;
       final diff = DateTime.now().difference(earliest).inDays;
       return diff >= 0 ? diff + 1 : 1;
     } catch (_) {
-      return 12; // fallback
+      return 1;
     }
   }
 
@@ -130,7 +140,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget build(BuildContext context) {
     final emp = ref.watch(authProvider).value?.currentEmployment;
     final fmt = NumberFormat('#,###', 'ko');
-    final dDay = _getDDay();
+    final dDay = _getDDay(emp);
     final estimatedPay = _calculateEstimatedPay();
 
     // 이번 달 기록들을 날짜 순으로 정렬해서 리스트로 추출
