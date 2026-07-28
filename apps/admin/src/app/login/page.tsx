@@ -65,7 +65,7 @@ export default function LoginPage() {
         {/* 헤더 로고 영역 */}
         <div className="text-center" style={{ textAlign: 'center' }}>
           <h1 className="text-3xl font-extrabold tracking-tight text-[#1E3A8A]" style={{ fontSize: '30px', fontWeight: '800', color: '#1E3A8A' }}>
-            오출완 Admin
+            오출완
           </h1>
           <p className="mt-2 text-sm font-semibold text-slate-500" style={{ marginTop: '8px', fontSize: '14px', color: '#64748B' }}>
             관리자 대시보드 로그인

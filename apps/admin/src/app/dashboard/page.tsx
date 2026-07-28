@@ -240,136 +240,107 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 오늘의 근태 현황 카드 */}
+      {/* 오늘의 근태 & 사업장 핵심 KPI 통합 대시보드 */}
       {todayStatus && (
-        <div style={{ marginBottom: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', border: '1px solid #E2E8F0', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.01)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div>
-              <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#1E293B', margin: 0 }}>📅 오늘의 근태 현황</h2>
-              <p style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px' }}>{todayStatus.date} 기준 · 전체 {todayStatus.total}명</p>
+              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>📊 실시간 관제 및 근태 현황</span>
+              </h2>
+              <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px', margin: '4px 0 0 0' }}>
+                {todayStatus.date} KST 기준 · {selectedCompanyId === 'all' ? '전체 사업장' : '선택 사업장'} 총 {todayStatus.total}명 대상
+              </p>
             </div>
             <Link
               href="/dashboard/attendance"
-              style={{ fontSize: '12px', fontWeight: '600', color: '#2563EB', textDecoration: 'none' }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 14px',
+                borderRadius: '10px',
+                backgroundColor: '#EFF6FF',
+                color: '#2563EB',
+                fontSize: '12px',
+                fontWeight: '700',
+                textDecoration: 'none',
+                transition: 'all 0.2s',
+              }}
             >
-              상세 보기 →
+              전체 근태 대장 보기 →
             </Link>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-            {/* 출근완료 */}
-            <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '14px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>✅</div>
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: '700', color: '#15803D', letterSpacing: '0.04em' }}>출근 완료</div>
-                <div style={{ fontSize: '24px', fontWeight: '800', color: '#166534', lineHeight: 1.2 }}>{todayStatus.checkedIn}<span style={{ fontSize: '13px', fontWeight: '600', marginLeft: '2px' }}>명</span></div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '14px' }}>
+            {/* 총 등록 근무지 */}
+            <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748B' }}>등록 근무지</span>
+                <span style={{ fontSize: '16px' }}>🏢</span>
+              </div>
+              <div style={{ fontSize: '22px', fontWeight: '900', color: '#0F172A', lineHeight: 1 }}>
+                {selectedCompanyId === 'all' ? companies.length : 1}<span style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', marginLeft: '2px' }}>개소</span>
               </div>
             </div>
+
+            {/* 총 근로자 수 */}
+            <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748B' }}>총 근로자</span>
+                <span style={{ fontSize: '16px' }}>👥</span>
+              </div>
+              <div style={{ fontSize: '22px', fontWeight: '900', color: '#0F172A', lineHeight: 1 }}>
+                {todayStatus.total}<span style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', marginLeft: '2px' }}>명</span>
+              </div>
+            </div>
+
+            {/* 출근 완료 */}
+            <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#15803D' }}>출근 완료</span>
+                <span style={{ fontSize: '16px' }}>✅</span>
+              </div>
+              <div style={{ fontSize: '22px', fontWeight: '900', color: '#166534', lineHeight: 1 }}>
+                {todayStatus.checkedIn}<span style={{ fontSize: '12px', fontWeight: '700', color: '#15803D', marginLeft: '2px' }}>명</span>
+              </div>
+            </div>
+
             {/* 지각 */}
-            <div style={{ backgroundColor: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '14px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>⚠️</div>
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: '700', color: '#B45309', letterSpacing: '0.04em' }}>지각</div>
-                <div style={{ fontSize: '24px', fontWeight: '800', color: '#92400E', lineHeight: 1.2 }}>{todayStatus.late}<span style={{ fontSize: '13px', fontWeight: '600', marginLeft: '2px' }}>명</span></div>
+            <div style={{ backgroundColor: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#B45309' }}>지각</span>
+                <span style={{ fontSize: '16px' }}>⚠️</span>
+              </div>
+              <div style={{ fontSize: '22px', fontWeight: '900', color: '#92400E', lineHeight: 1 }}>
+                {todayStatus.late}<span style={{ fontSize: '12px', fontWeight: '700', color: '#B45309', marginLeft: '2px' }}>명</span>
               </div>
             </div>
+
             {/* 미출근 */}
-            <div style={{ backgroundColor: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '14px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#FFE4E6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>🔴</div>
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: '700', color: '#BE123C', letterSpacing: '0.04em' }}>미출근</div>
-                <div style={{ fontSize: '24px', fontWeight: '800', color: '#9F1239', lineHeight: 1.2 }}>{todayStatus.notCheckedIn}<span style={{ fontSize: '13px', fontWeight: '600', marginLeft: '2px' }}>명</span></div>
+            <div style={{ backgroundColor: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#BE123C' }}>미출근</span>
+                <span style={{ fontSize: '16px' }}>🔴</span>
+              </div>
+              <div style={{ fontSize: '22px', fontWeight: '900', color: '#9F1239', lineHeight: 1 }}>
+                {todayStatus.notCheckedIn}<span style={{ fontSize: '12px', fontWeight: '700', color: '#BE123C', marginLeft: '2px' }}>명</span>
               </div>
             </div>
+
             {/* 휴가 */}
-            <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '14px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>🏖️</div>
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: '700', color: '#1D4ED8', letterSpacing: '0.04em' }}>휴가</div>
-                <div style={{ fontSize: '24px', fontWeight: '800', color: '#1E3A8A', lineHeight: 1.2 }}>{todayStatus.onLeave}<span style={{ fontSize: '13px', fontWeight: '600', marginLeft: '2px' }}>명</span></div>
+            <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#1D4ED8' }}>휴가</span>
+                <span style={{ fontSize: '16px' }}>🏖️</span>
+              </div>
+              <div style={{ fontSize: '22px', fontWeight: '900', color: '#1E3A8A', lineHeight: 1 }}>
+                {todayStatus.onLeave}<span style={{ fontSize: '12px', fontWeight: '700', color: '#1D4ED8', marginLeft: '2px' }}>명</span>
               </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* 요약 통계 카드 영역 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-        
-        {/* 등록 근무지 요약 */}
-        <div 
-          style={{ 
-            backgroundColor: '#FFFFFF', 
-            borderRadius: '16px', 
-            border: '1px solid #E2E8F0', 
-            padding: '24px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.02)'
-          }}
-        >
-          <div>
-            <span style={{ fontSize: '11px', fontWeight: '700', color: '#94A3B8', letterSpacing: '0.05em' }}>
-              {selectedCompanyId === 'all' ? '총 등록 근무지' : '선택된 근무지'}
-            </span>
-            <h3 style={{ fontSize: '24px', fontWeight: '800', color: '#1E293B', marginTop: '6px', margin: 0 }}>
-              {selectedCompanyId === 'all' ? `${companies.length}개소` : '1개소'}
-            </h3>
-          </div>
-          <div 
-            style={{ 
-              width: '48px', 
-              height: '48px', 
-              borderRadius: '10px', 
-              backgroundColor: '#EFF6FF', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              fontSize: '20px'
-            }}
-          >
-            🏢
-          </div>
-        </div>
-
-        {/* 활성 근로자 요약 */}
-        <div 
-          style={{ 
-            backgroundColor: '#FFFFFF', 
-            borderRadius: '16px', 
-            border: '1px solid #E2E8F0', 
-            padding: '24px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.02)'
-          }}
-        >
-          <div>
-            <span style={{ fontSize: '11px', fontWeight: '700', color: '#94A3B8', letterSpacing: '0.05em' }}>
-              {selectedCompanyId === 'all' ? '총 활성 근로자 수' : '해당 사업장 근로자 수'}
-            </span>
-            <h3 style={{ fontSize: '24px', fontWeight: '800', color: '#1E293B', marginTop: '6px', margin: 0 }}>
-              {totalEmployees}명
-            </h3>
-          </div>
-          <div 
-            style={{ 
-              width: '48px', 
-              height: '48px', 
-              borderRadius: '10px', 
-              backgroundColor: '#EEF2F6', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              fontSize: '20px'
-            }}
-          >
-            👥
-          </div>
-        </div>
-
-      </div>
 
       {/* 목록 리스트 */}
       {loading ? (
@@ -408,23 +379,44 @@ export default function DashboardPage() {
                 >
                   <div>
                     {/* 헤더 타이틀 및 배지 */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
-                      <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#1E293B', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>
-                        {c.name}
-                      </h4>
-                      <span 
-                        style={{ 
-                          padding: '3px 8px',
-                          borderRadius: '9999px',
-                          fontSize: '10.5px',
-                          fontWeight: '700',
-                          backgroundColor: c.activeEmployeeCount > 0 ? '#EFF6FF' : '#F1F5F9',
-                          color: c.activeEmployeeCount > 0 ? '#2563EB' : '#64748B',
-                          border: c.activeEmployeeCount > 0 ? '1px solid #DBEAFE' : '1px solid #E2E8F0'
-                        }}
-                      >
-                        {c.activeEmployeeCount}명 근무 중
-                      </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '12px',
+                        backgroundColor: '#EFF6FF',
+                        color: '#2563EB',
+                        fontWeight: '800',
+                        fontSize: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '1px solid #DBEAFE',
+                        flexShrink: 0
+                      }}>
+                        {c.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                          <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {c.name}
+                          </h4>
+                          <span 
+                            style={{ 
+                              padding: '3px 8px',
+                              borderRadius: '9999px',
+                              fontSize: '11px',
+                              fontWeight: '700',
+                              backgroundColor: c.activeEmployeeCount > 0 ? '#DCFCE7' : '#F1F5F9',
+                              color: c.activeEmployeeCount > 0 ? '#15803D' : '#64748B',
+                              border: c.activeEmployeeCount > 0 ? '1px solid #BBF7D0' : '1px solid #E2E8F0',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {c.activeEmployeeCount}명 활성
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
                     {/* 주소 정보 */}

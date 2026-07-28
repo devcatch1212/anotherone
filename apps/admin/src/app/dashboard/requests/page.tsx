@@ -83,6 +83,10 @@ export default function RequestsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState('');
 
+  // 페이징 상태
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+
   // 반려 사유 모달 상태
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectTarget, setRejectTarget] = useState<{ id: string; type: 'leave' | 'attendance' | 'overtime' } | null>(null);
@@ -123,6 +127,7 @@ export default function RequestsPage() {
     try {
       setLoading(true);
       setError('');
+      setPage(1);
       if (activeTab === 'leave') {
         const data = await apiFetch<LeaveRecord[]>('/api/admin/leaves');
         setLeaves(data);
@@ -391,6 +396,23 @@ export default function RequestsPage() {
         >
           ✈️ 외근/출장 신청
         </button>
+
+        {/* 페이지당 표시 개수 */}
+        <div className="ml-auto pb-2" style={{ marginLeft: 'auto', paddingBottom: '8px' }}>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setPage(1);
+            }}
+            className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 bg-white"
+            style={{ padding: '6px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '12px', color: '#475569', outline: 'none', cursor: 'pointer' }}
+          >
+            {[10, 20, 50, 100].map(s => (
+              <option key={s} value={s}>{s}개씩 보기</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* 데이터 테이블 컨테이너 - 가로 오버플로우 방지 */}
@@ -438,7 +460,7 @@ export default function RequestsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100" style={{ backgroundColor: '#FFFFFF' }}>
-                  {leaves.map((l) => (
+                  {leaves.slice((page - 1) * pageSize, page * pageSize).map((l) => (
                     <tr key={l.id} className="hover:bg-slate-50/50 transition">
                       <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
                         <div className="font-bold text-slate-800" style={{ fontSize: '14px', fontWeight: '700', color: '#1E293B' }}>{l.user.name}</div>
@@ -481,7 +503,7 @@ export default function RequestsPage() {
                             </button>
                           </div>
                         ) : (
-                          <span className="text-xs text-slate-400" style={{ fontSize: '12px', color: '#94A3B8' }}>처리 완료</span>
+                          <span className="text-xs text-slate-400 font-medium" style={{ fontSize: '12px', color: '#94A3B8' }}>처리 완료</span>
                         )}
                       </td>
                     </tr>
@@ -513,7 +535,7 @@ export default function RequestsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100" style={{ backgroundColor: '#FFFFFF' }}>
-                  {corrections.map((c) => (
+                  {corrections.slice((page - 1) * pageSize, page * pageSize).map((c) => (
                     <tr key={c.id} className="hover:bg-slate-50/50 transition">
                       <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
                         <div className="font-bold text-slate-800" style={{ fontSize: '14px', fontWeight: '700', color: '#1E293B' }}>{c.user.name}</div>
@@ -560,7 +582,7 @@ export default function RequestsPage() {
                             </button>
                           </div>
                         ) : (
-                          <span className="text-xs text-slate-400" style={{ fontSize: '12px', color: '#94A3B8' }}>처리 완료</span>
+                          <span className="text-xs text-slate-400 font-medium" style={{ fontSize: '12px', color: '#94A3B8' }}>처리 완료</span>
                         )}
                       </td>
                     </tr>
@@ -592,7 +614,7 @@ export default function RequestsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100" style={{ backgroundColor: '#FFFFFF' }}>
-                  {overtimes.map((o) => (
+                  {overtimes.slice((page - 1) * pageSize, page * pageSize).map((o) => (
                     <tr key={o.id} className="hover:bg-slate-50/50 transition">
                       <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
                         <div className="font-bold text-slate-800" style={{ fontSize: '14px', fontWeight: '700', color: '#1E293B' }}>{o.user.name}</div>
@@ -639,7 +661,7 @@ export default function RequestsPage() {
                             </button>
                           </div>
                         ) : (
-                          <span className="text-xs text-slate-400" style={{ fontSize: '12px', color: '#94A3B8' }}>처리 완료</span>
+                          <span className="text-xs text-slate-400 font-medium" style={{ fontSize: '12px', color: '#94A3B8' }}>처리 완료</span>
                         )}
                       </td>
                     </tr>
@@ -671,7 +693,7 @@ export default function RequestsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100" style={{ backgroundColor: '#FFFFFF' }}>
-                  {outworks.map((w) => (
+                  {outworks.slice((page - 1) * pageSize, page * pageSize).map((w) => (
                     <tr key={w.id} className="hover:bg-slate-50/50 transition">
                       <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
                         <div className="font-bold text-slate-800" style={{ fontSize: '14px', fontWeight: '700', color: '#1E293B' }}>{w.user.name}</div>
