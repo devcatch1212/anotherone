@@ -46,7 +46,7 @@ export default function Sidebar() {
             className="text-xl font-extrabold text-[#1E3A8A] tracking-tight"
             style={{ fontSize: '20px', fontWeight: '800', color: '#1E3A8A' }}
           >
-            AnotherOne Admin
+            오출완 Admin
           </span>
         </Link>
       </div>

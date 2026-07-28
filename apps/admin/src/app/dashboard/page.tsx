@@ -33,6 +33,10 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [todayStatus, setTodayStatus] = useState<TodayStatus | null>(null);
 
+  // 근무지 페이징 상태
+  const [companyPage, setCompanyPage] = useState<number>(1);
+  const [companyPageSize, setCompanyPageSize] = useState<number>(12);
+
   const loadCompanies = async () => {
     try {
       setLoading(true);
@@ -47,11 +51,17 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadCompanies();
-    // 오늘의 근태 현황 로드
-    apiFetch<TodayStatus>('/api/admin/attendance/today')
+  }, []);
+
+  // 선택된 근무지에 맞춰 오늘의 근태 현황 갱신
+  useEffect(() => {
+    const url = selectedCompanyId && selectedCompanyId !== 'all'
+      ? `/api/admin/attendance/today?companyId=${selectedCompanyId}`
+      : '/api/admin/attendance/today';
+    apiFetch<TodayStatus>(url)
       .then(setTodayStatus)
       .catch(() => {});
-  }, []);
+  }, [selectedCompanyId]);
 
   // 필터링 + 검색 결합 로직
   const filteredCompanies = companies.filter(c => {
@@ -86,7 +96,10 @@ export default function DashboardPage() {
               type="text"
               placeholder="근무지명, 주소 검색..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCompanyPage(1);
+              }}
               className="rounded-xl border border-slate-200 pl-10 pr-4 py-2 text-xs font-semibold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 shadow-sm transition"
               style={{
                 borderRadius: '12px',
@@ -102,7 +115,10 @@ export default function DashboardPage() {
             />
             {searchQuery && (
               <button 
-                onClick={() => setSearchQuery('')}
+                onClick={() => {
+                  setSearchQuery('');
+                  setCompanyPage(1);
+                }}
                 className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 font-bold"
                 style={{ position: 'absolute', right: '12px', top: '9px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '12px' }}
               >
@@ -115,7 +131,10 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <select
               value={selectedCompanyId}
-              onChange={(e) => setSelectedCompanyId(e.target.value)}
+              onChange={(e) => {
+                setSelectedCompanyId(e.target.value);
+                setCompanyPage(1);
+              }}
               className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 shadow-sm transition"
               style={{ 
                 borderRadius: '12px', 
@@ -132,6 +151,32 @@ export default function DashboardPage() {
               <option value="all">전체 근무지 필터</option>
               {companies.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 페이지당 표시 개수 */}
+          <div className="flex items-center gap-2" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <select
+              value={companyPageSize}
+              onChange={(e) => {
+                setCompanyPageSize(Number(e.target.value));
+                setCompanyPage(1);
+              }}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 shadow-sm transition"
+              style={{ 
+                borderRadius: '12px', 
+                border: '1px solid #E2E8F0', 
+                padding: '10px 16px', 
+                fontSize: '12px', 
+                fontWeight: '600',
+                backgroundColor: '#FFFFFF',
+                color: '#334155',
+                cursor: 'pointer'
+              }}
+            >
+              {[12, 24, 48, 96].map(s => (
+                <option key={s} value={s}>{s}개씩 보기</option>
               ))}
             </select>
           </div>
@@ -340,153 +385,243 @@ export default function DashboardPage() {
         <div style={{ padding: '64px', borderRadius: '16px', border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', textAlign: 'center', color: '#94A3B8', fontSize: '14px' }}>
           일치하는 근무지가 없습니다.
         </div>
-      ) : viewMode === 'grid' ? (
-        /* 카드 뷰 모드 (콤팩트 다이어트 레이아웃) */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-          {filteredCompanies.map((c) => (
-            <div 
-              key={c.id} 
-              className="group rounded-2xl border border-slate-200 flex flex-col justify-between"
-              style={{ 
-                backgroundColor: '#FFFFFF', 
-                borderRadius: '16px', 
-                border: '1px solid #E2E8F0', 
-                padding: '20px', 
-                display: 'flex', 
-                flexDirection: 'column', 
-                justifyContent: 'space-between',
-                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -1px rgba(0,0,0,0.01)',
-                transition: 'all 0.25s ease-in-out',
-              }}
-            >
-              <div>
-                {/* 헤더 타이틀 및 배지 */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
-                  <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#1E293B', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>
-                    {c.name}
-                  </h4>
-                  <span 
-                    style={{ 
-                      padding: '3px 8px',
-                      borderRadius: '9999px',
-                      fontSize: '10.5px',
-                      fontWeight: '700',
-                      backgroundColor: c.activeEmployeeCount > 0 ? '#EFF6FF' : '#F1F5F9',
-                      color: c.activeEmployeeCount > 0 ? '#2563EB' : '#64748B',
-                      border: c.activeEmployeeCount > 0 ? '1px solid #DBEAFE' : '1px solid #E2E8F0'
-                    }}
-                  >
-                    {c.activeEmployeeCount}명 근무 중
-                  </span>
-                </div>
-
-                {/* 주소 정보 */}
-                <p style={{ fontSize: '12px', color: '#64748B', margin: '12px 0 0 0', lineHeight: '1.4', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>
-                  📍 {c.address}
-                </p>
-              </div>
-
-              {/* 액션 버튼 */}
-              <div style={{ marginTop: '16px' }}>
-                <Link
-                  href={`/dashboard/companies/${c.id}`}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                    padding: '8px 0',
-                    borderRadius: '10px',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    backgroundColor: '#F8FAFC',
-                    color: '#475569',
-                    border: '1px solid #F1F5F9',
-                    textDecoration: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s'
-                  }}
-                  className="hover:bg-slate-100 hover:text-slate-800"
-                >
-                  <span>근로자 현황 보기</span>
-                  <span>→</span>
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
       ) : (
-        /* 리스트 뷰 모드 (테이블형 로우 리스트) */
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.02)' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                  <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>근무지명</th>
-                  <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>위치 주소</th>
-                  <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>근무 상태</th>
-                  <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>관리</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCompanies.map((c) => (
-                  <tr 
-                    key={c.id} 
-                    style={{ borderBottom: '1px solid #F1F5F9', transition: 'background-color 0.15s' }}
-                    className="hover:bg-slate-50/50"
-                  >
-                    <td style={{ padding: '16px 20px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#1E293B' }}>{c.name}</span>
-                    </td>
-                    <td style={{ padding: '16px 20px' }}>
-                      <span style={{ fontSize: '13px', color: '#64748B' }}>📍 {c.address}</span>
-                    </td>
-                    <td style={{ padding: '16px 20px', textAlign: 'center' }}>
+        <>
+          {viewMode === 'grid' ? (
+            /* 카드 뷰 모드 (콤팩트 다이어트 레이아웃) */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+              {filteredCompanies.slice((companyPage - 1) * companyPageSize, companyPage * companyPageSize).map((c) => (
+                <div 
+                  key={c.id} 
+                  className="group rounded-2xl border border-slate-200 flex flex-col justify-between"
+                  style={{ 
+                    backgroundColor: '#FFFFFF', 
+                    borderRadius: '16px', 
+                    border: '1px solid #E2E8F0', 
+                    padding: '20px', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    justifyContent: 'space-between',
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -1px rgba(0,0,0,0.01)',
+                    transition: 'all 0.25s ease-in-out',
+                  }}
+                >
+                  <div>
+                    {/* 헤더 타이틀 및 배지 */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                      <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#1E293B', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>
+                        {c.name}
+                      </h4>
                       <span 
                         style={{ 
-                          padding: '4px 10px',
+                          padding: '3px 8px',
                           borderRadius: '9999px',
-                          fontSize: '11px',
+                          fontSize: '10.5px',
                           fontWeight: '700',
                           backgroundColor: c.activeEmployeeCount > 0 ? '#EFF6FF' : '#F1F5F9',
                           color: c.activeEmployeeCount > 0 ? '#2563EB' : '#64748B',
-                          border: c.activeEmployeeCount > 0 ? '1px solid #DBEAFE' : '1px solid #E2E8F0',
-                          display: 'inline-block'
+                          border: c.activeEmployeeCount > 0 ? '1px solid #DBEAFE' : '1px solid #E2E8F0'
                         }}
                       >
-                        {c.activeEmployeeCount}명 활성
+                        {c.activeEmployeeCount}명 근무 중
                       </span>
-                    </td>
-                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                      <Link
-                        href={`/dashboard/companies/${c.id}`}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '6px 14px',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                          fontWeight: '700',
-                          backgroundColor: '#F1F5F9',
-                          color: '#475569',
-                          textDecoration: 'none',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s'
-                        }}
-                        className="hover:bg-slate-200 hover:text-slate-800"
+                    </div>
+
+                    {/* 주소 정보 */}
+                    <p style={{ fontSize: '12px', color: '#64748B', margin: '12px 0 0 0', lineHeight: '1.4', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>
+                      📍 {c.address}
+                    </p>
+                  </div>
+
+                  {/* 액션 버튼 */}
+                  <div style={{ marginTop: '16px' }}>
+                    <Link
+                      href={`/dashboard/companies/${c.id}`}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
+                        padding: '8px 0',
+                        borderRadius: '10px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        backgroundColor: '#F8FAFC',
+                        color: '#475569',
+                        border: '1px solid #F1F5F9',
+                        textDecoration: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s'
+                      }}
+                      className="hover:bg-slate-100 hover:text-slate-800"
+                    >
+                      <span>근로자 현황 보기</span>
+                      <span>→</span>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* 리스트 뷰 모드 (테이블형 로우 리스트) */
+            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.02)' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                      <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>근무지명</th>
+                      <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>위치 주소</th>
+                      <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>근무 상태</th>
+                      <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>관리</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCompanies.slice((companyPage - 1) * companyPageSize, companyPage * companyPageSize).map((c) => (
+                      <tr 
+                        key={c.id} 
+                        style={{ borderBottom: '1px solid #F1F5F9', transition: 'background-color 0.15s' }}
+                        className="hover:bg-slate-50/50"
                       >
-                        <span>현황 보기</span>
-                        <span>→</span>
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                        <td style={{ padding: '16px 20px' }}>
+                          <span style={{ fontSize: '14px', fontWeight: '700', color: '#1E293B' }}>{c.name}</span>
+                        </td>
+                        <td style={{ padding: '16px 20px' }}>
+                          <span style={{ fontSize: '13px', color: '#64748B' }}>📍 {c.address}</span>
+                        </td>
+                        <td style={{ padding: '16px 20px', textAlign: 'center' }}>
+                          <span 
+                            style={{ 
+                              padding: '4px 10px',
+                              borderRadius: '9999px',
+                              fontSize: '11px',
+                              fontWeight: '700',
+                              backgroundColor: c.activeEmployeeCount > 0 ? '#EFF6FF' : '#F1F5F9',
+                              color: c.activeEmployeeCount > 0 ? '#2563EB' : '#64748B',
+                              border: c.activeEmployeeCount > 0 ? '1px solid #DBEAFE' : '1px solid #E2E8F0',
+                              display: 'inline-block'
+                            }}
+                          >
+                            {c.activeEmployeeCount}명 활성
+                          </span>
+                        </td>
+                        <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                          <Link
+                            href={`/dashboard/companies/${c.id}`}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '6px 14px',
+                              borderRadius: '8px',
+                              fontSize: '12px',
+                              fontWeight: '700',
+                              backgroundColor: '#F1F5F9',
+                              color: '#475569',
+                              textDecoration: 'none',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s'
+                            }}
+                            className="hover:bg-slate-200 hover:text-slate-800"
+                          >
+                            <span>현황 보기</span>
+                            <span>→</span>
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* 근무지 목록 하단 페이징 바 */}
+          {filteredCompanies.length > 0 && (() => {
+            const totalCount = filteredCompanies.length;
+            const totalPages = Math.ceil(totalCount / companyPageSize) || 1;
+            const startIndex = (companyPage - 1) * companyPageSize;
+            const endIndex = Math.min(startIndex + companyPageSize, totalCount);
+
+            return (
+              <div 
+                className="flex items-center justify-between px-6 py-4 mt-4 rounded-2xl border border-slate-200 bg-white"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '16px 24px',
+                  borderRadius: '16px',
+                  border: '1px solid #E2E8F0',
+                  backgroundColor: '#FFFFFF',
+                  marginTop: '16px'
+                }}
+              >
+                <div style={{ fontSize: '13px', color: '#64748B', fontWeight: '500' }}>
+                  총 <strong style={{ color: '#1E293B' }}>{totalCount}</strong>개 근무지 중{' '}
+                  <strong style={{ color: '#1E293B' }}>{totalCount > 0 ? startIndex + 1 : 0}-{endIndex}</strong>개 표시
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button
+                    onClick={() => setCompanyPage(p => Math.max(1, p - 1))}
+                    disabled={companyPage === 1}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      borderRadius: '8px',
+                      border: '1px solid #E2E8F0',
+                      backgroundColor: companyPage === 1 ? '#F1F5F9' : '#FFFFFF',
+                      color: companyPage === 1 ? '#94A3B8' : '#334155',
+                      cursor: companyPage === 1 ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    ← 이전
+                  </button>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(pNum => (
+                    <button
+                      key={pNum}
+                      onClick={() => setCompanyPage(pNum)}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        fontSize: '13px',
+                        fontWeight: pNum === companyPage ? '700' : '600',
+                        borderRadius: '8px',
+                        border: pNum === companyPage ? 'none' : '1px solid #E2E8F0',
+                        backgroundColor: pNum === companyPage ? '#2563EB' : '#FFFFFF',
+                        color: pNum === companyPage ? '#FFFFFF' : '#334155',
+                        cursor: 'pointer',
+                        boxShadow: pNum === companyPage ? '0 2px 4px rgba(37,99,235,0.2)' : 'none',
+                      }}
+                    >
+                      {pNum}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() => setCompanyPage(p => Math.min(totalPages, p + 1))}
+                    disabled={companyPage === totalPages}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      borderRadius: '8px',
+                      border: '1px solid #E2E8F0',
+                      backgroundColor: companyPage === totalPages ? '#F1F5F9' : '#FFFFFF',
+                      color: companyPage === totalPages ? '#94A3B8' : '#334155',
+                      cursor: companyPage === totalPages ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    다음 →
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+        </>
       )}
     </div>
   );

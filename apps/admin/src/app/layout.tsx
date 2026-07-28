@@ -2,8 +2,8 @@ import './globals.css';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'AnotherOne 관리자 대시보드',
-  description: '근무지 및 근로자 실시간 출퇴근 관리 서비스',
+  title: '오출완 관리자 대시보드',
+  description: '근로자 출퇴근 기록 및 급여 관리자 통합 대시보드',
 };
 
 export default function RootLayout({

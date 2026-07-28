@@ -129,27 +129,35 @@ export class AdminService {
   }
 
   // ─── 오늘의 근태 현황 집계 ────────────────────────────────────────────────
-  async getTodayAttendance() {
+  async getTodayAttendance(companyId?: string) {
     // 한국 시간(KST, UTC+9) 기준 오늘 날짜
     const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
     const today = kstNow.toISOString().split('T')[0];
 
+    const empWhere: any = { isActive: true };
+    const recWhere: any = { date: today };
+    const leaveWhere: any = {
+      status: 'approved',
+      startDate: { lte: today },
+      endDate: { gte: today },
+    };
+
+    if (companyId && companyId !== 'all') {
+      empWhere.companyId = companyId;
+      recWhere.companyId = companyId;
+      leaveWhere.companyId = companyId;
+    }
+
     const [activeEmployments, todayRecords, approvedLeaves] = await Promise.all([
       this.prisma.employment.findMany({
-        where: { isActive: true },
+        where: empWhere,
         include: {
           user: { select: { name: true, email: true } },
           company: { select: { name: true } },
         },
       }),
-      this.prisma.attendanceRecord.findMany({ where: { date: today } }),
-      this.prisma.leaveRecord.findMany({
-        where: {
-          status: 'approved',
-          startDate: { lte: today },
-          endDate: { gte: today },
-        },
-      }),
+      this.prisma.attendanceRecord.findMany({ where: recWhere }),
+      this.prisma.leaveRecord.findMany({ where: leaveWhere }),
     ]);
 
     const leaveSet = new Set(

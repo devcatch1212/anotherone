@@ -45,8 +45,8 @@ export class AdminController {
   // 오늘의 전체 직원 근태 현황 집계
   @UseGuards(AdminAuthGuard)
   @Get('attendance/today')
-  getTodayAttendance() {
-    return this.adminService.getTodayAttendance();
+  getTodayAttendance(@Query('companyId') companyId?: string) {
+    return this.adminService.getTodayAttendance(companyId);
   }
 
   // 월별 전체 직원 그리드 데이터

@@ -258,10 +258,10 @@ export default function RequestsPage() {
   };
 
   const leaveTypeLabel: Record<string, string> = {
-    annual: '연차 🗓️',
-    half: '반차 🌗',
-    sick: '병가 🤒',
-    official: '공가 🏫',
+    annual: '연차',
+    half: '반차',
+    sick: '병가',
+    official: '공가',
   };
 
   const statusBadge = (status: 'pending' | 'approved' | 'rejected' | 'cancelled') => {
