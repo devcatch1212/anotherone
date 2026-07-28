@@ -311,7 +311,7 @@ export default function PayrollPage() {
               boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.15)'
             }}
           >
-            {actionLoading ? '발행 처리 중...' : selectedKeys.size > 0 ? `💵 선택한 (${payrolls.filter(p => selectedKeys.has(`${p.userId}-${p.companyId}`) && !p.confirmed).length}명) 급여 명세서 발행` : '💵 급여 명세서 발행'}
+            {actionLoading ? '발행 처리 중...' : selectedKeys.size > 0 ? `선택한 (${payrolls.filter(p => selectedKeys.has(`${p.userId}-${p.companyId}`) && !p.confirmed).length}명) 급여 명세서 발행` : '급여 명세서 발행'}
           </button>
         </div>
       </div>
@@ -498,7 +498,7 @@ export default function PayrollPage() {
                               className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition cursor-pointer"
                               style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', border: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}
                             >
-                              🔎 열람
+                              열람
                             </button>
                             {!p.confirmed && (
                               <button
@@ -507,7 +507,7 @@ export default function PayrollPage() {
                                 className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition cursor-pointer"
                                 style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', border: '1px solid #BFDBFE', backgroundColor: '#EFF6FF' }}
                               >
-                                💵 발행
+                                발행
                               </button>
                             )}
                           </div>
