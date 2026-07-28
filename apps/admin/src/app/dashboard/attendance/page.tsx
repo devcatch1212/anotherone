@@ -156,7 +156,7 @@ export default function AttendancePage() {
             boxShadow: gridData && !loading ? '0 4px 12px rgba(37,99,235,0.25)' : 'none',
           }}
         >
-          <span>📥</span> EXCEL 다운로드
+          EXCEL 다운로드
         </button>
       </div>
 

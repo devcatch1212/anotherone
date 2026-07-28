@@ -307,7 +307,7 @@ export default function ContractsPage() {
       </div>
 
       {/* 대시보드 KPI 관제 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
         <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '16px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
           <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>전체 전자계약</div>
           <div style={{ fontSize: '26px', fontWeight: '900', color: '#0F172A', marginTop: '6px' }}>{contracts.length}<span style={{ fontSize: '14px', marginLeft: '2px', color: '#64748B' }}>건</span></div>
@@ -319,10 +319,6 @@ export default function ContractsPage() {
         <div style={{ backgroundColor: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '16px', padding: '20px' }}>
           <div style={{ fontSize: '12px', fontWeight: '700', color: '#B45309' }}>서명 대기</div>
           <div style={{ fontSize: '26px', fontWeight: '900', color: '#92400E', marginTop: '6px' }}>{totalPending}<span style={{ fontSize: '14px', marginLeft: '2px' }}>건</span></div>
-        </div>
-        <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '16px', padding: '20px' }}>
-          <div style={{ fontSize: '12px', fontWeight: '700', color: '#1D4ED8' }}>지원 서식 템플릿</div>
-          <div style={{ fontSize: '18px', fontWeight: '800', color: '#1E3A8A', marginTop: '6px' }}>4종 (근로/연봉/NDA/동의서)</div>
         </div>
       </div>
 
