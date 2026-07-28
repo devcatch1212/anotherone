@@ -186,6 +186,28 @@ export default function Sidebar() {
           <span>급여 정산</span>
         </Link>
 
+        <Link
+          href="/dashboard/contracts"
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition ${
+            pathname.startsWith('/dashboard/contracts')
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10'
+              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+          }`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            fontSize: '14px',
+            fontWeight: '600',
+            textDecoration: 'none'
+          }}
+        >
+          <span style={{ fontSize: '16px' }}>📝</span>
+          <span>전자계약 관리</span>
+        </Link>
+
       </nav>
 
       {/* 하단 설정 & 로그아웃 */}

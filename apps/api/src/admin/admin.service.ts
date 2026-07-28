@@ -919,4 +919,96 @@ export class AdminService {
       data: { status: 'rejected' },
     });
   }
+
+  // ─── 전자계약 관리 ──────────────────────────────────────────────────────────
+  // 전자계약 목록 조회
+  async getContracts(companyId?: string, status?: string, type?: string) {
+    const where: any = { company: { isActive: true } };
+    if (companyId && companyId !== 'all') where.companyId = companyId;
+    if (status && status !== 'all') where.status = status;
+    if (type && type !== 'all') where.type = type;
+
+    return this.prisma.contractDocument.findMany({
+      where,
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        company: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // 전자계약서 작성 및 서명 요청 발송
+  async createContract(data: {
+    userId: string;
+    companyId: string;
+    type: 'labor' | 'salary' | 'nda' | 'privacy';
+    title: string;
+    content: string;
+    employmentId?: string;
+  }) {
+    return this.prisma.$transaction(async (tx) => {
+      const contract = await tx.contractDocument.create({
+        data: {
+          userId: data.userId,
+          companyId: data.companyId,
+          employmentId: data.employmentId,
+          type: data.type,
+          title: data.title,
+          content: data.content,
+          status: 'pending',
+        },
+      });
+
+      // 근로자 대상 알림 발송
+      await tx.notification.create({
+        data: {
+          userId: data.userId,
+          companyId: data.companyId,
+          type: 'contract_requested',
+          title: '전자계약 서명 요청',
+          body: `[${data.title}] 서명 요청이 도착했습니다. (설정 > 전자계약 관리)`,
+        },
+      });
+
+      return contract;
+    });
+  }
+
+  // 특정 전자계약서 상세
+  async getContractDetail(id: string) {
+    const contract = await this.prisma.contractDocument.findUnique({
+      where: { id },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        company: { select: { id: true, name: true, address: true } },
+      },
+    });
+    if (!contract) throw new NotFoundException('전자계약서를 찾을 수 없습니다.');
+    return contract;
+  }
+
+  // 전자계약서 알림 재발송
+  async sendContractRemind(id: string) {
+    const contract = await this.prisma.contractDocument.findUnique({ where: { id } });
+    if (!contract) throw new NotFoundException('전자계약서를 찾을 수 없습니다.');
+
+    return this.prisma.notification.create({
+      data: {
+        userId: contract.userId,
+        companyId: contract.companyId,
+        type: 'contract_remind',
+        title: '전자계약 서명 요청 재안내',
+        body: `[${contract.title}] 아직 서명되지 않은 계약서가 있습니다. (설정 > 전자계약 관리)`,
+      },
+    });
+  }
+
+  // 전자계약서 삭제
+  async deleteContract(id: string) {
+    const contract = await this.prisma.contractDocument.findUnique({ where: { id } });
+    if (!contract) throw new NotFoundException('전자계약서를 찾을 수 없습니다.');
+
+    return this.prisma.contractDocument.delete({ where: { id } });
+  }
 }

@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -218,5 +219,52 @@ export class AdminController {
   @Post('outworks/:id/reject')
   rejectOutwork(@Param('id') id: string) {
     return this.adminService.rejectOutwork(id);
+  }
+
+  // ─── 전자계약 관리 API ──────────────────────────────────────────────────────
+  // 전자계약 목록 조회
+  @UseGuards(AdminAuthGuard)
+  @Get('contracts')
+  getContracts(
+    @Query('companyId') companyId?: string,
+    @Query('status') status?: string,
+    @Query('type') type?: string,
+  ) {
+    return this.adminService.getContracts(companyId, status, type);
+  }
+
+  // 전자계약서 작성 및 발송
+  @UseGuards(AdminAuthGuard)
+  @Post('contracts')
+  createContract(@Body() body: {
+    userId: string;
+    companyId: string;
+    type: 'labor' | 'salary' | 'nda' | 'privacy';
+    title: string;
+    content: string;
+    employmentId?: string;
+  }) {
+    return this.adminService.createContract(body);
+  }
+
+  // 특정 전자계약서 상세
+  @UseGuards(AdminAuthGuard)
+  @Get('contracts/:id')
+  getContractDetail(@Param('id') id: string) {
+    return this.adminService.getContractDetail(id);
+  }
+
+  // 서명 요청 알림 재발송
+  @UseGuards(AdminAuthGuard)
+  @Post('contracts/:id/remind')
+  sendContractRemind(@Param('id') id: string) {
+    return this.adminService.sendContractRemind(id);
+  }
+
+  // 전자계약서 삭제
+  @UseGuards(AdminAuthGuard)
+  @Delete('contracts/:id')
+  deleteContract(@Param('id') id: string) {
+    return this.adminService.deleteContract(id);
   }
 }

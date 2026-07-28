@@ -88,7 +88,7 @@ export default function AttendancePage() {
     loadGrid();
   }, [loadGrid]);
 
-  const downloadCSV = () => {
+  const downloadExcel = () => {
     if (!gridData) return;
     const days = Array.from({ length: gridData.days }, (_, i) => {
       const d = i + 1;
@@ -111,15 +111,19 @@ export default function AttendancePage() {
       });
       return [emp.name, emp.email, emp.company, ...dayData];
     });
-    const csvContent = [headers, ...rows]
-      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    const headerHtml = headers.map(h => `<th style="background-color:#F1F5F9;border:1px solid #CBD5E1;padding:8px;">${h}</th>`).join('');
+    const rowsHtml = rows.map(r => `<tr>${r.map(c => `<td style="border:1px solid #CBD5E1;padding:6px;">${String(c).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`).join('')}</tr>`).join('');
+    
+    const excelTemplate = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"/><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>근태현황</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>
+<body><table><thead><tr>${headerHtml}</tr></thead><tbody>${rowsHtml}</tbody></table></body></html>`;
+
+    const blob = new Blob([excelTemplate], { type: 'application/vnd.ms-excel;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `근태현황_${gridData.year}년_${gridData.month}월.csv`;
+    a.download = `근태현황_${gridData.year}년_${gridData.month}월.xlsx`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -136,10 +140,10 @@ export default function AttendancePage() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: '16px', borderBottom: '1px solid #F1F5F9' }}>
         <div>
           <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1E293B', margin: 0 }}>근태 현황</h1>
-          <p style={{ fontSize: '14px', color: '#64748B', marginTop: '4px' }}>전체 직원의 월별 출퇴근 기록을 확인하고 CSV로 내보낼 수 있습니다.</p>
+          <p style={{ fontSize: '14px', color: '#64748B', marginTop: '4px' }}>전체 직원의 월별 출퇴근 기록을 확인하고 EXCEL로 내보낼 수 있습니다.</p>
         </div>
         <button
-          onClick={downloadCSV}
+          onClick={downloadExcel}
           disabled={!gridData || loading}
           style={{
             display: 'flex', alignItems: 'center', gap: '8px',
@@ -152,7 +156,7 @@ export default function AttendancePage() {
             boxShadow: gridData && !loading ? '0 4px 12px rgba(37,99,235,0.25)' : 'none',
           }}
         >
-          <span>📥</span> CSV 다운로드
+          <span>📥</span> EXCEL 다운로드
         </button>
       </div>
 

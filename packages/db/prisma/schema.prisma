@@ -32,6 +32,7 @@ model User {
   overtimeRequests    OvertimeRequest[]
   attendanceCorrections AttendanceCorrection[]
   outworkRequests     OutworkRequest[]
+  contractDocuments   ContractDocument[]
 
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
@@ -55,6 +56,7 @@ model Company {
   overtimeRequests    OvertimeRequest[]
   attendanceCorrections AttendanceCorrection[]
   outworkRequests     OutworkRequest[]
+  contractDocuments   ContractDocument[]
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -293,4 +295,23 @@ model OutworkRequest {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ContractDocument {
+  id             String    @id @default(uuid())
+  type           String    // 'labor' | 'salary' | 'nda' | 'privacy'
+  title          String
+  content        String    @db.Text
+  status         String    @default("pending") // 'pending', 'signed', 'rejected'
+  signedAt       DateTime?
+  signatureData  String?   @db.Text // 서명 이미지/텍스트
+
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+  companyId      String
+  company        Company   @relation(fields: [companyId], references: [id])
+  employmentId   String?
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }

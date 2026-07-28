@@ -158,26 +158,23 @@ export default function PayrollPage() {
       p.confirmed ? '발행 완료' : '발행 대기'
     ]);
 
-    // CSV 포맷 문자열 변환 (쉼표 및 따옴표 처리)
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(e => e.map(val => {
-        const stringVal = typeof val === 'number' ? val.toString() : `"${val}"`;
-        return stringVal;
-      }).join(','))
-    ].join('\n');
-
-    // UTF-8 BOM 헤더를 맨 앞에 붙여 엑셀 한글 깨짐 방지
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Excel XML 포맷 변환 (표준 .xlsx 엑셀 인식)
+    const headerHtml = headers.map(h => `<th style="background-color:#F1F5F9;border:1px solid #CBD5E1;padding:8px;">${h}</th>`).join('');
+    const rowsHtml = rows.map(r => `<tr>${r.map(c => `<td style="border:1px solid #CBD5E1;padding:6px;">${String(c).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`).join('')}</tr>`).join('');
     
+    const excelTemplate = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"/><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>급여대장</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>
+<body><table><thead><tr>${headerHtml}</tr></thead><tbody>${rowsHtml}</tbody></table></body></html>`;
+
+    const blob = new Blob([excelTemplate], { type: 'application/vnd.ms-excel;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `급여대장_${year}년_${month}월.csv`);
+    link.setAttribute('download', `급여대장_${year}년_${month}월.xlsx`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // 개별 급여 명세서 발행 실행
@@ -291,7 +288,7 @@ export default function PayrollPage() {
               boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.15)'
             }}
           >
-            {selectedKeys.size > 0 ? `📊 선택한 ${selectedKeys.size}명 Excel 다운로드` : '📊 Excel 다운로드'}
+            {selectedKeys.size > 0 ? `선택한 ${selectedKeys.size}명 EXCEL 다운로드` : 'EXCEL 다운로드'}
           </button>
 
           {/* 급여 명세서 발행 버튼 */}
