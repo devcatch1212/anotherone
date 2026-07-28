@@ -42,6 +42,29 @@ export class AdminController {
     return this.adminService.getEmployeeDetail(employmentId);
   }
 
+  // 오늘의 전체 직원 근태 현황 집계
+  @UseGuards(AdminAuthGuard)
+  @Get('attendance/today')
+  getTodayAttendance() {
+    return this.adminService.getTodayAttendance();
+  }
+
+  // 월별 전체 직원 그리드 데이터
+  @UseGuards(AdminAuthGuard)
+  @Get('attendance/grid')
+  getMonthlyAttendanceGrid(
+    @Query('year') year: string,
+    @Query('month') month: string,
+    @Query('companyId') companyId?: string,
+  ) {
+    const now = new Date();
+    return this.adminService.getMonthlyAttendanceGrid(
+      parseInt(year) || now.getFullYear(),
+      parseInt(month) || now.getMonth() + 1,
+      companyId,
+    );
+  }
+
   // 근로자 출퇴근 기록 (월별)
   @UseGuards(AdminAuthGuard)
   @Get('employees/:employmentId/attendance')

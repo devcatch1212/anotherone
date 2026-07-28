@@ -128,6 +128,118 @@ export class AdminService {
     return employment;
   }
 
+  // ─── 오늘의 근태 현황 집계 ────────────────────────────────────────────────
+  async getTodayAttendance() {
+    // 한국 시간(KST, UTC+9) 기준 오늘 날짜
+    const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    const today = kstNow.toISOString().split('T')[0];
+
+    const [activeEmployments, todayRecords, approvedLeaves] = await Promise.all([
+      this.prisma.employment.findMany({
+        where: { isActive: true },
+        include: {
+          user: { select: { name: true, email: true } },
+          company: { select: { name: true } },
+        },
+      }),
+      this.prisma.attendanceRecord.findMany({ where: { date: today } }),
+      this.prisma.leaveRecord.findMany({
+        where: {
+          status: 'approved',
+          startDate: { lte: today },
+          endDate: { gte: today },
+        },
+      }),
+    ]);
+
+    const leaveSet = new Set(
+      approvedLeaves.map((l) => `${l.userId}:${l.companyId}`),
+    );
+
+    let checkedIn = 0, late = 0, notCheckedIn = 0, onLeave = 0;
+
+    for (const emp of activeEmployments) {
+      const key = `${emp.userId}:${emp.companyId}`;
+      const record = todayRecords.find(
+        (r) => r.userId === emp.userId && r.companyId === emp.companyId,
+      );
+
+      if (leaveSet.has(key)) {
+        onLeave++;
+      } else if (!record || !record.checkIn) {
+        notCheckedIn++;
+      } else if (record.status === 'late') {
+        late++;
+      } else {
+        checkedIn++;
+      }
+    }
+
+    return {
+      date: today,
+      total: activeEmployments.length,
+      checkedIn,
+      late,
+      notCheckedIn,
+      onLeave,
+    };
+  }
+
+  // ─── 월별 전체 직원 그리드 데이터 ─────────────────────────────────────────
+  async getMonthlyAttendanceGrid(year: number, month: number, companyId?: string) {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
+
+    const employmentWhere: any = { isActive: true };
+    if (companyId && companyId !== 'all') employmentWhere.companyId = companyId;
+
+    const recordsWhere: any = { date: { gte: startDate, lte: endDate } };
+    if (companyId && companyId !== 'all') recordsWhere.companyId = companyId;
+
+    const [employments, records] = await Promise.all([
+      this.prisma.employment.findMany({
+        where: employmentWhere,
+        include: {
+          user: { select: { name: true, email: true } },
+          company: { select: { name: true } },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.attendanceRecord.findMany({ where: recordsWhere }),
+    ]);
+
+    const employees = employments.map((emp) => {
+      const empRecords = records.filter(
+        (r) => r.userId === emp.userId && r.companyId === emp.companyId,
+      );
+      const recordMap: Record<string, {
+        status: string;
+        checkIn: string | null;
+        checkOut: string | null;
+        workedMinutes: number | null;
+      }> = {};
+      empRecords.forEach((r) => {
+        recordMap[r.date] = {
+          status: r.status ?? 'normal',
+          checkIn: r.checkIn ? r.checkIn.toISOString() : null,
+          checkOut: r.checkOut ? r.checkOut.toISOString() : null,
+          workedMinutes: r.workedMinutes ?? null,
+        };
+      });
+      return {
+        employmentId: emp.id,
+        name: emp.user.name,
+        email: emp.user.email ?? '',
+        company: emp.company.name,
+        companyId: emp.companyId,
+        recordMap,
+      };
+    });
+
+    return { year, month, days: endDay, startDate, endDate, employees };
+  }
+
   // 근로자별 출퇴근 기록 (월별)
   async getAttendanceByEmployment(
     employmentId: string,

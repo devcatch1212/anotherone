@@ -15,6 +15,15 @@ interface CompanySummary {
   createdAt: string;
 }
 
+interface TodayStatus {
+  date: string;
+  total: number;
+  checkedIn: number;
+  late: number;
+  notCheckedIn: number;
+  onLeave: number;
+}
+
 export default function DashboardPage() {
   const [companies, setCompanies] = useState<CompanySummary[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('all');
@@ -22,6 +31,7 @@ export default function DashboardPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [todayStatus, setTodayStatus] = useState<TodayStatus | null>(null);
 
   const loadCompanies = async () => {
     try {
@@ -37,6 +47,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadCompanies();
+    // 오늘의 근태 현황 로드
+    apiFetch<TodayStatus>('/api/admin/attendance/today')
+      .then(setTodayStatus)
+      .catch(() => {});
   }, []);
 
   // 필터링 + 검색 결합 로직
@@ -180,6 +194,58 @@ export default function DashboardPage() {
 
         </div>
       </div>
+
+      {/* 오늘의 근태 현황 카드 */}
+      {todayStatus && (
+        <div style={{ marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div>
+              <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#1E293B', margin: 0 }}>📅 오늘의 근태 현황</h2>
+              <p style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px' }}>{todayStatus.date} 기준 · 전체 {todayStatus.total}명</p>
+            </div>
+            <Link
+              href="/dashboard/attendance"
+              style={{ fontSize: '12px', fontWeight: '600', color: '#2563EB', textDecoration: 'none' }}
+            >
+              상세 보기 →
+            </Link>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+            {/* 출근완료 */}
+            <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '14px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>✅</div>
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: '#15803D', letterSpacing: '0.04em' }}>출근 완료</div>
+                <div style={{ fontSize: '24px', fontWeight: '800', color: '#166534', lineHeight: 1.2 }}>{todayStatus.checkedIn}<span style={{ fontSize: '13px', fontWeight: '600', marginLeft: '2px' }}>명</span></div>
+              </div>
+            </div>
+            {/* 지각 */}
+            <div style={{ backgroundColor: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '14px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>⚠️</div>
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: '#B45309', letterSpacing: '0.04em' }}>지각</div>
+                <div style={{ fontSize: '24px', fontWeight: '800', color: '#92400E', lineHeight: 1.2 }}>{todayStatus.late}<span style={{ fontSize: '13px', fontWeight: '600', marginLeft: '2px' }}>명</span></div>
+              </div>
+            </div>
+            {/* 미출근 */}
+            <div style={{ backgroundColor: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '14px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#FFE4E6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>🔴</div>
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: '#BE123C', letterSpacing: '0.04em' }}>미출근</div>
+                <div style={{ fontSize: '24px', fontWeight: '800', color: '#9F1239', lineHeight: 1.2 }}>{todayStatus.notCheckedIn}<span style={{ fontSize: '13px', fontWeight: '600', marginLeft: '2px' }}>명</span></div>
+              </div>
+            </div>
+            {/* 휴가 */}
+            <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '14px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>🏖️</div>
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: '#1D4ED8', letterSpacing: '0.04em' }}>휴가</div>
+                <div style={{ fontSize: '24px', fontWeight: '800', color: '#1E3A8A', lineHeight: 1.2 }}>{todayStatus.onLeave}<span style={{ fontSize: '13px', fontWeight: '600', marginLeft: '2px' }}>명</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 요약 통계 카드 영역 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
