@@ -134,7 +134,7 @@ export class AdminService {
     const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
     const today = kstNow.toISOString().split('T')[0];
 
-    const empWhere: any = { isActive: true };
+    const empWhere: any = { isActive: true, company: { isActive: true } };
     const recWhere: any = { date: today };
     const leaveWhere: any = {
       status: 'approved',
@@ -199,7 +199,7 @@ export class AdminService {
     const endDay = new Date(year, month, 0).getDate();
     const endDate = `${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
 
-    const employmentWhere: any = { isActive: true };
+    const employmentWhere: any = { isActive: true, company: { isActive: true } };
     if (companyId && companyId !== 'all') employmentWhere.companyId = companyId;
 
     const recordsWhere: any = { date: { gte: startDate, lte: endDate } };
@@ -306,6 +306,7 @@ export class AdminService {
   // 연차 신청 목록 조회
   async getLeaves() {
     return this.prisma.leaveRecord.findMany({
+      where: { company: { isActive: true } },
       include: {
         user: { select: { name: true, email: true } },
         company: { select: { name: true } },
@@ -410,6 +411,7 @@ export class AdminService {
   // 출퇴근 수정 요청 목록 조회
   async getAttendanceCorrections() {
     return this.prisma.attendanceCorrection.findMany({
+      where: { company: { isActive: true } },
       include: {
         user: { select: { name: true, email: true } },
         company: { select: { name: true } },
@@ -577,6 +579,7 @@ export class AdminService {
   // 연장 근무 신청 목록 조회
   async getOvertimes() {
     return this.prisma.overtimeRequest.findMany({
+      where: { company: { isActive: true } },
       include: {
         user: { select: { name: true, email: true } },
         company: { select: { name: true } },
@@ -714,6 +717,7 @@ export class AdminService {
     // 2. 대상 고용 계약(Employment) 조회 (당월 재직자 + 당월 내 퇴사자 포함)
     const employments = await this.prisma.employment.findMany({
       where: {
+        company: { isActive: true },
         ...(companyId ? { companyId } : {}),
         OR: [
           { isActive: true },
@@ -883,6 +887,7 @@ export class AdminService {
   // 외근/출장 신청 목록 조회
   async getOutworks() {
     return this.prisma.outworkRequest.findMany({
+      where: { company: { isActive: true } },
       include: {
         user: { select: { name: true, email: true } },
         company: { select: { name: true } },
