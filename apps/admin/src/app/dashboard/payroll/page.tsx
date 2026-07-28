@@ -243,7 +243,7 @@ export default function PayrollPage() {
       <div className="flex justify-between items-start" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2" style={{ fontSize: '28px', fontWeight: '800', color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>💵 급여 대장 및 명세서 발행</span>
+            <span>급여 대장 및 명세서 발행</span>
             <button
               onClick={() => setShowHelpModal(true)}
               title="급여 계산 공식 및 공제 기준 보기"
@@ -465,11 +465,11 @@ export default function PayrollPage() {
                           <div className="text-xs text-slate-400 mt-1" style={{ fontSize: '11px', color: '#94A3B8' }}>{p.userEmail}</div>
                         </td>
                         <td className="px-6 py-4 font-semibold text-slate-700" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
-                          🏢 {p.companyName}
+                          {p.companyName}
                           <span className="block text-[11px] font-bold text-slate-400 mt-0.5" style={{ fontSize: '11px', color: '#94A3B8', fontWeight: '700' }}>{p.position}</span>
                         </td>
                         <td className="px-6 py-4 font-bold text-slate-700" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
-                          📅 {p.workedDays}일 출근
+                          {p.workedDays}일 출근
                         </td>
                         <td className="px-6 py-4 font-medium text-slate-700" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
                           ₩{p.totalGross.toLocaleString()}원

@@ -79,7 +79,7 @@ export default function DashboardPage() {
       <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 pb-4 border-b border-slate-100" style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '16px' }}>
         <div>
           <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight" style={{ fontSize: '28px', fontWeight: '800', color: '#1E293B' }}>
-            🏢 근무지 목록
+            근무지 목록
           </h1>
           <p className="text-sm text-slate-500 mt-1 font-medium" style={{ fontSize: '14px', color: '#64748B', marginTop: '4px' }}>
             등록된 전체 사업장 목록 및 실시간 활성 근로자 현황입니다.
@@ -212,7 +212,7 @@ export default function DashboardPage() {
                 boxShadow: viewMode === 'grid' ? '0 1px 3px 0 rgba(0,0,0,0.05)' : 'none'
               }}
             >
-              🗂️ 카드 뷰
+              카드 뷰
             </button>
             <button
               onClick={() => setViewMode('list')}
@@ -233,7 +233,7 @@ export default function DashboardPage() {
                 boxShadow: viewMode === 'list' ? '0 1px 3px 0 rgba(0,0,0,0.05)' : 'none'
               }}
             >
-              📄 리스트 뷰
+              리스트 뷰
             </button>
           </div>
 
@@ -246,7 +246,7 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div>
               <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>📊 실시간 관제 및 근태 현황</span>
+                <span>실시간 관제 및 근태 현황</span>
               </h2>
               <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px', margin: '4px 0 0 0' }}>
                 {todayStatus.date} KST 기준 · {selectedCompanyId === 'all' ? '전체 사업장' : '선택 사업장'} 총 {todayStatus.total}명 대상

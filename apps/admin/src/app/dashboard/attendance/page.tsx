@@ -135,7 +135,7 @@ export default function AttendancePage() {
       {/* 헤더 */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: '16px', borderBottom: '1px solid #F1F5F9' }}>
         <div>
-          <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1E293B', margin: 0 }}>📊 근태 현황</h1>
+          <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1E293B', margin: 0 }}>근태 현황</h1>
           <p style={{ fontSize: '14px', color: '#64748B', marginTop: '4px' }}>전체 직원의 월별 출퇴근 기록을 확인하고 CSV로 내보낼 수 있습니다.</p>
         </div>
         <button

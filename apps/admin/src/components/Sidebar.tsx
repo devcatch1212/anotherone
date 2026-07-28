@@ -41,26 +41,11 @@ export default function Sidebar() {
           alignItems: 'center'
         }}
       >
-        <Link href="/dashboard" className="flex items-center gap-3" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '10px',
-            background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#FFFFFF',
-            fontSize: '18px',
-            fontWeight: '800',
-            boxShadow: '0 4px 12px rgba(37,99,235,0.25)'
-          }}>
-            ⏰
-          </div>
+        <Link href="/dashboard" className="flex items-center" style={{ textDecoration: 'none' }}>
           <div>
             <span 
-              className="text-lg font-black tracking-tight"
-              style={{ fontSize: '18px', fontWeight: '900', color: '#0F172A', letterSpacing: '-0.02em', display: 'block', lineHeight: 1.2 }}
+              className="text-xl font-black tracking-tight"
+              style={{ fontSize: '20px', fontWeight: '900', color: '#1E3A8A', letterSpacing: '-0.02em', display: 'block', lineHeight: 1.2 }}
             >
               오출완
             </span>

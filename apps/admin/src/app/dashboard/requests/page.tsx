@@ -304,7 +304,7 @@ export default function RequestsPage() {
       {/* 타이틀 헤더 */}
       <div>
         <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight" style={{ fontSize: '28px', fontWeight: '800', color: '#1E293B' }}>
-          ⏰ 근태 관리
+          근태 관리
         </h1>
         <p className="text-sm text-slate-500 mt-2 font-medium" style={{ fontSize: '14px', color: '#64748B', marginTop: '6px' }}>
           근로자의 연차 신청, 출퇴근 수정 요청, 연장 근무 결재를 검토하고 승인/반려할 수 있습니다.
@@ -334,7 +334,7 @@ export default function RequestsPage() {
             color: activeTab === 'leave' ? '#2563EB' : '#94A3B8'
           }}
         >
-          📄 연차 신청 내역
+          연차 신청 내역
         </button>
         <button
           onClick={() => setActiveTab('attendance')}
@@ -354,7 +354,7 @@ export default function RequestsPage() {
             color: activeTab === 'attendance' ? '#2563EB' : '#94A3B8'
           }}
         >
-          ⏰ 출퇴근 수정 요청
+          출퇴근 수정 요청
         </button>
         <button
           onClick={() => setActiveTab('overtime')}
@@ -374,7 +374,7 @@ export default function RequestsPage() {
             color: activeTab === 'overtime' ? '#2563EB' : '#94A3B8'
           }}
         >
-          💼 연장 근무 신청
+          연장 근무 신청
         </button>
         <button
           onClick={() => setActiveTab('outwork')}
@@ -394,7 +394,7 @@ export default function RequestsPage() {
             color: activeTab === 'outwork' ? '#2563EB' : '#94A3B8'
           }}
         >
-          ✈️ 외근/출장 신청
+          외근/출장 신청
         </button>
 
         {/* 페이지당 표시 개수 */}
@@ -781,7 +781,7 @@ export default function RequestsPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-base font-black text-slate-800 mb-3" style={{ fontSize: '16px', fontWeight: '900', color: '#1E293B', margin: '0 0 12px 0' }}>
-              ❌ 반려 사유 기입
+              반려 사유 기입
             </h3>
             <p className="text-xs text-slate-400 mb-4" style={{ fontSize: '12px', color: '#64748B', marginBottom: '16px', margin: '0 0 16px 0' }}>
               근로자에게 보낼 반려 사유를 작성해주세요 (선택사항).

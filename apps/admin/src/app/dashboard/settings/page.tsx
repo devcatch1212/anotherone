@@ -127,7 +127,7 @@ export default function SettingsPage() {
       {/* 타이틀 헤더 */}
       <div>
         <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight" style={{ fontSize: '28px', fontWeight: '800', color: '#1E293B' }}>
-          ⚙️ 시스템 설정 및 관리
+          시스템 설정 및 관리
         </h1>
         <p className="text-sm text-slate-500 mt-2 font-medium" style={{ fontSize: '14px', color: '#64748B', marginTop: '6px' }}>
           실수 방지를 위해 데이터의 삭제 대신 안전하게 보존하며 숨기는 운영 종료 및 퇴사 처리를 수행할 수 있습니다.
