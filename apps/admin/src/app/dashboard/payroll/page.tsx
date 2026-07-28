@@ -42,6 +42,13 @@ export default function PayrollPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
   
+  // 페이징 상태
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+
+  // 체크박스 선택 상태 (userId-companyId 키 집합)
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  
   // 상세 보기 모달 대상
   const [selectedItem, setSelectedItem] = useState<PayrollItem | null>(null);
   // 도움말 모달 대상
@@ -62,6 +69,8 @@ export default function PayrollPage() {
     try {
       setLoading(true);
       setError('');
+      setPage(1);
+      setSelectedKeys(new Set());
       const params: any = { year, month };
       if (selectedCompanyId) {
         params.companyId = selectedCompanyId;
@@ -83,9 +92,42 @@ export default function PayrollPage() {
     loadPayrolls();
   }, [year, month, selectedCompanyId]);
 
-  // Excel(CSV) 내보내기 핸들러
+  // 체크박스 단일 선택/해제
+  const toggleSelectRow = (key: string) => {
+    setSelectedKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  // 현재 페이지(또는 전체) 항목 전체 선택/해제
+  const toggleSelectAll = () => {
+    if (payrolls.length === 0) return;
+    const allKeys = payrolls.map(p => `${p.userId}-${p.companyId}`);
+    const isAllSelected = allKeys.every(k => selectedKeys.has(k));
+
+    if (isAllSelected) {
+      setSelectedKeys(new Set());
+    } else {
+      setSelectedKeys(new Set(allKeys));
+    }
+  };
+
+  // Excel(CSV) 내보내기 핸들러 (선택 항목 또는 전체)
   const handleExportCSV = () => {
     if (payrolls.length === 0) return;
+
+    // 선택 항목이 있으면 선택된 데이터만, 없으면 전체
+    const targetPayrolls = selectedKeys.size > 0
+      ? payrolls.filter(p => selectedKeys.has(`${p.userId}-${p.companyId}`))
+      : payrolls;
+
+    if (targetPayrolls.length === 0) return;
 
     // 헤더 설정
     const headers = [
@@ -96,7 +138,7 @@ export default function PayrollPage() {
     ];
 
     // 데이터 행 매핑
-    const rows = payrolls.map(p => [
+    const rows = targetPayrolls.map(p => [
       p.userName,
       p.userEmail,
       p.companyName,
@@ -158,15 +200,25 @@ export default function PayrollPage() {
     }
   };
 
-  // 급여 명세서 일괄 발행 실행
-  const handleIssueAll = async () => {
-    const pendingItems = payrolls.filter(p => !p.confirmed);
+  // 급여 명세서 발행 실행 (선택 항목 또는 미발행 전체 대상)
+  const handleIssueBatch = async () => {
+    const targetPool = selectedKeys.size > 0
+      ? payrolls.filter(p => selectedKeys.has(`${p.userId}-${p.companyId}`))
+      : payrolls;
+
+    const pendingItems = targetPool.filter(p => !p.confirmed);
+
     if (pendingItems.length === 0) {
-      alert('현재 발행할 대기 상태의 급여 명세서가 없습니다.');
+      if (selectedKeys.size > 0) {
+        alert('선택한 항목 중 이미 발행이 완료된 내역만 포함되어 있거나 발행 대상이 없습니다.');
+      } else {
+        alert('현재 발행할 대기 상태의 급여 명세서가 없습니다.');
+      }
       return;
     }
 
-    const confirmMsg = `⚠️ 정말로 [${year}년 ${month}월] 급여 명세서를 일괄 발행하시겠습니까?\n\n• 발행 대상: 총 ${pendingItems.length}명\n\n발행 즉시 각 근로자의 모바일 앱으로 급여 명세서 알림이 발송되며, 확정 데이터를 조회할 수 있게 됩니다.`;
+    const scopeText = selectedKeys.size > 0 ? `선택한 ${pendingItems.length}명` : `전체 미발행 ${pendingItems.length}명`;
+    const confirmMsg = `⚠️ 정말로 [${year}년 ${month}월] 급여 명세서를 발행하시겠습니까?\n\n• 발행 대상: ${scopeText}\n\n발행 즉시 각 근로자의 모바일 앱으로 급여 명세서 알림이 발송되며, 확정 데이터를 조회할 수 있게 됩니다.`;
     if (!window.confirm(confirmMsg)) return;
 
     try {
@@ -175,8 +227,7 @@ export default function PayrollPage() {
         method: 'POST',
         body: JSON.stringify({ items: pendingItems }),
       });
-      alert('🎉 급여 명세서 일괄 발행 및 푸시 전송이 성공적으로 완료되었습니다!');
-      // 목록 리로드
+      alert('🎉 급여 명세서 발행 및 푸시 전송이 성공적으로 완료되었습니다!');
       loadPayrolls();
     } catch (err: any) {
       alert(err.message || '발행 처리 중 오류가 발생했습니다.');
@@ -240,12 +291,12 @@ export default function PayrollPage() {
               boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.15)'
             }}
           >
-            📊 Excel 다운로드
+            {selectedKeys.size > 0 ? `📊 선택한 ${selectedKeys.size}명 Excel 다운로드` : '📊 Excel 다운로드'}
           </button>
 
-          {/* 일괄 발행 버튼 */}
+          {/* 급여 명세서 발행 버튼 */}
           <button
-            onClick={handleIssueAll}
+            onClick={handleIssueBatch}
             disabled={loading || actionLoading || payrolls.filter(p => !p.confirmed).length === 0}
             className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-500/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition"
             style={{
@@ -260,7 +311,7 @@ export default function PayrollPage() {
               boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.15)'
             }}
           >
-            {actionLoading ? '일괄 발행 처리 중...' : '💵 급여 명세서 일괄 발행'}
+            {actionLoading ? '발행 처리 중...' : selectedKeys.size > 0 ? `💵 선택한 (${payrolls.filter(p => selectedKeys.has(`${p.userId}-${p.companyId}`) && !p.confirmed).length}명) 급여 명세서 발행` : '💵 급여 명세서 발행'}
           </button>
         </div>
       </div>
@@ -323,6 +374,24 @@ export default function PayrollPage() {
             ))}
           </select>
         </div>
+
+        {/* 페이지당 목록 개수 */}
+        <div className="flex flex-col gap-1.5 ml-auto" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginLeft: 'auto' }}>
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider" style={{ fontSize: '10px', fontWeight: '700', color: '#94A3B8' }}>페이지당 표시</label>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setPage(1);
+            }}
+            className="px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 bg-white"
+            style={{ padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '13px', color: '#475569', outline: 'none' }}
+          >
+            {[10, 20, 50, 100].map(s => (
+              <option key={s} value={s}>{s}개씩 보기</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* 정산 대장 목록 카드 */}
@@ -352,80 +421,189 @@ export default function PayrollPage() {
             선택한 월에 근무 중인 근로자 혹은 정산 대상 데이터가 존재하지 않습니다.
           </div>
         ) : (
-          <div className="w-full overflow-x-auto" style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-            <table className="w-full border-collapse text-left text-sm text-slate-600" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '950px' }}>
-              <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase border-b border-slate-100" style={{ backgroundColor: '#F8FAFC', fontSize: '11px', color: '#64748B' }}>
-                <tr>
-                  <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>근로자 (이메일)</th>
-                  <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>소속 근무지</th>
-                  <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>출근 일수</th>
-                  <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>지급 총액 (기본+수당)</th>
-                  <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>세금 공제액</th>
-                  <th className="px-6 py-4 font-black" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0', fontWeight: '900' }}>실수령액 (Net Pay)</th>
-                  <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>발행 상태</th>
-                  <th className="px-6 py-4 text-center" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0', textAlign: 'center' }}>명세 상세</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100" style={{ backgroundColor: '#FFFFFF' }}>
-                {payrolls.map((p) => (
-                  <tr key={`${p.userId}-${p.companyId}`} className="hover:bg-slate-50/50 transition">
-                    <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
-                      <div className="font-bold text-slate-800" style={{ fontSize: '14px', fontWeight: '700', color: '#1E293B' }}>{p.userName}</div>
-                      <div className="text-xs text-slate-400 mt-1" style={{ fontSize: '11px', color: '#94A3B8' }}>{p.userEmail}</div>
-                    </td>
-                    <td className="px-6 py-4 font-semibold text-slate-700" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
-                      🏢 {p.companyName}
-                      <span className="block text-[11px] font-bold text-slate-400 mt-0.5" style={{ fontSize: '11px', color: '#94A3B8', fontWeight: '700' }}>{p.position}</span>
-                    </td>
-                    <td className="px-6 py-4 font-bold text-slate-700" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
-                      📅 {p.workedDays}일 출근
-                    </td>
-                    <td className="px-6 py-4 font-medium text-slate-700" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
-                      ₩{p.totalGross.toLocaleString()}원
-                    </td>
-                    <td className="px-6 py-4 text-red-500 font-semibold" style={{ padding: '16px 24px', fontSize: '13px', color: '#EF4444', borderBottom: '1px solid #F1F5F9' }}>
-                      -₩{p.totalDeduction.toLocaleString()}원
-                    </td>
-                    <td className="px-6 py-4 font-black text-blue-600" style={{ padding: '16px 24px', fontSize: '14px', fontWeight: '900', color: '#2563EB', borderBottom: '1px solid #F1F5F9' }}>
-                      ₩{p.netPay.toLocaleString()}원
-                    </td>
-                    <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
-                      {p.confirmed ? (
-                        <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
-                          발행 완료
-                        </span>
-                      ) : (
-                        <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-600 border border-amber-100">
-                          발행 대기
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-center" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9', textAlign: 'center' }}>
-                      <div className="flex gap-2 justify-center" style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
-                        <button
-                          onClick={() => setSelectedItem(p)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition cursor-pointer"
-                          style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', border: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}
-                        >
-                          🔎 열람
-                        </button>
-                        {!p.confirmed && (
-                          <button
-                            onClick={() => handleIssueSingle(p)}
-                            disabled={actionLoading}
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition cursor-pointer"
-                            style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', border: '1px solid #BFDBFE', backgroundColor: '#EFF6FF' }}
-                          >
-                            💵 발행
-                          </button>
-                        )}
-                      </div>
-                    </td>
+          <>
+            <div className="w-full overflow-x-auto" style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table className="w-full border-collapse text-left text-sm text-slate-600" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '950px' }}>
+                <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase border-b border-slate-100" style={{ backgroundColor: '#F8FAFC', fontSize: '11px', color: '#64748B' }}>
+                  <tr>
+                    <th style={{ width: '48px', padding: '16px 12px 16px 24px', borderBottom: '1px solid #E2E8F0', textAlign: 'center' }}>
+                      <input
+                        type="checkbox"
+                        checked={payrolls.length > 0 && payrolls.every(p => selectedKeys.has(`${p.userId}-${p.companyId}`))}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                      />
+                    </th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>근로자 (이메일)</th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>소속 근무지</th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>출근 일수</th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>지급 총액 (기본+수당)</th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>세금 공제액</th>
+                    <th className="px-6 py-4 font-black" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0', fontWeight: '900' }}>실수령액 (Net Pay)</th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>발행 상태</th>
+                    <th className="px-6 py-4 text-center" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0', textAlign: 'center' }}>명세 상세</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100" style={{ backgroundColor: '#FFFFFF' }}>
+                  {payrolls.slice((page - 1) * pageSize, page * pageSize).map((p) => {
+                    const rowKey = `${p.userId}-${p.companyId}`;
+                    const isSelected = selectedKeys.has(rowKey);
+                    return (
+                      <tr key={rowKey} className={`hover:bg-slate-50/50 transition ${isSelected ? 'bg-blue-50/30' : ''}`} style={{ backgroundColor: isSelected ? '#EFF6FF' : undefined }}>
+                        <td style={{ width: '48px', padding: '16px 12px 16px 24px', borderBottom: '1px solid #F1F5F9', textAlign: 'center' }}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelectRow(rowKey)}
+                            className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                          />
+                        </td>
+                        <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
+                          <div className="font-bold text-slate-800" style={{ fontSize: '14px', fontWeight: '700', color: '#1E293B' }}>{p.userName}</div>
+                          <div className="text-xs text-slate-400 mt-1" style={{ fontSize: '11px', color: '#94A3B8' }}>{p.userEmail}</div>
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-slate-700" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
+                          🏢 {p.companyName}
+                          <span className="block text-[11px] font-bold text-slate-400 mt-0.5" style={{ fontSize: '11px', color: '#94A3B8', fontWeight: '700' }}>{p.position}</span>
+                        </td>
+                        <td className="px-6 py-4 font-bold text-slate-700" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
+                          📅 {p.workedDays}일 출근
+                        </td>
+                        <td className="px-6 py-4 font-medium text-slate-700" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
+                          ₩{p.totalGross.toLocaleString()}원
+                        </td>
+                        <td className="px-6 py-4 text-red-500 font-semibold" style={{ padding: '16px 24px', fontSize: '13px', color: '#EF4444', borderBottom: '1px solid #F1F5F9' }}>
+                          -₩{p.totalDeduction.toLocaleString()}원
+                        </td>
+                        <td className="px-6 py-4 font-black text-blue-600" style={{ padding: '16px 24px', fontSize: '14px', fontWeight: '900', color: '#2563EB', borderBottom: '1px solid #F1F5F9' }}>
+                          ₩{p.netPay.toLocaleString()}원
+                        </td>
+                        <td className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
+                          {p.confirmed ? (
+                            <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                              발행 완료
+                            </span>
+                          ) : (
+                            <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-600 border border-amber-100">
+                              발행 대기
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-center" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9', textAlign: 'center' }}>
+                          <div className="flex gap-2 justify-center" style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                            <button
+                              onClick={() => setSelectedItem(p)}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition cursor-pointer"
+                              style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', border: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}
+                            >
+                              🔎 열람
+                            </button>
+                            {!p.confirmed && (
+                              <button
+                                onClick={() => handleIssueSingle(p)}
+                                disabled={actionLoading}
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition cursor-pointer"
+                                style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', border: '1px solid #BFDBFE', backgroundColor: '#EFF6FF' }}
+                              >
+                                💵 발행
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* 페이징 하단 네비게이션 컨트롤 */}
+            {payrolls.length > 0 && (() => {
+              const totalCount = payrolls.length;
+              const totalPages = Math.ceil(totalCount / pageSize) || 1;
+              const startIndex = (page - 1) * pageSize;
+              const endIndex = Math.min(startIndex + pageSize, totalCount);
+
+              return (
+                <div 
+                  className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '16px 24px',
+                    borderTop: '1px solid #F1F5F9',
+                    backgroundColor: '#F8FAFC'
+                  }}
+                >
+                  <div style={{ fontSize: '13px', color: '#64748B', fontWeight: '500' }}>
+                    총 <strong style={{ color: '#1E293B' }}>{totalCount}</strong>명 중{' '}
+                    <strong style={{ color: '#1E293B' }}>{totalCount > 0 ? startIndex + 1 : 0}-{endIndex}</strong>명 표시
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <button
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        borderRadius: '8px',
+                        border: '1px solid #E2E8F0',
+                        backgroundColor: page === 1 ? '#F1F5F9' : '#FFFFFF',
+                        color: page === 1 ? '#94A3B8' : '#334155',
+                        cursor: page === 1 ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      ← 이전
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(pNum => (
+                      <button
+                        key={pNum}
+                        onClick={() => setPage(pNum)}
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          fontSize: '13px',
+                          fontWeight: pNum === page ? '700' : '600',
+                          borderRadius: '8px',
+                          border: pNum === page ? 'none' : '1px solid #E2E8F0',
+                          backgroundColor: pNum === page ? '#2563EB' : '#FFFFFF',
+                          color: pNum === page ? '#FFFFFF' : '#334155',
+                          cursor: 'pointer',
+                          boxShadow: pNum === page ? '0 2px 4px rgba(37,99,235,0.2)' : 'none',
+                        }}
+                      >
+                        {pNum}
+                      </button>
+                    ))}
+
+                    <button
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        borderRadius: '8px',
+                        border: '1px solid #E2E8F0',
+                        backgroundColor: page === totalPages ? '#F1F5F9' : '#FFFFFF',
+                        color: page === totalPages ? '#94A3B8' : '#334155',
+                        cursor: page === totalPages ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      다음 →
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+          </>
+
         )}
       </div>
 
