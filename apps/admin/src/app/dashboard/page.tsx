@@ -15,6 +15,20 @@ interface CompanySummary {
   createdAt: string;
 }
 
+interface TodayAttendanceDetail {
+  employmentId: string;
+  userId: string;
+  name: string;
+  email: string | null;
+  companyId: string;
+  companyName: string;
+  status: 'checkedIn' | 'late' | 'notCheckedIn' | 'onLeave';
+  statusLabel: string;
+  checkIn: string | null;
+  checkOut: string | null;
+  workedMinutes: number | null;
+}
+
 interface TodayStatus {
   date: string;
   total: number;
@@ -22,6 +36,7 @@ interface TodayStatus {
   late: number;
   notCheckedIn: number;
   onLeave: number;
+  employees?: TodayAttendanceDetail[];
 }
 
 export default function DashboardPage() {
@@ -32,6 +47,15 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [todayStatus, setTodayStatus] = useState<TodayStatus | null>(null);
+
+  // 실시간 관제 카드 클릭 상세 모달 상태
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [detailModalFilter, setDetailModalFilter] = useState<'all' | 'checkedIn' | 'late' | 'notCheckedIn' | 'onLeave'>('all');
+
+  const openDetailModal = (filter: 'all' | 'checkedIn' | 'late' | 'notCheckedIn' | 'onLeave') => {
+    setDetailModalFilter(filter);
+    setDetailModalOpen(true);
+  };
 
   // 근무지 페이징 상태
   const [companyPage, setCompanyPage] = useState<number>(1);
@@ -274,7 +298,18 @@ export default function DashboardPage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '14px' }}>
             {/* 총 등록 근무지 */}
-            <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div
+              style={{
+                backgroundColor: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: '14px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                transition: 'all 0.2s ease',
+              }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748B' }}>등록 근무지</span>
                 <span style={{ fontSize: '16px' }}>🏢</span>
@@ -285,57 +320,148 @@ export default function DashboardPage() {
             </div>
 
             {/* 총 근로자 수 */}
-            <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div
+              onClick={() => openDetailModal('all')}
+              className="group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+              style={{
+                backgroundColor: '#F8FAFC',
+                border: '1px solid #CBD5E1',
+                borderRadius: '14px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                cursor: 'pointer',
+                position: 'relative',
+              }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748B' }}>총 근로자</span>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#475569' }}>총 근로자</span>
                 <span style={{ fontSize: '16px' }}>👥</span>
               </div>
-              <div style={{ fontSize: '22px', fontWeight: '900', color: '#0F172A', lineHeight: 1 }}>
-                {todayStatus.total}<span style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', marginLeft: '2px' }}>명</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: '22px', fontWeight: '900', color: '#0F172A', lineHeight: 1 }}>
+                  {todayStatus.total}<span style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', marginLeft: '2px' }}>명</span>
+                </div>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#2563EB', backgroundColor: '#EFF6FF', padding: '2px 8px', borderRadius: '6px' }}>
+                  상세 🔍
+                </span>
               </div>
             </div>
 
             {/* 출근 완료 */}
-            <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div
+              onClick={() => openDetailModal('checkedIn')}
+              className="group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+              style={{
+                backgroundColor: '#F0FDF4',
+                border: '1px solid #BBF7D0',
+                borderRadius: '14px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                cursor: 'pointer',
+              }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '11px', fontWeight: '700', color: '#15803D' }}>출근 완료</span>
                 <span style={{ fontSize: '16px' }}>✅</span>
               </div>
-              <div style={{ fontSize: '22px', fontWeight: '900', color: '#166534', lineHeight: 1 }}>
-                {todayStatus.checkedIn}<span style={{ fontSize: '12px', fontWeight: '700', color: '#15803D', marginLeft: '2px' }}>명</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: '22px', fontWeight: '900', color: '#166534', lineHeight: 1 }}>
+                  {todayStatus.checkedIn}<span style={{ fontSize: '12px', fontWeight: '700', color: '#15803D', marginLeft: '2px' }}>명</span>
+                </div>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#166534', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '6px' }}>
+                  상세 🔍
+                </span>
               </div>
             </div>
 
             {/* 지각 */}
-            <div style={{ backgroundColor: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div
+              onClick={() => openDetailModal('late')}
+              className="group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+              style={{
+                backgroundColor: '#FFFBEB',
+                border: '1px solid #FDE68A',
+                borderRadius: '14px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                cursor: 'pointer',
+              }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '11px', fontWeight: '700', color: '#B45309' }}>지각</span>
                 <span style={{ fontSize: '16px' }}>⚠️</span>
               </div>
-              <div style={{ fontSize: '22px', fontWeight: '900', color: '#92400E', lineHeight: 1 }}>
-                {todayStatus.late}<span style={{ fontSize: '12px', fontWeight: '700', color: '#B45309', marginLeft: '2px' }}>명</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: '22px', fontWeight: '900', color: '#92400E', lineHeight: 1 }}>
+                  {todayStatus.late}<span style={{ fontSize: '12px', fontWeight: '700', color: '#B45309', marginLeft: '2px' }}>명</span>
+                </div>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#92400E', backgroundColor: '#FEF3C7', padding: '2px 8px', borderRadius: '6px' }}>
+                  상세 🔍
+                </span>
               </div>
             </div>
 
             {/* 미출근 */}
-            <div style={{ backgroundColor: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div
+              onClick={() => openDetailModal('notCheckedIn')}
+              className="group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+              style={{
+                backgroundColor: '#FFF1F2',
+                border: '1px solid #FECDD3',
+                borderRadius: '14px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                cursor: 'pointer',
+              }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '11px', fontWeight: '700', color: '#BE123C' }}>미출근</span>
                 <span style={{ fontSize: '16px' }}>🔴</span>
               </div>
-              <div style={{ fontSize: '22px', fontWeight: '900', color: '#9F1239', lineHeight: 1 }}>
-                {todayStatus.notCheckedIn}<span style={{ fontSize: '12px', fontWeight: '700', color: '#BE123C', marginLeft: '2px' }}>명</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: '22px', fontWeight: '900', color: '#9F1239', lineHeight: 1 }}>
+                  {todayStatus.notCheckedIn}<span style={{ fontSize: '12px', fontWeight: '700', color: '#BE123C', marginLeft: '2px' }}>명</span>
+                </div>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#9F1239', backgroundColor: '#FFE4E6', padding: '2px 8px', borderRadius: '6px' }}>
+                  상세 🔍
+                </span>
               </div>
             </div>
 
             {/* 휴가 */}
-            <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div
+              onClick={() => openDetailModal('onLeave')}
+              className="group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+              style={{
+                backgroundColor: '#EFF6FF',
+                border: '1px solid #BFDBFE',
+                borderRadius: '14px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                cursor: 'pointer',
+              }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '11px', fontWeight: '700', color: '#1D4ED8' }}>휴가</span>
                 <span style={{ fontSize: '16px' }}>🏖️</span>
               </div>
-              <div style={{ fontSize: '22px', fontWeight: '900', color: '#1E3A8A', lineHeight: 1 }}>
-                {todayStatus.onLeave}<span style={{ fontSize: '12px', fontWeight: '700', color: '#1D4ED8', marginLeft: '2px' }}>명</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: '22px', fontWeight: '900', color: '#1E3A8A', lineHeight: 1 }}>
+                  {todayStatus.onLeave}<span style={{ fontSize: '12px', fontWeight: '700', color: '#1D4ED8', marginLeft: '2px' }}>명</span>
+                </div>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#1E3A8A', backgroundColor: '#DBEAFE', padding: '2px 8px', borderRadius: '6px' }}>
+                  상세 🔍
+                </span>
               </div>
             </div>
           </div>
@@ -615,6 +741,351 @@ export default function DashboardPage() {
           })()}
         </>
       )}
+
+      {/* 근로자 상세 현황 팝업 모달 */}
+      <TodayAttendanceDetailModal
+        isOpen={detailModalOpen}
+        onClose={() => setDetailModalOpen(false)}
+        initialFilter={detailModalFilter}
+        todayStatus={todayStatus}
+      />
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 실시간 근로자 정보 및 근태 현황 상세 모달 컴포넌트
+// ─────────────────────────────────────────────────────────────────────────────
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  initialFilter: 'all' | 'checkedIn' | 'late' | 'notCheckedIn' | 'onLeave';
+  todayStatus: TodayStatus | null;
+}
+
+function TodayAttendanceDetailModal({ isOpen, onClose, initialFilter, todayStatus }: ModalProps) {
+  const [activeFilter, setActiveFilter] = useState<'all' | 'checkedIn' | 'late' | 'notCheckedIn' | 'onLeave'>(initialFilter);
+  const [modalSearch, setModalSearch] = useState('');
+
+  useEffect(() => {
+    setActiveFilter(initialFilter);
+  }, [initialFilter, isOpen]);
+
+  if (!isOpen || !todayStatus) return null;
+
+  const employees = todayStatus.employees || [];
+
+  // 필터링 적용
+  const filteredEmployees = employees.filter(emp => {
+    const matchesFilter = activeFilter === 'all' || emp.status === activeFilter;
+    const q = modalSearch.toLowerCase().trim();
+    const matchesSearch = !q ||
+      emp.name.toLowerCase().includes(q) ||
+      (emp.email && emp.email.toLowerCase().includes(q)) ||
+      emp.companyName.toLowerCase().includes(q);
+    return matchesFilter && matchesSearch;
+  });
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'checkedIn':
+        return <span style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>🟢 출근 완료</span>;
+      case 'late':
+        return <span style={{ backgroundColor: '#FEF3C7', color: '#92400E', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>🟡 지각</span>;
+      case 'onLeave':
+        return <span style={{ backgroundColor: '#DBEAFE', color: '#1E3A8A', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>🔵 휴가</span>;
+      default:
+        return <span style={{ backgroundColor: '#FFE4E6', color: '#9F1239', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>🔴 미출근</span>;
+    }
+  };
+
+  const fmtTime = (iso: string | null) => {
+    if (!iso) return '-';
+    try {
+      const d = new Date(iso);
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    } catch {
+      return '-';
+    }
+  };
+
+  const fmtMinutes = (min: number | null) => {
+    if (!min || min <= 0) return '-';
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return m > 0 ? `${h}시간 ${m}분` : `${h}시간`;
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        backgroundColor: 'rgba(15, 23, 42, 0.55)',
+        backdropFilter: 'blur(4px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: '24px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          width: '100%',
+          maxWidth: '820px',
+          maxHeight: '85vh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          animation: 'fadeIn 0.2s ease-out',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* 모달 헤더 */}
+        <div
+          style={{
+            padding: '24px 28px 16px 28px',
+            borderBottom: '1px solid #F1F5F9',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A', margin: 0 }}>
+                실시간 근로자 근태 현황
+              </h2>
+              <span style={{ fontSize: '13px', fontWeight: '700', color: '#2563EB', backgroundColor: '#EFF6FF', padding: '2px 10px', borderRadius: '12px' }}>
+                총 {employees.length}명
+              </span>
+            </div>
+            <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px', margin: '4px 0 0 0' }}>
+              기준일: {todayStatus.date} · 각 카드를 선택하거나 근로자명을 검색해 상세 정보를 확인하세요.
+            </p>
+          </div>
+
+          <button
+            onClick={onClose}
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
+              border: '1px solid #E2E8F0',
+              backgroundColor: '#F8FAFC',
+              color: '#64748B',
+              fontSize: '16px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s',
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* 필터 탭 & 검색바 */}
+        <div style={{ padding: '16px 28px', backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
+          {/* 탭 필터 */}
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            {[
+              { key: 'all', label: '전체', count: todayStatus.total, color: '#334155', bg: '#E2E8F0' },
+              { key: 'checkedIn', label: '출근 완료', count: todayStatus.checkedIn, color: '#166534', bg: '#DCFCE7' },
+              { key: 'late', label: '지각', count: todayStatus.late, color: '#92400E', bg: '#FEF3C7' },
+              { key: 'notCheckedIn', label: '미출근', count: todayStatus.notCheckedIn, color: '#9F1239', bg: '#FFE4E6' },
+              { key: 'onLeave', label: '휴가', count: todayStatus.onLeave, color: '#1E3A8A', bg: '#DBEAFE' },
+            ].map(tab => {
+              const isActive = activeFilter === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveFilter(tab.key as any)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '10px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    border: isActive ? '1px solid #2563EB' : '1px solid #E2E8F0',
+                    backgroundColor: isActive ? '#2563EB' : '#FFFFFF',
+                    color: isActive ? '#FFFFFF' : '#475569',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <span>{tab.label}</span>
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      padding: '1px 6px',
+                      borderRadius: '8px',
+                      backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : tab.bg,
+                      color: isActive ? '#FFFFFF' : tab.color,
+                      fontWeight: '800',
+                    }}
+                  >
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 검색 입력 */}
+          <div style={{ position: 'relative', width: '220px' }}>
+            <span style={{ position: 'absolute', left: '10px', top: '8px', color: '#94A3B8', fontSize: '13px' }}>🔍</span>
+            <input
+              type="text"
+              placeholder="이름, 이메일, 근무지 검색..."
+              value={modalSearch}
+              onChange={e => setModalSearch(e.target.value)}
+              style={{
+                width: '100%',
+                borderRadius: '10px',
+                border: '1px solid #CBD5E1',
+                padding: '6px 12px 6px 30px',
+                fontSize: '12px',
+                fontWeight: '600',
+                outline: 'none',
+                backgroundColor: '#FFFFFF',
+                color: '#1E293B',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* 근로자 목록 리스트 영역 */}
+        <div style={{ padding: '20px 28px', overflowY: 'auto', flex: 1 }}>
+          {filteredEmployees.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8', fontSize: '14px' }}>
+              해당하는 근로자 정보가 없습니다.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {filteredEmployees.map(emp => (
+                <div
+                  key={emp.employmentId}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '14px 18px',
+                    borderRadius: '14px',
+                    border: '1px solid #F1F5F9',
+                    backgroundColor: '#F8FAFC',
+                    transition: 'all 0.15s',
+                  }}
+                  className="hover:border-blue-200 hover:bg-blue-50/30"
+                >
+                  {/* 근로자 기본 프로필 */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <div
+                      style={{
+                        width: '42px',
+                        height: '42px',
+                        borderRadius: '12px',
+                        backgroundColor: '#EFF6FF',
+                        color: '#2563EB',
+                        fontWeight: '800',
+                        fontSize: '15px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '1px solid #DBEAFE',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {emp.name.substring(0, 1)}
+                    </div>
+
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A' }}>
+                          {emp.name}
+                        </span>
+                        <span style={{ fontSize: '11px', fontWeight: '600', color: '#475569', backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', padding: '1px 7px', borderRadius: '6px' }}>
+                          🏢 {emp.companyName}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+                        {emp.email || '이메일 미등록'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 근태 상세 (상태 뱃지 + 시간 정보) */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '11px', color: '#64748B', fontWeight: '600' }}>
+                        출근: <strong style={{ color: '#0F172A' }}>{fmtTime(emp.checkIn)}</strong> / 퇴근: <strong style={{ color: '#0F172A' }}>{fmtTime(emp.checkOut)}</strong>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#2563EB', fontWeight: '700', marginTop: '2px' }}>
+                        {emp.workedMinutes ? `총 근무 ${fmtMinutes(emp.workedMinutes)}` : '근무 시간 집계 대기'}
+                      </div>
+                    </div>
+
+                    <div>
+                      {getStatusBadge(emp.status)}
+                    </div>
+
+                    <Link
+                      href="/dashboard/employees"
+                      style={{
+                        padding: '6px 10px',
+                        borderRadius: '8px',
+                        backgroundColor: '#FFFFFF',
+                        border: '1px solid #CBD5E1',
+                        color: '#475569',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        textDecoration: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '2px',
+                      }}
+                      className="hover:border-blue-500 hover:text-blue-600"
+                    >
+                      상세 ↗
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 푸터 */}
+        <div style={{ padding: '14px 28px', backgroundColor: '#F8FAFC', borderTop: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '500' }}>
+            표시 항목: 총 <strong>{filteredEmployees.length}</strong>명
+          </span>
+          <button
+            onClick={onClose}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '10px',
+              backgroundColor: '#0F172A',
+              color: '#FFFFFF',
+              fontSize: '12px',
+              fontWeight: '700',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            닫기
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

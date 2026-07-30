@@ -165,6 +165,19 @@ export class AdminService {
     );
 
     let checkedIn = 0, late = 0, notCheckedIn = 0, onLeave = 0;
+    const employees: Array<{
+      employmentId: string;
+      userId: string;
+      name: string;
+      email: string | null;
+      companyId: string;
+      companyName: string;
+      status: 'checkedIn' | 'late' | 'notCheckedIn' | 'onLeave';
+      statusLabel: string;
+      checkIn: string | null;
+      checkOut: string | null;
+      workedMinutes: number | null;
+    }> = [];
 
     for (const emp of activeEmployments) {
       const key = `${emp.userId}:${emp.companyId}`;
@@ -172,15 +185,40 @@ export class AdminService {
         (r) => r.userId === emp.userId && r.companyId === emp.companyId,
       );
 
+      let status: 'checkedIn' | 'late' | 'notCheckedIn' | 'onLeave' = 'notCheckedIn';
+      let statusLabel = '미출근';
+
       if (leaveSet.has(key)) {
         onLeave++;
+        status = 'onLeave';
+        statusLabel = '휴가';
       } else if (!record || !record.checkIn) {
         notCheckedIn++;
+        status = 'notCheckedIn';
+        statusLabel = '미출근';
       } else if (record.status === 'late') {
         late++;
+        status = 'late';
+        statusLabel = '지각';
       } else {
         checkedIn++;
+        status = 'checkedIn';
+        statusLabel = '출근 완료';
       }
+
+      employees.push({
+        employmentId: emp.id,
+        userId: emp.userId,
+        name: emp.user?.name || '미등록',
+        email: emp.user?.email || null,
+        companyId: emp.companyId,
+        companyName: emp.company?.name || '미지정',
+        status,
+        statusLabel,
+        checkIn: record?.checkIn ? record.checkIn.toISOString() : null,
+        checkOut: record?.checkOut ? record.checkOut.toISOString() : null,
+        workedMinutes: record?.workedMinutes ?? null,
+      });
     }
 
     return {
@@ -190,6 +228,7 @@ export class AdminService {
       late,
       notCheckedIn,
       onLeave,
+      employees,
     };
   }
 
