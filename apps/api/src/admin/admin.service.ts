@@ -152,7 +152,7 @@ export class AdminService {
       this.prisma.employment.findMany({
         where: empWhere,
         include: {
-          user: { select: { name: true, email: true } },
+          user: { select: { name: true, email: true, isAnonymous: true } },
           company: { select: { name: true } },
         },
       }),
@@ -170,6 +170,7 @@ export class AdminService {
       userId: string;
       name: string;
       email: string | null;
+      isAnonymous: boolean;
       companyId: string;
       companyName: string;
       status: 'checkedIn' | 'late' | 'notCheckedIn' | 'onLeave';
@@ -211,6 +212,7 @@ export class AdminService {
         userId: emp.userId,
         name: emp.user?.name || '미등록',
         email: emp.user?.email || null,
+        isAnonymous: emp.user?.isAnonymous ?? true,
         companyId: emp.companyId,
         companyName: emp.company?.name || '미지정',
         status,

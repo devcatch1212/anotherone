@@ -20,6 +20,7 @@ interface TodayAttendanceDetail {
   userId: string;
   name: string;
   email: string | null;
+  isAnonymous?: boolean;
   companyId: string;
   companyName: string;
   status: 'checkedIn' | 'late' | 'notCheckedIn' | 'onLeave';
@@ -1017,8 +1018,14 @@ function TodayAttendanceDetailModal({ isOpen, onClose, initialFilter, todayStatu
                           🏢 {emp.companyName}
                         </span>
                       </div>
-                      <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
-                        {emp.email || '이메일 미등록'}
+                      <div style={{ fontSize: '12px', color: '#64748B', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {emp.email ? (
+                          <span>✉️ {emp.email}</span>
+                        ) : (
+                          <span style={{ fontSize: '11px', color: '#64748B', backgroundColor: '#F1F5F9', padding: '1px 6px', borderRadius: '4px', fontWeight: '500' }}>
+                            📱 모바일 간편 인증 계정
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1039,7 +1046,7 @@ function TodayAttendanceDetailModal({ isOpen, onClose, initialFilter, todayStatu
                     </div>
 
                     <Link
-                      href="/dashboard/employees"
+                      href={`/dashboard/employees/${emp.employmentId}`}
                       style={{
                         padding: '6px 10px',
                         borderRadius: '8px',
