@@ -204,6 +204,8 @@ export default function ContractsPage() {
       return;
     }
 
+    if (!window.confirm(`📄 [${formTitle}] 전자계약서를 근로자에게 작성 및 서명 요청하시겠습니까?`)) return;
+
     try {
       setSubmitting(true);
       await apiFetch('/api/admin/contracts', {

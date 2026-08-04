@@ -80,6 +80,14 @@ export default function SettingsPage() {
     e.preventDefault();
     if (!appConfig) return;
 
+    const confirmMsg = `📱 앱 버전 및 시스템 설정을 저장하시겠습니까?\n\n` +
+      `• Android: 최소 v${appConfig.minVersionAndroid} / 최신 v${appConfig.latestVersionAndroid}\n` +
+      `• iOS: 최소 v${appConfig.minVersionIos} / 최신 v${appConfig.latestVersionIos}\n` +
+      `• 점검 모드: ${appConfig.maintenanceMode ? '🚨 활성화 (근로자 앱 접속 제한)' : '비활성화 (정상 운영)'}\n\n` +
+      `저장 시 모바일 앱 사용자의 버전 검증 및 서비스 접속에 즉각 반영됩니다.`;
+
+    if (!window.confirm(confirmMsg)) return;
+
     try {
       setConfigSaving(true);
       setSaveSuccess(false);

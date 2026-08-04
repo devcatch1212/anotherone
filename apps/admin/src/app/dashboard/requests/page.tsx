@@ -154,6 +154,9 @@ export default function RequestsPage() {
 
   // 연차 승인/반려 액션
   const handleLeaveAction = async (id: string, action: 'approve' | 'reject', rejectReason?: string) => {
+    const actionName = action === 'approve' ? '승인' : '반려';
+    if (!window.confirm(`해당 연차 신청을 ${actionName}하시겠습니까?`)) return;
+
     try {
       setActionLoading(`${id}-${action}`);
       await apiFetch(`/api/admin/leaves/${id}/${action}`, { 
@@ -174,6 +177,9 @@ export default function RequestsPage() {
 
   // 출퇴근 수정 승인/반려 액션
   const handleCorrectionAction = async (id: string, action: 'approve' | 'reject', rejectReason?: string) => {
+    const actionName = action === 'approve' ? '승인' : '반려';
+    if (!window.confirm(`해당 출퇴근 수정 요청을 ${actionName}하시겠습니까?`)) return;
+
     try {
       setActionLoading(`${id}-${action}`);
       await apiFetch(`/api/admin/attendance-corrections/${id}/${action}`, { 
@@ -194,6 +200,9 @@ export default function RequestsPage() {
 
   // 연장 근무 승인/반려 액션
   const handleOvertimeAction = async (id: string, action: 'approve' | 'reject', rejectReason?: string) => {
+    const actionName = action === 'approve' ? '승인' : '반려';
+    if (!window.confirm(`해당 연장 근무 신청을 ${actionName}하시겠습니까?`)) return;
+
     try {
       setActionLoading(`${id}-${action}`);
       await apiFetch(`/api/admin/overtimes/${id}/${action}`, { 
@@ -214,6 +223,9 @@ export default function RequestsPage() {
 
   // 외근/출장 승인/반려 액션
   const handleOutworkAction = async (id: string, action: 'approve' | 'reject') => {
+    const actionName = action === 'approve' ? '승인' : '반려';
+    if (!window.confirm(`해당 외근/출장 신청을 ${actionName}하시겠습니까?`)) return;
+
     try {
       setActionLoading(`${id}-${action}`);
       await apiFetch(`/api/admin/outworks/${id}/${action}`, { 
