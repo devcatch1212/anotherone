@@ -276,19 +276,38 @@ export class AttendanceService {
     }));
 
     const todayStr = getKSTDateString(new Date());
-    const todayOutwork = await this.prisma.outworkRequest.findFirst({
-      where: {
-        userId,
-        companyId: employment.companyId,
-        date: todayStr,
-        status: 'approved',
-      },
-    });
+    const [todayOutwork, todayOvertime] = await Promise.all([
+      this.prisma.outworkRequest.findFirst({
+        where: {
+          userId,
+          companyId: employment.companyId,
+          date: todayStr,
+          status: 'approved',
+        },
+      }),
+      this.prisma.overtimeRequest.findFirst({
+        where: {
+          userId,
+          companyId: employment.companyId,
+          date: todayStr,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
 
     return {
       records: recordsWithOutwork,
       hasTodayOutwork: todayOutwork !== null,
       todayOutworkType: todayOutwork?.type || null,
+      todayOvertime: todayOvertime
+        ? {
+            id: todayOvertime.id,
+            status: todayOvertime.status,
+            startTime: todayOvertime.startTime,
+            endTime: todayOvertime.endTime,
+            reason: todayOvertime.reason,
+          }
+        : null,
     };
   }
 

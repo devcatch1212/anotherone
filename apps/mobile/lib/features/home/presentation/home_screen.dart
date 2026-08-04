@@ -28,11 +28,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   double _leaveRemaining = 0;
   bool _checkingIn = false;
   bool _hasTodayOutwork = false;
+  Map<String, dynamic>? _todayOvertime;
   String? _loadError;
   Timer? _timer;
   DateTime _now = DateTime.now();
   StreamSubscription<Position>? _positionSub;
-
 
   @override
   void initState() {
@@ -68,7 +68,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final auth = ref.read(authProvider).value;
     if (auth == null) return;
 
-
     final emp = auth.currentEmployment;
     if (emp == null) return;
     final api = ref.read(apiClientProvider);
@@ -92,12 +91,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
       final today = recs.where((r) => r.date == todayStr).firstOrNull;
       final hasTodayOutwork = res['hasTodayOutwork'] as bool? ?? false;
+      final todayOvertime = res['todayOvertime'] as Map<String, dynamic>?;
 
       if (mounted) {
         setState(() {
           _records = recs;
           _todayRecord = today;
           _hasTodayOutwork = hasTodayOutwork;
+          _todayOvertime = todayOvertime;
           if (today != null) {
             _workState = today.checkOut != null
                 ? AttendanceState.done
@@ -497,6 +498,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text('연장근로 신청', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                if (_todayOvertime != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: (_todayOvertime!['status'] == 'approved'
+                              ? AppColors.success
+                              : _todayOvertime!['status'] == 'rejected'
+                                  ? AppColors.danger
+                                  : const Color(0xFFFFFBEB)),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: (_todayOvertime!['status'] == 'approved'
+                                ? AppColors.success
+                                : _todayOvertime!['status'] == 'rejected'
+                                    ? AppColors.danger
+                                    : const Color(0xFFF59E0B))
+                            .withOpacity(0.4),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('오늘 신청 내역', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                            Text(
+                              _todayOvertime!['status'] == 'approved'
+                                  ? '승인됨 ✅'
+                                  : _todayOvertime!['status'] == 'rejected'
+                                      ? '반려됨 ❌'
+                                      : '승인 대기 중 ⏳',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: _todayOvertime!['status'] == 'approved'
+                                    ? AppColors.success
+                                    : _todayOvertime!['status'] == 'rejected'
+                                        ? AppColors.danger
+                                        : const Color(0xFFD97706),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text('신청 시간: ${_todayOvertime!['startTime']} ~ ${_todayOvertime!['endTime']}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                        if ((_todayOvertime!['reason'] as String? ?? '').isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text('사유: ${_todayOvertime!['reason']}', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -1249,11 +1306,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       borderRadius: BorderRadius.circular(12)),
                   side: const BorderSide(color: Color(0xFF3E6872), width: 1.0),
                 ),
-                child: const Text('⏱️ 연장',
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF3E6872))),
+                child: Text(
+                  _todayOvertime == null
+                      ? '⏱️ 연장'
+                      : _todayOvertime!['status'] == 'approved'
+                          ? '⏱️ 연장 (승인)'
+                          : _todayOvertime!['status'] == 'rejected'
+                              ? '⏱️ 연장 (반려)'
+                              : '⏱️ 연장 (대기)',
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF3E6872)),
+                ),
               ),
             ),
           ),
