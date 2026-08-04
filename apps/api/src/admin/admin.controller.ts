@@ -267,4 +267,25 @@ export class AdminController {
   deleteContract(@Param('id') id: string) {
     return this.adminService.deleteContract(id);
   }
+
+  // 앱 설정 조회
+  @UseGuards(AdminAuthGuard)
+  @Get('app-config')
+  getAppConfig() {
+    return this.adminService.getAppConfig();
+  }
+
+  // 앱 설정 수정
+  @UseGuards(AdminAuthGuard)
+  @Patch('app-config')
+  updateAppConfig(@Body() body: {
+    latestVersionAndroid?: string;
+    minVersionAndroid?: string;
+    latestVersionIos?: string;
+    minVersionIos?: string;
+    forceUpdate?: boolean;
+    maintenanceMode?: boolean;
+  }) {
+    return this.adminService.updateAppConfig(body);
+  }
 }

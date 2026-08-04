@@ -31,9 +31,9 @@ final versionServiceProvider = Provider<VersionService>((ref) {
 class VersionService {
   final ApiClient _apiClient;
 
-  // 임시 마켓 주소 (실제 앱 배포 시 번들 ID 또는 앱 ID 기입)
-  static const String _playStoreUrl = 'market://details?id=com.example.geumumapp';
-  static const String _appStoreUrl = 'https://apps.apple.com/app/id6470000000'; // 임시 ID
+  // 실제 마켓 주소 반영
+  static const String _playStoreUrl = 'market://details?id=com.catchily.geumumu';
+  static const String _appStoreUrl = 'https://apps.apple.com/app/id6788237254';
 
   VersionService(this._apiClient);
 

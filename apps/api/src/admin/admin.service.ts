@@ -1052,4 +1052,51 @@ export class AdminService {
 
     return this.prisma.contractDocument.delete({ where: { id } });
   }
+
+  // 앱 설정 조회
+  async getAppConfig() {
+    let config = await this.prisma.appConfig.findFirst();
+    if (!config) {
+      config = await this.prisma.appConfig.create({
+        data: {
+          latestVersionAndroid: '1.0.0',
+          minVersionAndroid: '1.0.0',
+          latestVersionIos: '1.0.0',
+          minVersionIos: '1.0.0',
+          forceUpdate: false,
+          maintenanceMode: false,
+        },
+      });
+    }
+    return config;
+  }
+
+  // 앱 설정 업데이트
+  async updateAppConfig(data: {
+    latestVersionAndroid?: string;
+    minVersionAndroid?: string;
+    latestVersionIos?: string;
+    minVersionIos?: string;
+    forceUpdate?: boolean;
+    maintenanceMode?: boolean;
+  }) {
+    const config = await this.prisma.appConfig.findFirst();
+    if (!config) {
+      return this.prisma.appConfig.create({
+        data: {
+          latestVersionAndroid: data.latestVersionAndroid ?? '1.0.0',
+          minVersionAndroid: data.minVersionAndroid ?? '1.0.0',
+          latestVersionIos: data.latestVersionIos ?? '1.0.0',
+          minVersionIos: data.minVersionIos ?? '1.0.0',
+          forceUpdate: data.forceUpdate ?? false,
+          maintenanceMode: data.maintenanceMode ?? false,
+        },
+      });
+    }
+
+    return this.prisma.appConfig.update({
+      where: { id: config.id },
+      data,
+    });
+  }
 }
