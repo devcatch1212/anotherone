@@ -211,7 +211,9 @@ export class AttendanceService {
     // 기본급
     let basePay = 0;
     if (employment.wageType === 'daily') {
-      basePay = employment.dailyWage ?? 0;
+      // 소정 근로 시간 대비 실제 근무 비율로 비례 계산 (미달 시 삭감, 초과 시 일급 전액)
+      const ratio = Math.min(1, actualWorkMinutes / contractWorkMinutes);
+      basePay = Math.floor((employment.dailyWage ?? 0) * ratio);
     } else {
       basePay = Math.floor((actualWorkMinutes / 60) * hourlyWage);
     }
@@ -369,7 +371,9 @@ export class AttendanceService {
     // 기본급
     let basePay = 0;
     if (employment.wageType === 'daily') {
-      basePay = employment.dailyWage ?? 0;
+      // 소정 근로 시간 대비 실제 근무 비율로 비례 계산 (미달 시 삭감, 초과 시 일급 전액)
+      const ratio = Math.min(1, actualWorkMinutes / contractWorkMinutes);
+      basePay = Math.floor((employment.dailyWage ?? 0) * ratio);
     } else {
       basePay = Math.floor((actualWorkMinutes / 60) * hourlyWage);
     }
