@@ -83,6 +83,15 @@ button, a, input, select, textarea {
   touch-action: manipulation; /* 모바일 더블 탭 확대 딜레이 방지 */
 }
 
+/* Tailwind preflight가 appearance:none 으로 덮어쓰는 것을 복구 */
+/* type="time" 은 네이티브 time picker가 올바르게 동작해야 함 */
+input[type="time"],
+input[type="date"],
+input[type="datetime-local"] {
+  -webkit-appearance: auto;
+  appearance: auto;
+}
+
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 .safe-top    { padding-top: env(safe-area-inset-top, 0px); }
 

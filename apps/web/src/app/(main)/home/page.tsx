@@ -254,9 +254,21 @@ export default function HomePage() {
 
   const handleOvertimeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetchApi('/api/attendance/overtime', { method: 'POST', body: JSON.stringify({ ...overtime, employmentId: employment?.id }) });
-    setOvertimeOpen(false); setOvertime({ start: '', end: '', reason: '' });
-    toast('연장근로 신청이 완료되었습니다', 'success');
+    try {
+      await fetchApi('/api/attendance/overtime', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...overtime,
+          date: format(now, 'yyyy-MM-dd'),
+          employmentId: employment?.id,
+        }),
+      });
+      setOvertimeOpen(false);
+      setOvertime({ start: '', end: '', reason: '' });
+      toast('연장근로 신청이 완료되었습니다', 'success');
+    } catch (e: any) {
+      toast(`오류: ${e.message}`, 'error');
+    }
   };
 
   const recentRecords = records.slice(0, 3);
