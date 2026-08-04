@@ -409,6 +409,7 @@ class SettingsScreen extends ConsumerWidget {
     const options = [5, 10, 15, 20, 30];
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),

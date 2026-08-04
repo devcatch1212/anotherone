@@ -464,6 +464,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     TimeOfDay startTime = const TimeOfDay(hour: 18, minute: 0);
     TimeOfDay endTime = const TimeOfDay(hour: 21, minute: 0);
     final reasonCtrl = TextEditingController();
+    bool submitting = false;
+    String? sheetError;
 
     String fmtTime(TimeOfDay t) =>
         '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
@@ -471,6 +473,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) => Padding(
@@ -579,8 +583,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 TextField(
                   controller: reasonCtrl,
                   maxLines: 3,
+                  onChanged: (_) {
+                    if (sheetError != null) setSheetState(() => sheetError = null);
+                  },
                   decoration: const InputDecoration(hintText: '연장근로 사유를 입력해주세요'),
                 ),
+                if (sheetError != null) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    sheetError!,
+                    style: const TextStyle(color: AppColors.danger, fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ],
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
@@ -591,9 +605,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: ElevatedButton(
-                      onPressed: () async {
+                      onPressed: submitting ? null : () async {
                         final emp = _employment;
-                        if (emp == null) return;
+                        if (emp == null) {
+                          setSheetState(() => sheetError = '고용 정보를 불러올 수 없습니다. 앱을 재시작해주세요.');
+                          return;
+                        }
+                        if (reasonCtrl.text.trim().isEmpty) {
+                          setSheetState(() => sheetError = '연장근로 사유를 입력해주세요.');
+                          return;
+                        }
+                        setSheetState(() {
+                          submitting = true;
+                          sheetError = null;
+                        });
                         try {
                           await ref.read(apiClientProvider).post<dynamic>(
                             '/api/attendance/overtime',
@@ -602,13 +627,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               'date': DateFormat('yyyy-MM-dd').format(DateTime.now()),
                               'start': fmtTime(startTime),
                               'end': fmtTime(endTime),
-                              'reason': reasonCtrl.text,
+                              'reason': reasonCtrl.text.trim(),
                             },
                           );
                           if (ctx.mounted) Navigator.pop(ctx);
                           _showSnackBar('연장근로 신청이 완료되었습니다', AppColors.success);
                         } catch (e) {
-                          _showSnackBar(parseApiError(e), AppColors.danger);
+                          setSheetState(() {
+                            submitting = false;
+                            sheetError = parseApiError(e);
+                          });
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -616,7 +644,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         shadowColor: Colors.transparent,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: const Text('신청하기', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+                      child: submitting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            )
+                          : const Text('신청하기', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
                     ),
                   ),
                 ),
