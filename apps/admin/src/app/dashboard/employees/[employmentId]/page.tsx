@@ -86,6 +86,22 @@ export default function EmployeeDetailPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
 
+  // ② 계약 정보 수정 모달
+  const [editModal, setEditModal] = useState(false);
+  const [editForm, setEditForm] = useState<any>({});
+  const [editLoading, setEditLoading] = useState(false);
+
+  // ② 연차 수정 인라인
+  const [leaveEditMode, setLeaveEditMode] = useState(false);
+  const [leaveInput, setLeaveInput] = useState('');
+  const [leaveLoading, setLeaveLoading] = useState(false);
+
+  // ③ 출퇴근 추가/수정 모달
+  const EMPTY_ATT_FORM = { date: '', checkIn: '', checkOut: '', status: 'normal' };
+  const [attModal, setAttModal] = useState<{ open: boolean; recordId: string | null }>({ open: false, recordId: null });
+  const [attForm, setAttForm] = useState(EMPTY_ATT_FORM);
+  const [attLoading, setAttLoading] = useState(false);
+
   const loadEmployment = async () => {
     try {
       setLoadingEmp(true);
@@ -123,6 +139,136 @@ export default function EmployeeDetailPage() {
       loadAttendance();
     }
   }, [employmentId, year, month]);
+
+  // ② 계약 정보 수정 열기
+  const openEditModal = () => {
+    if (!employment) return;
+    setEditForm({
+      position: employment.position || '',
+      department: employment.department || '',
+      wageType: employment.wageType || 'hourly',
+      hourlyWage: employment.hourlyWage ?? '',
+      dailyWage: employment.dailyWage ?? '',
+      weeklyWage: employment.weeklyWage ?? '',
+      monthlyWage: employment.monthlyWage ?? '',
+      dailyWorkHours: (employment as any).dailyWorkHours ?? 8,
+      weeklyWorkDays: employment.weeklyWorkDays ?? 5,
+      workStartTime: employment.workStartTime || '',
+      workEndTime: employment.workEndTime || '',
+      breakMinutes: (employment as any).breakMinutes ?? 60,
+      hireDate: employment.hireDate ? employment.hireDate.split('T')[0] : '',
+      memo: employment.memo || '',
+      employeeCount: employment.employeeCount || 'over5',
+    });
+    setEditModal(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setEditLoading(true);
+      const payload: any = {
+        position: editForm.position,
+        department: editForm.department || null,
+        wageType: editForm.wageType,
+        dailyWorkHours: Number(editForm.dailyWorkHours),
+        weeklyWorkDays: Number(editForm.weeklyWorkDays),
+        workStartTime: editForm.workStartTime || null,
+        workEndTime: editForm.workEndTime || null,
+        breakMinutes: editForm.breakMinutes !== '' ? Number(editForm.breakMinutes) : null,
+        hireDate: editForm.hireDate || null,
+        memo: editForm.memo || null,
+        employeeCount: editForm.employeeCount,
+      };
+      if (editForm.wageType === 'hourly') payload.hourlyWage = editForm.hourlyWage !== '' ? Number(editForm.hourlyWage) : null;
+      if (editForm.wageType === 'daily') payload.dailyWage = editForm.dailyWage !== '' ? Number(editForm.dailyWage) : null;
+      if (editForm.wageType === 'weekly') payload.weeklyWage = editForm.weeklyWage !== '' ? Number(editForm.weeklyWage) : null;
+      if (editForm.wageType === 'monthly') payload.monthlyWage = editForm.monthlyWage !== '' ? Number(editForm.monthlyWage) : null;
+      const updated = await apiFetch<EmploymentDetail>(`/api/admin/employments/${employmentId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+      setEmployment((prev) => prev ? { ...prev, ...updated } : prev);
+      setEditModal(false);
+    } catch (err: any) {
+      alert(err.message || '수정 중 오류가 발생했습니다.');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // ⑤ 연차 잔여일수 저장
+  const handleLeaveSave = async () => {
+    const val = parseFloat(leaveInput);
+    if (isNaN(val) || val < 0) { alert('올바른 숫자를 입력해주세요.'); return; }
+    try {
+      setLeaveLoading(true);
+      await apiFetch(`/api/admin/employments/${employmentId}/leave-balance`, {
+        method: 'PATCH',
+        body: JSON.stringify({ balance: val }),
+      });
+      setEmployment((prev) => prev ? { ...prev, annualLeaveBalance: val } as any : prev);
+      setLeaveEditMode(false);
+    } catch (err: any) {
+      alert(err.message || '연차 수정 중 오류가 발생했습니다.');
+    } finally {
+      setLeaveLoading(false);
+    }
+  };
+
+  // ③ 출퇴근 모달 열기
+  const openAttModal = (record?: AttendanceRecord) => {
+    if (record) {
+      const toLocalDatetime = (iso: string | null) => {
+        if (!iso) return '';
+        const d = new Date(iso);
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      };
+      setAttForm({ date: record.date, checkIn: toLocalDatetime(record.checkIn), checkOut: toLocalDatetime(record.checkOut), status: record.status });
+      setAttModal({ open: true, recordId: record.id });
+    } else {
+      setAttForm(EMPTY_ATT_FORM);
+      setAttModal({ open: true, recordId: null });
+    }
+  };
+
+  const handleAttSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setAttLoading(true);
+      const toISO = (localDT: string) => localDT ? new Date(localDT).toISOString() : null;
+      if (attModal.recordId) {
+        const updated = await apiFetch<AttendanceRecord>(`/api/admin/attendance/${attModal.recordId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ checkIn: toISO(attForm.checkIn), checkOut: toISO(attForm.checkOut), status: attForm.status }),
+        });
+        setAttendance((prev) => prev ? { ...prev, records: prev.records.map((r) => r.id === updated.id ? updated : r) } : prev);
+      } else {
+        await apiFetch(`/api/admin/attendance`, {
+          method: 'POST',
+          body: JSON.stringify({ employmentId, date: attForm.date, checkIn: toISO(attForm.checkIn), checkOut: toISO(attForm.checkOut), status: attForm.status }),
+        });
+        await loadAttendance();
+      }
+      setAttModal({ open: false, recordId: null });
+    } catch (err: any) {
+      alert(err.message || '저장 중 오류가 발생했습니다.');
+    } finally {
+      setAttLoading(false);
+    }
+  };
+
+  const handleAttDelete = async (recordId: string) => {
+    if (!window.confirm('이 출퇴근 기록을 삭제하시겠습니까?\n삭제하면 복원할 수 없습니다.')) return;
+    try {
+      await apiFetch(`/api/admin/attendance/${recordId}`, { method: 'DELETE' });
+      setAttendance((prev) => prev ? { ...prev, records: prev.records.filter((r) => r.id !== recordId) } : prev);
+    } catch (err: any) {
+      alert(err.message || '삭제 중 오류가 발생했습니다.');
+    }
+  };
+
 
   if (loadingEmp) {
     return (
@@ -219,9 +365,15 @@ export default function EmployeeDetailPage() {
         >
           <h3 
             className="text-lg font-extrabold text-slate-800 pb-4 border-b border-slate-100 flex items-center gap-2"
-            style={{ fontSize: '18px', fontWeight: '800', color: '#1E293B', borderBottom: '1px solid #F1F5F9', paddingBottom: '16px', margin: '0 0 24px 0' }}
+            style={{ fontSize: '18px', fontWeight: '800', color: '#1E293B', borderBottom: '1px solid #F1F5F9', paddingBottom: '16px', margin: '0 0 24px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
           >
             📋 고용 정보
+            <button
+              onClick={openEditModal}
+              style={{ fontSize: '12px', fontWeight: '700', padding: '5px 12px', borderRadius: '8px', backgroundColor: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE', cursor: 'pointer' }}
+            >
+              계약 정보 수정
+            </button>
           </h3>
           
           <div className="flex flex-col gap-5" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -294,9 +446,34 @@ export default function EmployeeDetailPage() {
 
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-bold text-slate-400 tracking-wide uppercase" style={{ fontSize: '11px', fontWeight: '700', color: '#94A3B8' }}>남은 연차 일수</span>
-              <span className="text-sm font-extrabold text-blue-600 mt-1" style={{ fontSize: '14px', fontWeight: '800', color: '#2563EB' }}>
-                {(employment as any).annualLeaveBalance !== undefined ? `${(employment as any).annualLeaveBalance}일` : '15일'}
-              </span>
+              {leaveEditMode ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    value={leaveInput}
+                    onChange={(e) => setLeaveInput(e.target.value)}
+                    style={{ width: '80px', padding: '6px 10px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px', fontWeight: '700' }}
+                    autoFocus
+                  />
+                  <button onClick={handleLeaveSave} disabled={leaveLoading} style={{ padding: '5px 12px', fontSize: '12px', fontWeight: '700', borderRadius: '6px', backgroundColor: '#2563EB', color: '#FFF', border: 'none', cursor: 'pointer' }}>
+                    {leaveLoading ? '저장...' : '저장'}
+                  </button>
+                  <button onClick={() => setLeaveEditMode(false)} style={{ padding: '5px 12px', fontSize: '12px', fontWeight: '700', borderRadius: '6px', backgroundColor: '#F1F5F9', color: '#64748B', border: '1px solid #E2E8F0', cursor: 'pointer' }}>
+                    취소
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                  <span className="text-sm font-extrabold text-blue-600" style={{ fontSize: '14px', fontWeight: '800', color: '#2563EB' }}>
+                    {(employment as any).annualLeaveBalance !== undefined ? `${(employment as any).annualLeaveBalance}일` : '15일'}
+                  </span>
+                  <button onClick={() => { setLeaveInput(String((employment as any).annualLeaveBalance ?? 15)); setLeaveEditMode(true); }} style={{ padding: '3px 8px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', backgroundColor: '#F8FAFC', color: '#64748B', border: '1px solid #E2E8F0', cursor: 'pointer' }}>
+                    ✏️ 수정
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-1">
@@ -431,7 +608,15 @@ export default function EmployeeDetailPage() {
 
                 {/* 상세 내역 테이블 - 가로 스크롤 보호 */}
                 <div className="w-full overflow-x-auto border border-slate-100 rounded-xl" style={{ width: '100%', overflowX: 'auto', borderRadius: '12px', border: '1px solid #E2E8F0', WebkitOverflowScrolling: 'touch' }}>
-                  <table className="w-full border-collapse text-left text-xs text-slate-600" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+                  <button
+                    onClick={() => openAttModal()}
+                    style={{ padding: '7px 16px', fontSize: '12px', fontWeight: '700', backgroundColor: '#2563EB', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                  >
+                    + 기록 추가
+                  </button>
+                </div>
+                  <table className="w-full border-collapse text-left text-xs text-slate-600" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '680px' }}>
                     <thead className="bg-slate-50/80 font-bold text-slate-500 uppercase border-b border-slate-100" style={{ backgroundColor: '#F8FAFC', fontSize: '11px', fontWeight: '700', color: '#64748B' }}>
                       <tr>
                         <th className="px-6 py-4" style={{ padding: '14px 20px', borderBottom: '1px solid #E2E8F0' }}>날짜</th>
@@ -439,6 +624,7 @@ export default function EmployeeDetailPage() {
                         <th className="px-6 py-4" style={{ padding: '14px 20px', borderBottom: '1px solid #E2E8F0' }}>퇴근 시각</th>
                         <th className="px-6 py-4" style={{ padding: '14px 20px', borderBottom: '1px solid #E2E8F0' }}>근무 시간</th>
                         <th className="px-6 py-4" style={{ padding: '14px 20px', borderBottom: '1px solid #E2E8F0' }}>근무 상태</th>
+                        <th className="px-6 py-4 text-center" style={{ padding: '14px 20px', borderBottom: '1px solid #E2E8F0', textAlign: 'center' }}>관리</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100" style={{ backgroundColor: '#FFFFFF' }}>
@@ -481,6 +667,12 @@ export default function EmployeeDetailPage() {
                                   {status.label}
                                 </span>
                               </td>
+                              <td className="px-6 py-4 text-center" style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9', textAlign: 'center' }}>
+                                <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                  <button onClick={() => openAttModal(r)} style={{ padding: '3px 8px', fontSize: '10px', fontWeight: '700', borderRadius: '6px', backgroundColor: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE', cursor: 'pointer' }}>수정</button>
+                                  <button onClick={() => handleAttDelete(r.id)} style={{ padding: '3px 8px', fontSize: '10px', fontWeight: '700', borderRadius: '6px', backgroundColor: '#FEF2F2', color: '#EF4444', border: '1px solid #FECACA', cursor: 'pointer' }}>삭제</button>
+                                </div>
+                              </td>
                             </tr>
                           );
                         })
@@ -494,6 +686,107 @@ export default function EmployeeDetailPage() {
         </div>
 
       </div>
+
+      {/* ── ② 계약 정보 수정 모달 ── */}
+      {editModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+             onClick={(e) => { if (e.target === e.currentTarget) setEditModal(false); }}>
+          <div style={{ backgroundColor: '#FFF', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#1E293B', marginBottom: '24px' }}>📋 계약 정보 수정</h2>
+            <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>직책 *</label>
+                  <input required value={editForm.position} onChange={(e) => setEditForm({ ...editForm, position: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>부서</label>
+                  <input value={editForm.department} onChange={(e) => setEditForm({ ...editForm, department: e.target.value })} placeholder="(선택)" style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>급여 유형</label>
+                <select value={editForm.wageType} onChange={(e) => setEditForm({ ...editForm, wageType: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }}>
+                  <option value="hourly">시급</option>
+                  <option value="daily">일급</option>
+                  <option value="weekly">주급</option>
+                  <option value="monthly">월급</option>
+                </select>
+              </div>
+              {editForm.wageType === 'hourly' && <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}><label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>시급 (원)</label><input type="number" value={editForm.hourlyWage} onChange={(e) => setEditForm({ ...editForm, hourlyWage: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }} /></div>}
+              {editForm.wageType === 'daily' && <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}><label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>일급 (원)</label><input type="number" value={editForm.dailyWage} onChange={(e) => setEditForm({ ...editForm, dailyWage: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }} /></div>}
+              {editForm.wageType === 'weekly' && <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}><label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>주급 (원)</label><input type="number" value={editForm.weeklyWage} onChange={(e) => setEditForm({ ...editForm, weeklyWage: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }} /></div>}
+              {editForm.wageType === 'monthly' && <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}><label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>월급 (원)</label><input type="number" value={editForm.monthlyWage} onChange={(e) => setEditForm({ ...editForm, monthlyWage: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }} /></div>}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}><label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>주 근무일수</label><input type="number" min="1" max="7" value={editForm.weeklyWorkDays} onChange={(e) => setEditForm({ ...editForm, weeklyWorkDays: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }} /></div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}><label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>출근 시각</label><input type="time" value={editForm.workStartTime} onChange={(e) => setEditForm({ ...editForm, workStartTime: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }} /></div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}><label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>퇴근 시각</label><input type="time" value={editForm.workEndTime} onChange={(e) => setEditForm({ ...editForm, workEndTime: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }} /></div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}><label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>휴게 시간 (분)</label><input type="number" value={editForm.breakMinutes} onChange={(e) => setEditForm({ ...editForm, breakMinutes: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }} /></div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}><label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>입사일자</label><input type="date" value={editForm.hireDate} onChange={(e) => setEditForm({ ...editForm, hireDate: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }} /></div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>사업장 규모</label>
+                <select value={editForm.employeeCount} onChange={(e) => setEditForm({ ...editForm, employeeCount: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }}>
+                  <option value="over5">5인 이상</option>
+                  <option value="under5">5인 미만</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>기업 메모</label>
+                <textarea rows={3} value={editForm.memo} onChange={(e) => setEditForm({ ...editForm, memo: e.target.value })} placeholder="(선택) 주안날짜, 담당자, 급여일 등" style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px', resize: 'vertical' }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '8px', borderTop: '1px solid #F1F5F9', marginTop: '8px' }}>
+                <button type="button" onClick={() => setEditModal(false)} style={{ padding: '9px 20px', fontSize: '13px', fontWeight: '700', borderRadius: '8px', border: '1px solid #E2E8F0', backgroundColor: '#F8FAFC', color: '#64748B', cursor: 'pointer' }}>취소</button>
+                <button type="submit" disabled={editLoading} style={{ padding: '9px 20px', fontSize: '13px', fontWeight: '700', borderRadius: '8px', border: 'none', backgroundColor: '#2563EB', color: '#FFF', cursor: 'pointer' }}>{editLoading ? '저장 중...' : '수정 완료'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── ③ 출퇴근 추가/수정 모달 ── */}
+      {attModal.open && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+             onClick={(e) => { if (e.target === e.currentTarget) setAttModal({ open: false, recordId: null }); }}>
+          <div style={{ backgroundColor: '#FFF', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '460px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#1E293B', marginBottom: '24px' }}>{attModal.recordId ? '⏰ 출퇴근 기록 수정' : '⏰ 출퇴근 기록 추가'}</h2>
+            <form onSubmit={handleAttSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {!attModal.recordId && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>날짜 *</label>
+                  <input required type="date" value={attForm.date} onChange={(e) => setAttForm({ ...attForm, date: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }} />
+                </div>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>출근 시각</label>
+                  <input type="datetime-local" value={attForm.checkIn} onChange={(e) => setAttForm({ ...attForm, checkIn: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>퇴근 시각</label>
+                  <input type="datetime-local" value={attForm.checkOut} onChange={(e) => setAttForm({ ...attForm, checkOut: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>근태 상태</label>
+                <select value={attForm.status} onChange={(e) => setAttForm({ ...attForm, status: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }}>
+                  <option value="normal">정상</option>
+                  <option value="late">지각</option>
+                  <option value="absent">결근</option>
+                  <option value="vacation">휴가</option>
+                  <option value="holiday">공휴일</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '8px', borderTop: '1px solid #F1F5F9', marginTop: '8px' }}>
+                <button type="button" onClick={() => setAttModal({ open: false, recordId: null })} style={{ padding: '9px 20px', fontSize: '13px', fontWeight: '700', borderRadius: '8px', border: '1px solid #E2E8F0', backgroundColor: '#F8FAFC', color: '#64748B', cursor: 'pointer' }}>취소</button>
+                <button type="submit" disabled={attLoading} style={{ padding: '9px 20px', fontSize: '13px', fontWeight: '700', borderRadius: '8px', border: 'none', backgroundColor: '#2563EB', color: '#FFF', cursor: 'pointer' }}>{attLoading ? '저장 중...' : attModal.recordId ? '수정 완료' : '추가하기'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

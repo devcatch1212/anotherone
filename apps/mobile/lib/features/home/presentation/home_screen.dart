@@ -1306,18 +1306,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       borderRadius: BorderRadius.circular(12)),
                   side: const BorderSide(color: Color(0xFF3E6872), width: 1.0),
                 ),
-                child: Text(
-                  _todayOvertime == null
-                      ? '⏱️ 연장'
-                      : _todayOvertime!['status'] == 'approved'
-                          ? '⏱️ 연장 (승인)'
-                          : _todayOvertime!['status'] == 'rejected'
-                              ? '⏱️ 연장 (반려)'
-                              : '⏱️ 연장 (대기)',
-                  style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF3E6872)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      '⏱️ 연장',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF3E6872),
+                      ),
+                    ),
+                    if (_todayOvertime != null) ...[
+                      const SizedBox(width: 5),
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: _todayOvertime!['status'] == 'approved'
+                              ? const Color(0xFF10B981)
+                              : _todayOvertime!['status'] == 'rejected'
+                                  ? const Color(0xFFEF4444)
+                                  : const Color(0xFFF59E0B),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),

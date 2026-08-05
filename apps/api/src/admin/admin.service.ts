@@ -1099,4 +1099,175 @@ export class AdminService {
       data,
     });
   }
+
+  // ─── ① 근무지 등록 ────────────────────────────────────────────────────────
+  async createCompany(data: {
+    name: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+    radiusMeters: number;
+  }) {
+    return this.prisma.company.create({ data });
+  }
+
+  // ─── ① 근무지 정보 수정 ───────────────────────────────────────────────────
+  async updateCompany(
+    id: string,
+    data: {
+      name?: string;
+      address?: string;
+      latitude?: number;
+      longitude?: number;
+      radiusMeters?: number;
+    },
+  ) {
+    const company = await this.prisma.company.findUnique({ where: { id } });
+    if (!company) throw new NotFoundException('근무지를 찾을 수 없습니다.');
+    return this.prisma.company.update({ where: { id }, data });
+  }
+
+  // ─── ② 근로자 계약 정보 직접 수정 ────────────────────────────────────────
+  async updateEmployment(
+    id: string,
+    data: {
+      position?: string;
+      department?: string;
+      wageType?: string;
+      hourlyWage?: number | null;
+      dailyWage?: number | null;
+      weeklyWage?: number | null;
+      monthlyWage?: number | null;
+      dailyWorkHours?: number;
+      weeklyWorkDays?: number;
+      workStartTime?: string | null;
+      workEndTime?: string | null;
+      workDaysOfWeek?: number[];
+      breakMinutes?: number | null;
+      hireDate?: string | null;
+      memo?: string | null;
+      employeeCount?: string;
+    },
+  ) {
+    const employment = await this.prisma.employment.findUnique({ where: { id } });
+    if (!employment) throw new NotFoundException('고용 정보를 찾을 수 없습니다.');
+
+    const updateData: any = { ...data };
+    if (data.hireDate) updateData.hireDate = new Date(data.hireDate);
+    else if (data.hireDate === null) updateData.hireDate = null;
+
+    return this.prisma.employment.update({ where: { id }, data: updateData });
+  }
+
+  // ─── ③ 출퇴근 기록 직접 생성 ─────────────────────────────────────────────
+  async createAttendanceRecord(data: {
+    employmentId: string;
+    date: string;
+    checkIn?: string | null;
+    checkOut?: string | null;
+    status: string;
+  }) {
+    const employment = await this.prisma.employment.findUnique({
+      where: { id: data.employmentId },
+    });
+    if (!employment) throw new NotFoundException('고용 정보를 찾을 수 없습니다.');
+
+    const checkInDate = data.checkIn ? new Date(data.checkIn) : null;
+    const checkOutDate = data.checkOut ? new Date(data.checkOut) : null;
+
+    let workedMinutes: number | null = null;
+    if (checkInDate && checkOutDate) {
+      const diff = Math.floor((checkOutDate.getTime() - checkInDate.getTime()) / 60000);
+      const breakTime = diff >= 480 ? (employment.breakMinutes ?? 60) : diff >= 240 ? 30 : 0;
+      workedMinutes = Math.max(0, Math.floor((diff - breakTime) / 30) * 30);
+    }
+
+    return this.prisma.attendanceRecord.upsert({
+      where: {
+        userId_companyId_date: {
+          userId: employment.userId,
+          companyId: employment.companyId,
+          date: data.date,
+        },
+      },
+      create: {
+        userId: employment.userId,
+        companyId: employment.companyId,
+        date: data.date,
+        checkIn: checkInDate,
+        checkOut: checkOutDate,
+        status: data.status,
+        workedMinutes,
+      },
+      update: {
+        checkIn: checkInDate,
+        checkOut: checkOutDate,
+        status: data.status,
+        workedMinutes,
+      },
+    });
+  }
+
+  // ─── ③ 출퇴근 기록 직접 수정 ─────────────────────────────────────────────
+  async updateAttendanceRecord(
+    recordId: string,
+    data: {
+      checkIn?: string | null;
+      checkOut?: string | null;
+      status?: string;
+    },
+  ) {
+    const record = await this.prisma.attendanceRecord.findUnique({
+      where: { id: recordId },
+    });
+    if (!record) throw new NotFoundException('출퇴근 기록을 찾을 수 없습니다.');
+
+    const employment = await this.prisma.employment.findFirst({
+      where: { userId: record.userId, companyId: record.companyId },
+    });
+
+    const checkInDate = data.checkIn !== undefined
+      ? (data.checkIn ? new Date(data.checkIn) : null)
+      : record.checkIn;
+    const checkOutDate = data.checkOut !== undefined
+      ? (data.checkOut ? new Date(data.checkOut) : null)
+      : record.checkOut;
+
+    let workedMinutes: number | null = record.workedMinutes;
+    if (checkInDate && checkOutDate) {
+      const diff = Math.floor((checkOutDate.getTime() - checkInDate.getTime()) / 60000);
+      const breakTime = diff >= 480 ? (employment?.breakMinutes ?? 60) : diff >= 240 ? 30 : 0;
+      workedMinutes = Math.max(0, Math.floor((diff - breakTime) / 30) * 30);
+    }
+
+    return this.prisma.attendanceRecord.update({
+      where: { id: recordId },
+      data: {
+        checkIn: checkInDate,
+        checkOut: checkOutDate,
+        status: data.status ?? record.status,
+        workedMinutes,
+      },
+    });
+  }
+
+  // ─── ③ 출퇴근 기록 삭제 ──────────────────────────────────────────────────
+  async deleteAttendanceRecord(recordId: string) {
+    const record = await this.prisma.attendanceRecord.findUnique({ where: { id: recordId } });
+    if (!record) throw new NotFoundException('출퇴근 기록을 찾을 수 없습니다.');
+    return this.prisma.attendanceRecord.delete({ where: { id: recordId } });
+  }
+
+  // ─── ④ 연차 잔여일수 수동 조정 ───────────────────────────────────────────
+  async updateLeaveBalance(employmentId: string, balance: number) {
+    const employment = await this.prisma.employment.findUnique({
+      where: { id: employmentId },
+    });
+    if (!employment) throw new NotFoundException('고용 정보를 찾을 수 없습니다.');
+
+    return this.prisma.employment.update({
+      where: { id: employmentId },
+      data: { annualLeaveBalance: balance },
+    });
+  }
 }

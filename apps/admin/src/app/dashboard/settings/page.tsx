@@ -7,6 +7,9 @@ interface Company {
   id: string;
   name: string;
   address: string;
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
   isActive: boolean;
   createdAt: string;
 }
@@ -41,6 +44,8 @@ interface SettingsData {
   employments: Employment[];
 }
 
+const EMPTY_COMPANY_FORM = { name: '', address: '', latitude: '', longitude: '', radiusMeters: '100' };
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'company' | 'employee' | 'version'>('company');
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -52,6 +57,10 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState('');
+  // 근무지 등록/수정 모달
+  const [companyModal, setCompanyModal] = useState<{ open: boolean; editId: string | null }>({ open: false, editId: null });
+  const [companyForm, setCompanyForm] = useState(EMPTY_COMPANY_FORM);
+  const [companyModalLoading, setCompanyModalLoading] = useState(false);
 
   const loadData = async () => {
     try {
@@ -157,6 +166,59 @@ export default function SettingsPage() {
       alert(err.message || '퇴사 처리 중 오류가 발생했습니다.');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  // 근무지 모달 열기
+  const openCompanyModal = (company?: Company) => {
+    if (company) {
+      setCompanyForm({
+        name: company.name,
+        address: company.address,
+        latitude: String(company.latitude ?? ''),
+        longitude: String(company.longitude ?? ''),
+        radiusMeters: String(company.radiusMeters ?? 100),
+      });
+      setCompanyModal({ open: true, editId: company.id });
+    } else {
+      setCompanyForm(EMPTY_COMPANY_FORM);
+      setCompanyModal({ open: true, editId: null });
+    }
+  };
+
+  const handleCompanyFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      name: companyForm.name.trim(),
+      address: companyForm.address.trim(),
+      latitude: parseFloat(companyForm.latitude),
+      longitude: parseFloat(companyForm.longitude),
+      radiusMeters: parseInt(companyForm.radiusMeters),
+    };
+    if (!payload.name || !payload.address || isNaN(payload.latitude) || isNaN(payload.longitude)) {
+      alert('근무지명, 주소, 위도, 경도는 필수 입력 항목입니다.');
+      return;
+    }
+    try {
+      setCompanyModalLoading(true);
+      if (companyModal.editId) {
+        const updated = await apiFetch<Company>(`/api/admin/companies/${companyModal.editId}`, {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        });
+        setCompanies((prev) => prev.map((c) => (c.id === companyModal.editId ? { ...c, ...updated } : c)));
+      } else {
+        const created = await apiFetch<Company>('/api/admin/companies', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+        setCompanies((prev) => [created, ...prev]);
+      }
+      setCompanyModal({ open: false, editId: null });
+    } catch (err: any) {
+      alert(err.message || '근무지 저장 중 오류가 발생했습니다.');
+    } finally {
+      setCompanyModalLoading(false);
     }
   };
 
@@ -278,20 +340,31 @@ export default function SettingsPage() {
           /* ========================================================
              1. 근무지 관리 탭
              ======================================================== */
-          companies.length === 0 ? (
+          <div>
+            {/* 등록 버튼 */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '16px 24px', borderBottom: '1px solid #F1F5F9' }}>
+              <button
+                onClick={() => openCompanyModal()}
+                style={{ padding: '8px 18px', fontSize: '13px', fontWeight: '700', backgroundColor: '#2563EB', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                + 근무지 등록
+              </button>
+            </div>
+            {companies.length === 0 ? (
             <div className="p-12 text-center text-slate-400 text-sm" style={{ padding: '48px', textAlign: 'center', color: '#94A3B8' }}>
               등록된 근무지가 존재하지 않습니다.
             </div>
           ) : (
             <div className="w-full overflow-x-auto" style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-              <table className="w-full border-collapse text-left text-sm text-slate-600" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
+              <table className="w-full border-collapse text-left text-sm text-slate-600" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
                 <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase border-b border-slate-100" style={{ backgroundColor: '#F8FAFC', fontSize: '11px', color: '#64748B' }}>
                   <tr>
                     <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>근무지명</th>
                     <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>주소</th>
+                    <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>반경</th>
                     <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>최초 등록일</th>
                     <th className="px-6 py-4" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0' }}>상태</th>
-                    <th className="px-6 py-4 text-center" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0', textAlign: 'center' }}>상태 제어</th>
+                    <th className="px-6 py-4 text-center" style={{ padding: '16px 24px', borderBottom: '1px solid #E2E8F0', textAlign: 'center' }}>관리</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100" style={{ backgroundColor: '#FFFFFF' }}>
@@ -302,6 +375,9 @@ export default function SettingsPage() {
                       </td>
                       <td className="px-6 py-4 text-slate-600" style={{ padding: '16px 24px', fontSize: '13px', color: '#475569', borderBottom: '1px solid #F1F5F9' }}>
                         📍 {c.address}
+                      </td>
+                      <td className="px-6 py-4 text-slate-500" style={{ padding: '16px 24px', fontSize: '13px', color: '#64748B', borderBottom: '1px solid #F1F5F9' }}>
+                        {c.radiusMeters ?? '-'}m
                       </td>
                       <td className="px-6 py-4 font-medium text-slate-500" style={{ padding: '16px 24px', fontSize: '13px', color: '#64748B', borderBottom: '1px solid #F1F5F9' }}>
                         {formatDate(c.createdAt)}
@@ -318,29 +394,29 @@ export default function SettingsPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 text-center" style={{ padding: '16px 24px', borderBottom: '1px solid #F1F5F9', textAlign: 'center' }}>
-                        <button
-                          disabled={actionLoading === `company-${c.id}`}
-                          onClick={() => handleCompanyStatusToggle(c.id, c.isActive, c.name)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer ${
-                            c.isActive
-                              ? 'bg-red-50 text-red-500 border-red-100 hover:bg-red-500 hover:text-white'
-                              : 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-600 hover:text-white'
-                          }`}
-                          style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer' }}
-                        >
-                          {actionLoading === `company-${c.id}`
-                            ? '처리중...'
-                            : c.isActive
-                            ? '운영 종료'
-                            : '운영 재개'}
-                        </button>
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                          <button
+                            onClick={() => openCompanyModal(c)}
+                            style={{ padding: '5px 10px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', backgroundColor: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE' }}
+                          >
+                            수정
+                          </button>
+                          <button
+                            disabled={actionLoading === `company-${c.id}`}
+                            onClick={() => handleCompanyStatusToggle(c.id, c.isActive, c.name)}
+                            style={{ padding: '5px 10px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', cursor: 'pointer', backgroundColor: c.isActive ? '#FEF2F2' : '#EFF6FF', color: c.isActive ? '#EF4444' : '#2563EB', border: c.isActive ? '1px solid #FECACA' : '1px solid #BFDBFE' }}
+                          >
+                            {actionLoading === `company-${c.id}` ? '처리중...' : c.isActive ? '운영 종료' : '운영 재개'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          )
+          )}
+          </div>
         ) : activeTab === 'employee' ? (
           /* ========================================================
              2. 근로자 관리 탭
@@ -544,6 +620,98 @@ export default function SettingsPage() {
           )
         )}
       </div>
+
+      {/* ── 근무지 등록/수정 모달 ── */}
+      {companyModal.open && (
+        <div
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setCompanyModal({ open: false, editId: null }); }}
+        >
+          <div style={{ backgroundColor: '#FFF', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '520px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#1E293B', marginBottom: '24px' }}>
+              {companyModal.editId ? '🏢 근무지 정보 수정' : '🏢 신규 근무지 등록'}
+            </h2>
+            <form onSubmit={handleCompanyFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>근무지명 *</label>
+                <input
+                  required
+                  value={companyForm.name}
+                  onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
+                  placeholder="예: 강남 본사"
+                  style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px', outline: 'none' }}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>주소 *</label>
+                <input
+                  required
+                  value={companyForm.address}
+                  onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
+                  placeholder="예: 서울시 강남구 테헤란로 123"
+                  style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px', outline: 'none' }}
+                />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>위도 (Latitude) *</label>
+                  <input
+                    required
+                    type="number"
+                    step="any"
+                    value={companyForm.latitude}
+                    onChange={(e) => setCompanyForm({ ...companyForm, latitude: e.target.value })}
+                    placeholder="예: 37.5665"
+                    style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px', outline: 'none' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>경도 (Longitude) *</label>
+                  <input
+                    required
+                    type="number"
+                    step="any"
+                    value={companyForm.longitude}
+                    onChange={(e) => setCompanyForm({ ...companyForm, longitude: e.target.value })}
+                    placeholder="예: 126.9780"
+                    style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px', outline: 'none' }}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>출퇴근 인정 반경 (미터) *</label>
+                <input
+                  required
+                  type="number"
+                  min="10"
+                  max="5000"
+                  value={companyForm.radiusMeters}
+                  onChange={(e) => setCompanyForm({ ...companyForm, radiusMeters: e.target.value })}
+                  placeholder="예: 100"
+                  style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px', outline: 'none' }}
+                />
+                <p style={{ fontSize: '11px', color: '#94A3B8' }}>근로자가 이 반경 내에서 출퇴근 태깅 시 인정됩니다.</p>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '8px', borderTop: '1px solid #F1F5F9', marginTop: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setCompanyModal({ open: false, editId: null })}
+                  style={{ padding: '9px 20px', fontSize: '13px', fontWeight: '700', borderRadius: '8px', border: '1px solid #E2E8F0', backgroundColor: '#F8FAFC', color: '#64748B', cursor: 'pointer' }}
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={companyModalLoading}
+                  style={{ padding: '9px 20px', fontSize: '13px', fontWeight: '700', borderRadius: '8px', border: 'none', backgroundColor: '#2563EB', color: '#FFF', cursor: 'pointer' }}
+                >
+                  {companyModalLoading ? '저장 중...' : companyModal.editId ? '수정 완료' : '등록하기'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

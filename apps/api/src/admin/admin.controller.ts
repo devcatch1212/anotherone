@@ -288,4 +288,100 @@ export class AdminController {
   }) {
     return this.adminService.updateAppConfig(body);
   }
+
+  // ─── ① 근무지 등록 ────────────────────────────────────────────────────────
+  @UseGuards(AdminAuthGuard)
+  @Post('companies')
+  createCompany(@Body() body: {
+    name: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+    radiusMeters: number;
+  }) {
+    return this.adminService.createCompany(body);
+  }
+
+  // ─── ① 근무지 정보 수정 ───────────────────────────────────────────────────
+  @UseGuards(AdminAuthGuard)
+  @Patch('companies/:id')
+  updateCompany(
+    @Param('id') id: string,
+    @Body() body: {
+      name?: string;
+      address?: string;
+      latitude?: number;
+      longitude?: number;
+      radiusMeters?: number;
+    },
+  ) {
+    return this.adminService.updateCompany(id, body);
+  }
+
+  // ─── ② 근로자 계약 정보 직접 수정 ────────────────────────────────────────
+  @UseGuards(AdminAuthGuard)
+  @Patch('employments/:id')
+  updateEmployment(
+    @Param('id') id: string,
+    @Body() body: {
+      position?: string;
+      department?: string;
+      wageType?: string;
+      hourlyWage?: number | null;
+      dailyWage?: number | null;
+      weeklyWage?: number | null;
+      monthlyWage?: number | null;
+      dailyWorkHours?: number;
+      weeklyWorkDays?: number;
+      workStartTime?: string | null;
+      workEndTime?: string | null;
+      workDaysOfWeek?: number[];
+      breakMinutes?: number | null;
+      hireDate?: string | null;
+      memo?: string | null;
+      employeeCount?: string;
+    },
+  ) {
+    return this.adminService.updateEmployment(id, body);
+  }
+
+  // ─── ③ 출퇴근 기록 직접 생성 ─────────────────────────────────────────────
+  @UseGuards(AdminAuthGuard)
+  @Post('attendance')
+  createAttendanceRecord(@Body() body: {
+    employmentId: string;
+    date: string;
+    checkIn?: string | null;
+    checkOut?: string | null;
+    status: string;
+  }) {
+    return this.adminService.createAttendanceRecord(body);
+  }
+
+  // ─── ③ 출퇴근 기록 직접 수정 ─────────────────────────────────────────────
+  @UseGuards(AdminAuthGuard)
+  @Patch('attendance/:recordId')
+  updateAttendanceRecord(
+    @Param('recordId') recordId: string,
+    @Body() body: { checkIn?: string | null; checkOut?: string | null; status?: string },
+  ) {
+    return this.adminService.updateAttendanceRecord(recordId, body);
+  }
+
+  // ─── ③ 출퇴근 기록 삭제 ──────────────────────────────────────────────────
+  @UseGuards(AdminAuthGuard)
+  @Delete('attendance/:recordId')
+  deleteAttendanceRecord(@Param('recordId') recordId: string) {
+    return this.adminService.deleteAttendanceRecord(recordId);
+  }
+
+  // ─── ④ 연차 잔여일수 수동 조정 ───────────────────────────────────────────
+  @UseGuards(AdminAuthGuard)
+  @Patch('employments/:id/leave-balance')
+  updateLeaveBalance(
+    @Param('id') id: string,
+    @Body() body: { balance: number },
+  ) {
+    return this.adminService.updateLeaveBalance(id, body.balance);
+  }
 }
