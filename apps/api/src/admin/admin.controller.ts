@@ -384,4 +384,27 @@ export class AdminController {
   ) {
     return this.adminService.updateLeaveBalance(id, body.balance);
   }
+
+  // ─── 근무 통계 리포트 ────────────────────────────────────────────────────
+  @UseGuards(AdminAuthGuard)
+  @Get('reports/monthly')
+  getMonthlyReport(
+    @Query('year') year: string,
+    @Query('month') month: string,
+    @Query('companyId') companyId?: string,
+  ) {
+    const now = new Date();
+    return this.adminService.getMonthlyReport(
+      parseInt(year) || now.getFullYear(),
+      parseInt(month) || now.getMonth() + 1,
+      companyId,
+    );
+  }
+
+  // ─── 주 52시간 초과 경보 ─────────────────────────────────────────────────
+  @UseGuards(AdminAuthGuard)
+  @Get('reports/weekly-overtime-alert')
+  getWeeklyOvertimeAlert(@Query('companyId') companyId?: string) {
+    return this.adminService.getWeeklyOvertimeAlert(companyId);
+  }
 }

@@ -1270,4 +1270,161 @@ export class AdminService {
       data: { annualLeaveBalance: balance },
     });
   }
+
+  // ─── 월별 근무 통계 리포트 ────────────────────────────────────────────────
+  async getMonthlyReport(year: number, month: number, companyId?: string) {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
+
+    const empWhere: any = { isActive: true, company: { isActive: true } };
+    if (companyId && companyId !== 'all') empWhere.companyId = companyId;
+
+    const recWhere: any = { date: { gte: startDate, lte: endDate } };
+    if (companyId && companyId !== 'all') recWhere.companyId = companyId;
+
+    const [employments, records] = await Promise.all([
+      this.prisma.employment.findMany({
+        where: empWhere,
+        include: {
+          user: { select: { name: true, email: true } },
+          company: { select: { name: true } },
+        },
+        orderBy: [{ companyId: 'asc' }, { createdAt: 'asc' }],
+      }),
+      this.prisma.attendanceRecord.findMany({ where: recWhere }),
+    ]);
+
+    const stats = employments.map((emp) => {
+      const empRecords = records.filter(
+        (r) => r.userId === emp.userId && r.companyId === emp.companyId,
+      );
+
+      const workDays = empRecords.filter((r) => r.checkIn).length;
+      const totalMinutes = empRecords.reduce((s, r) => s + (r.workedMinutes ?? 0), 0);
+      const overtimeMinutes = empRecords.reduce((s, r) => s + (r.overtimeMinutes ?? 0), 0);
+      const nightMinutes = empRecords.reduce((s, r) => s + (r.nightMinutes ?? 0), 0);
+      const lateCount = empRecords.filter((r) => r.status === 'late').length;
+      const absentCount = empRecords.filter((r) => r.status === 'absent').length;
+      const vacationCount = empRecords.filter((r) => r.status === 'vacation').length;
+      const normalCount = empRecords.filter((r) => r.status === 'normal').length;
+      const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
+      const overtimeHours = Math.round((overtimeMinutes / 60) * 10) / 10;
+
+      // 소정 근로일수 계산 (해당 월의 근무 요일에 해당하는 날 수)
+      const workDaysOfWeek: number[] = emp.workDaysOfWeek ?? [0, 1, 2, 3, 4]; // 0=월
+      let scheduledDays = 0;
+      for (let d = 1; d <= endDay; d++) {
+        const jsDay = new Date(year, month - 1, d).getDay(); // 0=일,1=월
+        const mapped = jsDay === 0 ? 6 : jsDay - 1; // 0=월,6=일 로 변환
+        if (workDaysOfWeek.includes(mapped)) scheduledDays++;
+      }
+      const attendanceRate = scheduledDays > 0 ? Math.round((workDays / scheduledDays) * 100) : 0;
+
+      return {
+        employmentId: emp.id,
+        name: emp.user.name,
+        email: emp.user.email ?? '',
+        company: emp.company.name,
+        companyId: emp.companyId,
+        position: emp.position,
+        wageType: emp.wageType,
+        scheduledDays,
+        workDays,
+        attendanceRate,
+        totalHours,
+        overtimeHours,
+        nightHours: Math.round((nightMinutes / 60) * 10) / 10,
+        normalCount,
+        lateCount,
+        absentCount,
+        vacationCount,
+      };
+    });
+
+    // 전체 집계 summary
+    const summary = {
+      totalEmployees: stats.length,
+      avgWorkDays: stats.length > 0 ? Math.round((stats.reduce((s, e) => s + e.workDays, 0) / stats.length) * 10) / 10 : 0,
+      avgTotalHours: stats.length > 0 ? Math.round((stats.reduce((s, e) => s + e.totalHours, 0) / stats.length) * 10) / 10 : 0,
+      totalLateCount: stats.reduce((s, e) => s + e.lateCount, 0),
+      totalAbsentCount: stats.reduce((s, e) => s + e.absentCount, 0),
+      totalOvertimeHours: Math.round(stats.reduce((s, e) => s + e.overtimeHours, 0) * 10) / 10,
+    };
+
+    return { year, month, period: { startDate, endDate }, summary, employees: stats };
+  }
+
+  // ─── 주 52시간 초과 경보 ──────────────────────────────────────────────────
+  async getWeeklyOvertimeAlert(companyId?: string) {
+    const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    // 이번 주 월요일(KST 기준)
+    const dayOfWeek = kstNow.getUTCDay(); // 0=일 1=월
+    const diffToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(kstNow);
+    monday.setUTCDate(kstNow.getUTCDate() + diffToMon);
+    const mondayStr = monday.toISOString().split('T')[0];
+    const todayStr = kstNow.toISOString().split('T')[0];
+
+    const empWhere: any = { isActive: true, company: { isActive: true } };
+    if (companyId && companyId !== 'all') empWhere.companyId = companyId;
+
+    const [employments, weekRecords] = await Promise.all([
+      this.prisma.employment.findMany({
+        where: empWhere,
+        include: {
+          user: { select: { name: true, email: true } },
+          company: { select: { name: true } },
+        },
+      }),
+      this.prisma.attendanceRecord.findMany({
+        where: {
+          date: { gte: mondayStr, lte: todayStr },
+          ...(companyId && companyId !== 'all' ? { companyId } : {}),
+        },
+      }),
+    ]);
+
+    const LIMIT_MINUTES = 52 * 60; // 3120분
+    const WARNING_MINUTES = 48 * 60; // 경고 기준 48시간
+
+    const alerts = employments.map((emp) => {
+      const empWeekRecords = weekRecords.filter(
+        (r) => r.userId === emp.userId && r.companyId === emp.companyId,
+      );
+      const weeklyMinutes = empWeekRecords.reduce((s, r) => s + (r.workedMinutes ?? 0), 0);
+      const weeklyHours = Math.round((weeklyMinutes / 60) * 10) / 10;
+      const overtimeMinutes = empWeekRecords.reduce((s, r) => s + (r.overtimeMinutes ?? 0), 0);
+
+      let alertLevel: 'ok' | 'warning' | 'danger' = 'ok';
+      if (weeklyMinutes >= LIMIT_MINUTES) alertLevel = 'danger';
+      else if (weeklyMinutes >= WARNING_MINUTES) alertLevel = 'warning';
+
+      return {
+        employmentId: emp.id,
+        name: emp.user.name,
+        email: emp.user.email ?? '',
+        company: emp.company.name,
+        companyId: emp.companyId,
+        position: emp.position,
+        weeklyHours,
+        overtimeHours: Math.round((overtimeMinutes / 60) * 10) / 10,
+        remainHours: Math.max(0, Math.round(((LIMIT_MINUTES - weeklyMinutes) / 60) * 10) / 10),
+        alertLevel,
+        weekStart: mondayStr,
+        weekEnd: todayStr,
+        recordCount: empWeekRecords.length,
+      };
+    });
+
+    const dangerCount = alerts.filter((a) => a.alertLevel === 'danger').length;
+    const warningCount = alerts.filter((a) => a.alertLevel === 'warning').length;
+
+    return {
+      weekStart: mondayStr,
+      weekEnd: todayStr,
+      summary: { dangerCount, warningCount, okCount: alerts.length - dangerCount - warningCount },
+      alerts: alerts.sort((a, b) => b.weeklyHours - a.weeklyHours),
+    };
+  }
 }
