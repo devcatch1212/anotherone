@@ -34,44 +34,53 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Future<void> _navigate({int retryCount = 0}) async {
-    if (retryCount == 0) {
-      await Future.delayed(const Duration(milliseconds: 1600));
-    }
-    if (!mounted) return;
-
-    // 버전 체크 (5초 타임아웃, 실패해도 진행)
+    // ── 버전 체크: Future.delayed 전에 먼저 실행 ──────────────────────────
+    // GoRouter는 versionCheckDone이 false인 동안 스플래시(/)를 유지함
     if (retryCount == 0) {
       try {
         final versionService = ref.read(versionServiceProvider);
         final versionInfo = await versionService.checkVersion()
-            .timeout(const Duration(seconds: 5), onTimeout: () => VersionInfo(
+            .timeout(const Duration(seconds: 15), onTimeout: () => VersionInfo(
                   state: UpdateState.none,
-                  currentVersion: '1.0.0',
-                  latestVersion: '1.0.0',
+                  currentVersion: '0.0.0',
+                  latestVersion: '0.0.0',
                   storeUrl: '',
                 ));
-        if (!mounted) return;
 
-        if (versionInfo.state == UpdateState.force) {
-          await showDialog<void>(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) => UpdateDialog(versionInfo: versionInfo),
-          );
-          return;
-        } else if (versionInfo.state == UpdateState.optional) {
-          final updateSelected = await showDialog<bool>(
-            context: context,
-            barrierDismissible: true,
-            builder: (context) => UpdateDialog(versionInfo: versionInfo),
-          );
-          if (updateSelected == true) return;
+        // 팝업 표시 (mounted 체크 후)
+        if (mounted) {
+          if (versionInfo.state == UpdateState.force) {
+            await showDialog<void>(
+              context: context,
+              useRootNavigator: true,
+              barrierDismissible: false,
+              builder: (context) => UpdateDialog(versionInfo: versionInfo),
+            );
+            // 강제 업데이트는 계속 스플래시에 머뭄 (return 없이 versionCheckDone 설정)
+          } else if (versionInfo.state == UpdateState.optional) {
+            await showDialog<bool>(
+              context: context,
+              useRootNavigator: true,
+              barrierDismissible: true,
+              builder: (context) => UpdateDialog(versionInfo: versionInfo),
+            );
+          }
         }
-      } catch (_) {
-        // 버전 체크 실패 시 무시하고 계속 진행
+      } catch (e) {
+        print('[VersionCheck] 버전 체크 오류: $e');
+      } finally {
+        // 버전 체크 완료 → GoRouter에게 이동 허가 신호
+        if (mounted) {
+          ref.read(versionCheckDoneProvider.notifier).state = true;
+        }
       }
-      if (!mounted) return;
     }
+
+    // ── 스플래시 최소 표시 시간 ──────────────────────────────────────────
+    if (retryCount == 0) {
+      await Future.delayed(const Duration(milliseconds: 800));
+    }
+    if (!mounted) return;
 
     // 서버 콜드 스타트 대응: 최대 2회 자동 재시도 (각 40초 타임아웃)
     try {

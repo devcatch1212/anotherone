@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import '../../shared/models/models.dart';
 import '../../features/auth/auth_provider.dart';
+import '../../core/api/version_service.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/attendance/presentation/attendance_screen.dart';
 import '../../features/payroll/presentation/payroll_screen.dart';
@@ -43,6 +44,10 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // 기기 자동 로그인 중 → 스플래시 유지
       if (authAsync.isLoading) return '/';
+
+      // 버전 체크 미완료 → 스플래시 유지
+      final versionCheckDone = ref.read(versionCheckDoneProvider);
+      if (!versionCheckDone && loc == '/') return null;
 
       final auth = authAsync.value;
       final isAuthenticated = auth?.isAuthenticated ?? false;
@@ -167,6 +172,10 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   ref.listen(authProvider, (previous, next) {
     router.refresh();
+  });
+
+  ref.listen(versionCheckDoneProvider, (previous, next) {
+    if (next == true) router.refresh();
   });
 
   return router;

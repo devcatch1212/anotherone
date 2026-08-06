@@ -9,6 +9,9 @@ enum UpdateState {
   force,      // 강제 업데이트
 }
 
+// GoRouter가 버전 체크 완료 전까지 스플래시를 유지하도록 하는 플래그
+final versionCheckDoneProvider = StateProvider<bool>((ref) => false);
+
 class VersionInfo {
   final UpdateState state;
   final String currentVersion;
@@ -42,9 +45,11 @@ class VersionService {
       // 1. 현재 로컬 앱 버전 조회
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
+      print('[VersionCheck] 현재 앱 버전: $currentVersion');
 
       // 2. 서버 설정 조회
       final res = await _apiClient.get<Map<String, dynamic>>('/api/app-config');
+      print('[VersionCheck] 서버 응답: $res');
       
       final String latestVersion;
       final String minVersion;
@@ -69,7 +74,9 @@ class VersionService {
       }
 
       // 3. 버전 비교 검증
+      print('[VersionCheck] 비교: current=$currentVersion, min=$minVersion, latest=$latestVersion');
       if (_isVersionLessThan(currentVersion, minVersion)) {
+        print('[VersionCheck] → 강제 업데이트');
         return VersionInfo(
           state: UpdateState.force,
           currentVersion: currentVersion,
@@ -77,6 +84,7 @@ class VersionService {
           storeUrl: storeUrl,
         );
       } else if (_isVersionLessThan(currentVersion, latestVersion)) {
+        print('[VersionCheck] → 선택 업데이트');
         return VersionInfo(
           state: UpdateState.optional,
           currentVersion: currentVersion,
@@ -84,6 +92,7 @@ class VersionService {
           storeUrl: storeUrl,
         );
       }
+      print('[VersionCheck] → 최신 버전 (팝업 없음)');
 
       return VersionInfo(
         state: UpdateState.none,
@@ -93,6 +102,7 @@ class VersionService {
       );
     } catch (e) {
       // 에러 발생 시 로그인은 할 수 있도록 검증을 패스시킴
+      print('[VersionCheck] ❌ 버전 체크 실패: $e');
       return VersionInfo(
         state: UpdateState.none,
         currentVersion: '1.0.0',

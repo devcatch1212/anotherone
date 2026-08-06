@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -158,10 +159,16 @@ class SettingsScreen extends ConsumerWidget {
 
                     const Text('앱 정보', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
                     const SizedBox(height: 10),
-                    _settingTile(
-                      icon: Icons.info_outline_rounded,
-                      label: '버전 정보',
-                      trailing: const Text('1.0.0', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                    FutureBuilder<PackageInfo>(
+                      future: PackageInfo.fromPlatform(),
+                      builder: (context, snapshot) {
+                        final version = snapshot.hasData ? snapshot.data!.version : '-';
+                        return _settingTile(
+                          icon: Icons.info_outline_rounded,
+                          label: '버전 정보',
+                          trailing: Text('v$version', style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                        );
+                      },
                     ),
                     const SizedBox(height: 8),
                     _settingTile(
