@@ -44,8 +44,9 @@ export class SettingsService {
         breakMinutes: data.breakMinutes,
         workDaysOfWeek: data.workDaysOfWeek,
         weeklyWorkDays: data.workDaysOfWeek.length,
-        hireDate: data.hireDate ? new Date(data.hireDate) : undefined,
-        memo: data.memo !== undefined ? data.memo : undefined,
+        // hireDate: undefined 이면 Prisma가 업데이트를 건너뜀 → null로 명시
+        hireDate: data.hireDate ? new Date(data.hireDate) : null,
+        memo: data.memo !== undefined ? data.memo : null,
         employeeCount: data.employeeCount !== undefined ? data.employeeCount : undefined,
       },
       include: { company: true },

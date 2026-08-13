@@ -157,6 +157,15 @@ class SettingsScreen extends ConsumerWidget {
                     // ),
                     // const SizedBox(height: 20),
 
+                    const Text('고객지원', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                    const SizedBox(height: 10),
+                    _settingTile(
+                      icon: Icons.chat_bubble_outline_rounded,
+                      label: '앱 이용문의',
+                      onTap: () => context.go('/settings/inquiry'),
+                    ),
+                    const SizedBox(height: 20),
+
                     const Text('앱 정보', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
                     const SizedBox(height: 10),
                     FutureBuilder<PackageInfo>(

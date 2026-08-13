@@ -407,4 +407,26 @@ export class AdminController {
   getWeeklyOvertimeAlert(@Query('companyId') companyId?: string) {
     return this.adminService.getWeeklyOvertimeAlert(companyId);
   }
+
+  // ─── 이용문의 관리 ────────────────────────────────────────────────────────
+
+  // 전체 이용문의 목록 조회 (필터 및 검색)
+  @UseGuards(AdminAuthGuard)
+  @Get('inquiries')
+  getAllInquiries(
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.adminService.getAllInquiries(status, search);
+  }
+
+  // 이용문의 답변 작성
+  @UseGuards(AdminAuthGuard)
+  @Patch('inquiries/:id/answer')
+  answerInquiry(
+    @Param('id') id: string,
+    @Body() body: { answer: string },
+  ) {
+    return this.adminService.answerInquiry(id, body.answer);
+  }
 }

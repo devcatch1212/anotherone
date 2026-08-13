@@ -1,6 +1,7 @@
 // lib/features/auth/auth_provider.dart
 // 기기 UUID 기반 자동 인증 상태관리 Riverpod Provider
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../shared/models/models.dart';
@@ -86,29 +87,52 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
     if (token != null && user != null) {
       try {
-        // 기존 토큰이 새 DB에서도 여전히 유효한지 검증
-        await _api.get('/api/auth/me');
+        // 기존 토큰이 여전히 유효한지 서버 최신 정보로 갱신 시도
+        final updatedUserJson = await _api.get<Map<String, dynamic>>('/api/auth/me');
+        final updatedUser = User.fromJson(updatedUserJson);
+        await _storage.saveUser(updatedUser);
 
-        // 유효하다면 복원 진행
-        final activeEmployments = user.employments.where((e) => e.isActive).toList();
+        final activeEmployments = updatedUser.employments.where((e) => e.isActive).toList();
         final primary = activeEmployments.firstWhereOrNull((e) => e.isPrimary) ??
             activeEmployments.firstOrNull ??
-            user.employments.firstOrNull;
+            updatedUser.employments.firstOrNull;
 
         // 알림 재예약
-        _rescheduleAlarms(user.employments);
+        _rescheduleAlarms(updatedUser.employments);
 
         return AuthState(
           token: token,
-          user: user,
+          user: updatedUser,
           isAuthenticated: true,
-          onboardingCompleted: user.onboardingCompleted,
+          onboardingCompleted: updatedUser.onboardingCompleted,
           currentCompanyId: primary?.companyId,
           currentEmploymentId: primary?.id,
         );
       } catch (e) {
-        debugPrint('기존 토큰 무효화 감지 (DB 초기화 등으로 인한 401): $e');
-        await _storage.clearAll();
+        // 서버에서 명시적으로 401/403 (토큰 만료/유효하지 않음)을 반환한 경우에만 토큰 삭제
+        if (e is DioException && (e.response?.statusCode == 401 || e.response?.statusCode == 403)) {
+          debugPrint('토큰 만료/무효화 확인 (401/403): $e');
+          await _storage.deleteToken();
+          await _storage.deleteUser();
+        } else {
+          // 네트워크 일시 오류, 서버 콜드 스타트, 오프라인 등의 경우 로컬 데이터로 로그인 유지!
+          debugPrint('서버 연결 일시 실패 (기존 로컬 인증 정보 유지): $e');
+          final activeEmployments = user.employments.where((e) => e.isActive).toList();
+          final primary = activeEmployments.firstWhereOrNull((e) => e.isPrimary) ??
+              activeEmployments.firstOrNull ??
+              user.employments.firstOrNull;
+
+          _rescheduleAlarms(user.employments);
+
+          return AuthState(
+            token: token,
+            user: user,
+            isAuthenticated: true,
+            onboardingCompleted: user.onboardingCompleted,
+            currentCompanyId: primary?.companyId,
+            currentEmploymentId: primary?.id,
+          );
+        }
       }
     }
 

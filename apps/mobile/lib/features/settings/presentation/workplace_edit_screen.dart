@@ -70,7 +70,9 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
       WageType.monthly => (emp.monthlyWage ?? 0).toInt(),
     };
     _wageCtrl = TextEditingController(text: wageValue > 0 ? wageValue.toString() : '');
-    _nameCtrl = TextEditingController();
+    // 현재 사용자 이름을 가져와서 초기값으로 설정
+    final currentUser = ref.read(authProvider).value?.user;
+    _nameCtrl = TextEditingController(text: currentUser?.name ?? '');
     _memoCtrl = TextEditingController(text: emp.memo ?? '');
     _hireDate = emp.hireDate != null ? DateTime.tryParse(emp.hireDate!) : null;
     _employeeCount = emp.employeeCount;
@@ -210,7 +212,10 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
           'workEndTime': _endTimeCtrl.text,
           'breakMinutes': int.tryParse(_breakMinutesCtrl.text) ?? 60,
           'workDaysOfWeek': _selectedDays,
-          if (_nameCtrl.text.trim().isNotEmpty) 'name': _nameCtrl.text.trim(),
+          // 이름이 기존과 다른 경우에만 전송
+          if (_nameCtrl.text.trim().isNotEmpty &&
+              _nameCtrl.text.trim() != (ref.read(authProvider).value?.user?.name ?? ''))
+            'name': _nameCtrl.text.trim(),
           if (_hireDate != null)
             'hireDate': _hireDate!.toIso8601String().substring(0, 10),
           'memo': _memoCtrl.text.trim(),
@@ -466,7 +471,7 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
                     _buildSectionHeader('급여 및 근무 형태 설정'),
                     const SizedBox(height: 10),
                     _buildCard([
-                      // ── 성명 수정 ──
+                            // ── 성명 수정 ──
                       _buildLabel('성명 변경 (선택)'),
                       const SizedBox(height: 6),
                       TextFormField(
@@ -474,7 +479,7 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
                         enabled: isEditable,
                         textInputAction: TextInputAction.next,
                         decoration: const InputDecoration(
-                          hintText: '미입력 시 현재 이름 유지',
+                          hintText: '이름을 변경하려면 수정해주세요',
                           prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
                         ),
                       ),

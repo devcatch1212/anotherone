@@ -12,6 +12,7 @@ import { SystemModule } from './system/system.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
 import { OutworkModule } from './outwork/outwork.module';
+import { InquiryModule } from './inquiry/inquiry.module';
 import { KeepAliveService } from './common/keep-alive.service';
 
 @Module({
@@ -27,6 +28,7 @@ import { KeepAliveService } from './common/keep-alive.service';
     NotificationsModule,
     AdminModule,
     OutworkModule,
+    InquiryModule,
   ],
   controllers: [AppController],
   providers: [AppService, KeepAliveService],

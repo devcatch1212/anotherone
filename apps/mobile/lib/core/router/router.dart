@@ -20,6 +20,8 @@ import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/settings/presentation/workplace_edit_screen.dart';
 import '../../features/settings/presentation/legal_detail_screen.dart';
+import '../../features/settings/presentation/inquiry_list_screen.dart';
+import '../../features/settings/presentation/inquiry_create_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/onboarding/presentation/welcome_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
@@ -164,6 +166,14 @@ final routerProvider = Provider<GoRouter>((ref) {
               final type = state.uri.queryParameters['type'] ?? 'terms';
               return LegalDetailScreen(type: type);
             },
+          ),
+          GoRoute(
+            path: '/settings/inquiry',
+            builder: (_, __) => const InquiryListScreen(),
+          ),
+          GoRoute(
+            path: '/settings/inquiry/create',
+            builder: (_, __) => const InquiryCreateScreen(),
           ),
         ],
       ),

@@ -18,13 +18,17 @@ class AuthStorage {
   static const _currentEmploymentKey = 'current_employment_id';
 
   final _secure = const FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    aOptions: AndroidOptions(
+      encryptedSharedPreferences: true,
+      // 앱 업데이트 시 keystore 손상으로 읽기 실패할 경우 자동 초기화 후 재생성
+      resetOnError: true,
+    ),
   );
 
   // ── 토큰 ──
   Future<void> saveToken(String token) async {
     try {
-      await _secure.write(key: _tokenKey, value: token).timeout(const Duration(seconds: 2));
+      await _secure.write(key: _tokenKey, value: token).timeout(const Duration(seconds: 5));
     } catch (e) {
       debugPrint('[AuthStorage] saveToken 오류: $e');
     }
@@ -32,7 +36,7 @@ class AuthStorage {
 
   Future<String?> getToken() async {
     try {
-      return await _secure.read(key: _tokenKey).timeout(const Duration(seconds: 2));
+      return await _secure.read(key: _tokenKey).timeout(const Duration(seconds: 5));
     } catch (e) {
       debugPrint('[AuthStorage] getToken 오류: $e');
       return null;
@@ -41,7 +45,7 @@ class AuthStorage {
 
   Future<void> deleteToken() async {
     try {
-      await _secure.delete(key: _tokenKey).timeout(const Duration(seconds: 2));
+      await _secure.delete(key: _tokenKey).timeout(const Duration(seconds: 5));
     } catch (e) {
       debugPrint('[AuthStorage] deleteToken 오류: $e');
     }
@@ -58,7 +62,7 @@ class AuthStorage {
         'onboardingCompleted': user.onboardingCompleted,
         'employments': user.employments.map((e) => _employmentToJson(e)).toList(),
       };
-      await _secure.write(key: _userKey, value: jsonEncode(json)).timeout(const Duration(seconds: 2));
+      await _secure.write(key: _userKey, value: jsonEncode(json)).timeout(const Duration(seconds: 5));
     } catch (e) {
       debugPrint('[AuthStorage] saveUser 오류: $e');
     }
@@ -66,7 +70,7 @@ class AuthStorage {
 
   Future<User?> getUser() async {
     try {
-      final str = await _secure.read(key: _userKey).timeout(const Duration(seconds: 2));
+      final str = await _secure.read(key: _userKey).timeout(const Duration(seconds: 5));
       if (str == null) return null;
       return User.fromJson(jsonDecode(str) as Map<String, dynamic>);
     } catch (e) {
@@ -77,7 +81,7 @@ class AuthStorage {
 
   Future<void> deleteUser() async {
     try {
-      await _secure.delete(key: _userKey).timeout(const Duration(seconds: 2));
+      await _secure.delete(key: _userKey).timeout(const Duration(seconds: 5));
     } catch (e) {
       debugPrint('[AuthStorage] deleteUser 오류: $e');
     }
@@ -122,16 +126,21 @@ class AuthStorage {
     return prefs.getString(_currentEmploymentKey);
   }
 
-  // ── 전체 삭제 ──
+  // ── 전체 삭제 (device_id는 기기 식별을 위해 보존) ──
   Future<void> clearAll() async {
     try {
-      await _secure.deleteAll().timeout(const Duration(seconds: 2));
+      // deleteAll() 대신 인증 관련 키만 개별 삭제 (다른 보안 저장소 데이터 보존)
+      await _secure.delete(key: _tokenKey).timeout(const Duration(seconds: 5));
+      await _secure.delete(key: _userKey).timeout(const Duration(seconds: 5));
     } catch (e) {
       debugPrint('[AuthStorage] clearAll secure storage 오류: $e');
     }
     try {
-      final prefs = await SharedPreferences.getInstance().timeout(const Duration(seconds: 2));
-      await prefs.clear();
+      final prefs = await SharedPreferences.getInstance().timeout(const Duration(seconds: 5));
+      await prefs.remove(_rememberMeKey);
+      await prefs.remove(_currentCompanyKey);
+      await prefs.remove(_currentEmploymentKey);
+      // device_id 키는 절대 삭제하지 않음 (기기 식별자 보존)
     } catch (e) {
       debugPrint('[AuthStorage] clearAll shared preferences 오류: $e');
     }

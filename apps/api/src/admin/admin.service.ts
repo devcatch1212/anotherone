@@ -1427,4 +1427,46 @@ export class AdminService {
       alerts: alerts.sort((a, b) => b.weeklyHours - a.weeklyHours),
     };
   }
+
+  // ── 이용문의 관리 ──────────────────────────────────────────────────────────
+
+  async getAllInquiries(status?: string, search?: string) {
+    const where: any = {};
+    if (status && status !== 'all') {
+      where.status = status;
+    }
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } },
+        { user: { name: { contains: search, mode: 'insensitive' } } },
+        { user: { email: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+    return this.prisma.inquiry.findMany({
+      where,
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        company: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async answerInquiry(id: string, answer: string) {
+    const inquiry = await this.prisma.inquiry.findUnique({ where: { id } });
+    if (!inquiry) throw new NotFoundException('문의를 찾을 수 없습니다.');
+    return this.prisma.inquiry.update({
+      where: { id },
+      data: {
+        answer,
+        status: 'answered',
+        answeredAt: new Date(),
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        company: { select: { id: true, name: true } },
+      },
+    });
+  }
 }
