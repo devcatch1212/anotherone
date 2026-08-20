@@ -210,7 +210,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                               borderRadius: BorderRadius.circular(99),
                             ),
                             child: Text(
-                              'D+$dDay',
+                              'D+${fmt.format(dDay)}',
                               style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,

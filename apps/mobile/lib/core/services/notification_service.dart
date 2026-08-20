@@ -134,6 +134,7 @@ class NotificationService {
     required String companyName,
     required DateTime scheduledTime,
     required int minutesBefore,
+    DateTimeComponents? matchDateTimeComponents,
   }) async {
     if (!await isPermissionGranted()) {
       debugPrint('[알림 권한] 권한 없음 - 출근 알림 예약 스킵');
@@ -165,7 +166,7 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: null,
+      matchDateTimeComponents: matchDateTimeComponents,
     );
   }
 
@@ -175,6 +176,7 @@ class NotificationService {
     required String companyName,
     required DateTime scheduledTime,
     required int minutesBefore,
+    DateTimeComponents? matchDateTimeComponents,
   }) async {
     if (!await isPermissionGranted()) {
       debugPrint('[알림 권한] 권한 없음 - 퇴근 알림 예약 스킵');
@@ -206,7 +208,7 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: null,
+      matchDateTimeComponents: matchDateTimeComponents,
     );
   }
 

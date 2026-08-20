@@ -300,10 +300,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         const SizedBox(height: 32),
         _wageTypeCard(WageType.hourly, '시급', '시간당 임금을 받는 경우', Icons.schedule_rounded),
         const SizedBox(height: 12),
-        _wageTypeCard(WageType.daily, '일급', '하루 단위로 임금을 받는 경우', Icons.today_rounded),
-        const SizedBox(height: 12),
-        _wageTypeCard(WageType.weekly, '주급', '주 단위로 임금을 받는 경우', Icons.date_range_rounded),
-        const SizedBox(height: 12),
         _wageTypeCard(WageType.monthly, '월급', '월 단위로 임금을 받는 경우', Icons.calendar_month_rounded),
       ],
     );

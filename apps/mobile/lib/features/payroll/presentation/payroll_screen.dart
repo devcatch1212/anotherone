@@ -67,7 +67,7 @@ class _PayrollScreenState extends ConsumerState<PayrollScreen> {
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
               child: const Align(
                 alignment: Alignment.centerLeft,
-                child: Text('급여명세서',
+                child: Text('급여 내역',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
               ),
             ),
@@ -126,9 +126,14 @@ class _PayrollScreenState extends ConsumerState<PayrollScreen> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text('${r.year}년 ${r.month}월',
-                                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                                          Text('근무 ${r.workedDays}일',
+                                          Text(
+                                            r.confirmed
+                                                ? '${r.year}년 ${r.month}월 급여명세서'
+                                                : '${r.year}년 ${r.month}월 예상 급여',
+                                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text('근무 ${fmt.format(r.workedDays)}일',
                                               style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
                                         ],
                                       ),
@@ -138,18 +143,23 @@ class _PayrollScreenState extends ConsumerState<PayrollScreen> {
                                       children: [
                                         Text('${fmt.format(r.netPay)}원',
                                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF3E6872))),
+                                        const SizedBox(height: 3),
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: r.confirmed ? AppColors.successLight : AppColors.warningLight,
+                                            color: r.confirmed ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
                                             borderRadius: BorderRadius.circular(99),
+                                            border: Border.all(
+                                              color: r.confirmed ? const Color(0xFFBBF7D0) : const Color(0xFFFDE68A),
+                                              width: 0.8,
+                                            ),
                                           ),
                                           child: Text(
-                                            r.confirmed ? '확정' : '미확정',
+                                            r.confirmed ? '확정' : '예상',
                                             style: TextStyle(
                                               fontSize: 10,
-                                              fontWeight: FontWeight.w700,
-                                              color: r.confirmed ? AppColors.success : AppColors.warning,
+                                              fontWeight: FontWeight.w800,
+                                              color: r.confirmed ? const Color(0xFF15803D) : const Color(0xFFB45309),
                                             ),
                                           ),
                                         ),

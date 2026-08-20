@@ -62,7 +62,9 @@ class _PayrollDetailScreenState extends ConsumerState<PayrollDetailScreen> {
                         icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
                       ),
                       Text(
-                        r != null ? '${r.year}년 ${r.month}월 급여명세서' : '급여명세서',
+                        r != null
+                            ? (r.confirmed ? '${r.year}년 ${r.month}월 급여명세서' : '${r.year}년 ${r.month}월 예상 급여')
+                            : '급여 상세',
                         style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
                       ),
                     ],
@@ -98,7 +100,7 @@ class _PayrollDetailScreenState extends ConsumerState<PayrollDetailScreen> {
                                 padding: const EdgeInsets.all(16),
                               child: Column(
                                 children: [
-                                  // 실수령액 강조
+                                  // 실수령액 강조 카드
                                   Container(
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(24),
@@ -109,14 +111,53 @@ class _PayrollDetailScreenState extends ConsumerState<PayrollDetailScreen> {
                                     ),
                                     child: Column(
                                       children: [
-                                        const Text('실수령액',
-                                            style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              r.confirmed ? '확정 실수령액' : '예상 실수령액',
+                                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: r.confirmed ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                                                borderRadius: BorderRadius.circular(99),
+                                                border: Border.all(
+                                                  color: r.confirmed ? const Color(0xFFBBF7D0) : const Color(0xFFFDE68A),
+                                                  width: 0.8,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                r.confirmed ? '확정' : '예상',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: r.confirmed ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                         const SizedBox(height: 8),
                                         Text('${fmt.format(r.netPay)}원',
                                             style: const TextStyle(color: Color(0xFF3E6872), fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
                                         const SizedBox(height: 4),
-                                        Text('근무 ${r.workedDays}일',
+                                        Text('근무 ${fmt.format(r.workedDays)}일',
                                             style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          r.confirmed
+                                              ? '✓ 관리자가 검토 후 공식 발행한 명세서입니다.'
+                                              : '* 출퇴근 기록을 바탕으로 자동 계산된 예상 금액입니다.',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: r.confirmed ? const Color(0xFF15803D) : AppColors.textMuted,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
                                       ],
                                     ),
                                   ),

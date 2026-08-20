@@ -70,6 +70,8 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
 
 
 
+    final fmt = NumberFormat('#,###', 'ko');
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -107,13 +109,13 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
               child: Row(
                 children: [
-                  _summaryCard('근무일수', '$totalDays일', AppColors.primary),
+                  _summaryCard('근무일수', '${fmt.format(totalDays)}일', AppColors.primary),
                   const SizedBox(width: 8),
-                  _summaryCard('총 근무', '${totalMins ~/ 60}h ${totalMins % 60}m', AppColors.accentDark),
+                  _summaryCard('총 근무', '${fmt.format(totalMins ~/ 60)}h ${totalMins % 60}m', AppColors.accentDark),
                   const SizedBox(width: 8),
-                  _summaryCard('지각', '$lateCount회', const Color(0xFFD97706)),
+                  _summaryCard('지각', '${fmt.format(lateCount)}회', const Color(0xFFD97706)),
                   const SizedBox(width: 8),
-                  _summaryCard('결근', '$absentCount회', const Color(0xFFDC2626)),
+                  _summaryCard('결근', '${fmt.format(absentCount)}회', const Color(0xFFDC2626)),
                 ],
               ),
             ),
@@ -175,7 +177,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                       const Spacer(),
                                       if (r.workedMinutes != null)
                                         Text(
-                                          '${r.workedMinutes! ~/ 60}h ${r.workedMinutes! % 60}m',
+                                          '${fmt.format(r.workedMinutes! ~/ 60)}h ${r.workedMinutes! % 60}m',
                                           style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                                         ),
                                       const SizedBox(width: 8),

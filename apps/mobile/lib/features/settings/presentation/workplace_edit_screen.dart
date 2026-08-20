@@ -533,8 +533,6 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
                         runSpacing: 8,
                         children: [
                           _buildWageTypeButton(WageType.hourly, '시급', isEditable),
-                          _buildWageTypeButton(WageType.daily, '일급', isEditable),
-                          _buildWageTypeButton(WageType.weekly, '주급', isEditable),
                           _buildWageTypeButton(WageType.monthly, '월급', isEditable),
                         ],
                       ),
@@ -546,7 +544,7 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
                         enabled: isEditable,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          hintText: _wageType == WageType.hourly ? '예: 10320' : '예: 80000',
+                          hintText: _wageType == WageType.hourly ? '예: 10,030' : '예: 2,096,270',
                           prefixIcon: const Icon(Icons.payments_outlined, size: 20),
                         ),
                         validator: (v) {

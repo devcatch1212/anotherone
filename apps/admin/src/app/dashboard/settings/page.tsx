@@ -377,7 +377,7 @@ export default function SettingsPage() {
                         📍 {c.address}
                       </td>
                       <td className="px-6 py-4 text-slate-500" style={{ padding: '16px 24px', fontSize: '13px', color: '#64748B', borderBottom: '1px solid #F1F5F9' }}>
-                        {c.radiusMeters ?? '-'}m
+                        {c.radiusMeters != null ? `${c.radiusMeters.toLocaleString()}m` : '-'}
                       </td>
                       <td className="px-6 py-4 font-medium text-slate-500" style={{ padding: '16px 24px', fontSize: '13px', color: '#64748B', borderBottom: '1px solid #F1F5F9' }}>
                         {formatDate(c.createdAt)}

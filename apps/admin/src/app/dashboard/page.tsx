@@ -274,7 +274,7 @@ export default function DashboardPage() {
                 <span>실시간 관제 및 근태 현황</span>
               </h2>
               <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px', margin: '4px 0 0 0' }}>
-                {todayStatus.date} KST 기준 · {selectedCompanyId === 'all' ? '전체 사업장' : '선택 사업장'} 총 {todayStatus.total}명 대상
+                {todayStatus.date} KST 기준 · {selectedCompanyId === 'all' ? '전체 사업장' : '선택 사업장'} 총 {todayStatus.total.toLocaleString()}명 대상
               </p>
             </div>
             <Link
@@ -316,7 +316,7 @@ export default function DashboardPage() {
                 <span style={{ fontSize: '16px' }}>🏢</span>
               </div>
               <div style={{ fontSize: '22px', fontWeight: '900', color: '#0F172A', lineHeight: 1 }}>
-                {selectedCompanyId === 'all' ? companies.length : 1}<span style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', marginLeft: '2px' }}>개소</span>
+                {selectedCompanyId === 'all' ? companies.length.toLocaleString() : 1}<span style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', marginLeft: '2px' }}>개소</span>
               </div>
             </div>
 
@@ -342,7 +342,7 @@ export default function DashboardPage() {
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
                 <div style={{ fontSize: '22px', fontWeight: '900', color: '#0F172A', lineHeight: 1 }}>
-                  {todayStatus.total}<span style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', marginLeft: '2px' }}>명</span>
+                  {todayStatus.total.toLocaleString()}<span style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', marginLeft: '2px' }}>명</span>
                 </div>
                 <span style={{ fontSize: '11px', fontWeight: '700', color: '#2563EB', backgroundColor: '#EFF6FF', padding: '2px 8px', borderRadius: '6px' }}>
                   상세 🔍
@@ -371,7 +371,7 @@ export default function DashboardPage() {
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
                 <div style={{ fontSize: '22px', fontWeight: '900', color: '#166534', lineHeight: 1 }}>
-                  {todayStatus.checkedIn}<span style={{ fontSize: '12px', fontWeight: '700', color: '#15803D', marginLeft: '2px' }}>명</span>
+                  {todayStatus.checkedIn.toLocaleString()}<span style={{ fontSize: '12px', fontWeight: '700', color: '#15803D', marginLeft: '2px' }}>명</span>
                 </div>
                 <span style={{ fontSize: '11px', fontWeight: '700', color: '#166534', backgroundColor: '#DCFCE7', padding: '2px 8px', borderRadius: '6px' }}>
                   상세 🔍
@@ -400,7 +400,7 @@ export default function DashboardPage() {
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
                 <div style={{ fontSize: '22px', fontWeight: '900', color: '#92400E', lineHeight: 1 }}>
-                  {todayStatus.late}<span style={{ fontSize: '12px', fontWeight: '700', color: '#B45309', marginLeft: '2px' }}>명</span>
+                  {todayStatus.late.toLocaleString()}<span style={{ fontSize: '12px', fontWeight: '700', color: '#B45309', marginLeft: '2px' }}>명</span>
                 </div>
                 <span style={{ fontSize: '11px', fontWeight: '700', color: '#92400E', backgroundColor: '#FEF3C7', padding: '2px 8px', borderRadius: '6px' }}>
                   상세 🔍
@@ -429,7 +429,7 @@ export default function DashboardPage() {
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
                 <div style={{ fontSize: '22px', fontWeight: '900', color: '#9F1239', lineHeight: 1 }}>
-                  {todayStatus.notCheckedIn}<span style={{ fontSize: '12px', fontWeight: '700', color: '#BE123C', marginLeft: '2px' }}>명</span>
+                  {todayStatus.notCheckedIn.toLocaleString()}<span style={{ fontSize: '12px', fontWeight: '700', color: '#BE123C', marginLeft: '2px' }}>명</span>
                 </div>
                 <span style={{ fontSize: '11px', fontWeight: '700', color: '#9F1239', backgroundColor: '#FFE4E6', padding: '2px 8px', borderRadius: '6px' }}>
                   상세 🔍
@@ -458,7 +458,7 @@ export default function DashboardPage() {
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
                 <div style={{ fontSize: '22px', fontWeight: '900', color: '#1E3A8A', lineHeight: 1 }}>
-                  {todayStatus.onLeave}<span style={{ fontSize: '12px', fontWeight: '700', color: '#1D4ED8', marginLeft: '2px' }}>명</span>
+                  {todayStatus.onLeave.toLocaleString()}<span style={{ fontSize: '12px', fontWeight: '700', color: '#1D4ED8', marginLeft: '2px' }}>명</span>
                 </div>
                 <span style={{ fontSize: '11px', fontWeight: '700', color: '#1E3A8A', backgroundColor: '#DBEAFE', padding: '2px 8px', borderRadius: '6px' }}>
                   상세 🔍
@@ -540,7 +540,7 @@ export default function DashboardPage() {
                               whiteSpace: 'nowrap'
                             }}
                           >
-                            {c.activeEmployeeCount}명 활성
+                            {c.activeEmployeeCount.toLocaleString()}명 활성
                           </span>
                         </div>
                       </div>
@@ -621,7 +621,7 @@ export default function DashboardPage() {
                               display: 'inline-block'
                             }}
                           >
-                            {c.activeEmployeeCount}명 활성
+                            {c.activeEmployeeCount.toLocaleString()}명 활성
                           </span>
                         </td>
                         <td style={{ padding: '16px 20px', textAlign: 'right' }}>
@@ -814,7 +814,7 @@ function TodayAttendanceDetailModal({ isOpen, onClose, initialFilter, todayStatu
     if (!min || min <= 0) return '-';
     const h = Math.floor(min / 60);
     const m = min % 60;
-    return m > 0 ? `${h}시간 ${m}분` : `${h}시간`;
+    return m > 0 ? `${h.toLocaleString()}시간 ${m}분` : `${h.toLocaleString()}시간`;
   };
 
   return (

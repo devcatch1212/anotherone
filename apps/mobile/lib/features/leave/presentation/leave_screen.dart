@@ -341,6 +341,8 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
   }
 
   Widget _buildLeaveTab(Map<LeaveStatus, ({Color bg, Color color, String label})> statusStyle, Map<LeaveType, String> typeLabel) {
+    final numFmt = NumberFormat('#,##0.#', 'ko');
+
     return Column(
       children: [
         // 연차 현황 카드
@@ -357,17 +359,15 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('남은 연차', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                    const Text('연차', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,
                       children: [
-                        Text('$_remaining', style: const TextStyle(color: Color(0xFF3E6872), fontSize: 36, fontWeight: FontWeight.w800)),
+                        Text(numFmt.format(_remaining), style: const TextStyle(color: Color(0xFF3E6872), fontSize: 36, fontWeight: FontWeight.w800)),
                         const SizedBox(width: 4),
                         const Text('일', style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
-                        const SizedBox(width: 6),
-                        Text('/ $_total일', style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
                       ],
                     ),
                   ],
@@ -453,7 +453,7 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
                                 Text(typeLabel[r.type] ?? '연차',
                                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                                 const SizedBox(width: 6),
-                                Text('${r.days}일',
+                                Text('${numFmt.format(r.days)}일',
                                     style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
                               ],
                             ),

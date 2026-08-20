@@ -107,20 +107,21 @@ export class LeaveService {
     }
 
     const today = new Date();
-    
-    // 입사일부터 오늘까지의 전체 기간 개근월수 및 출근율 계산
+
+    // 입사일부터 오늘까지의 전체 기간
     const diffTime = Math.abs(today.getTime() - hireDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     const years = diffDays / 365.25;
 
-    let totalLeaveDays = 0;
+    let remainingLeaveBalance = 0;
 
     if (years < 1) {
-      // 1년 미만 근속자:
-      // 최근 1개월 개근이면 연차 1일 발생 (매 월 단위 개근 체크, 입사월 기준 최대 11일)
-      let months = 0;
+      // ─── 1년 미만 근속자: 월별 1일 (최대 11일) ───────────────────────────
+      // 입사 1주년 전이므로 연차 소멸 시점이 아직 안 됨 → 전체 사용량 차감
+      let totalLeaveDays = 0;
       let checkDate = new Date(hireDate);
-      
+      let months = 0;
+
       while (true) {
         const nextMonthDate = new Date(checkDate);
         nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
@@ -146,23 +147,52 @@ export class LeaveService {
         checkDate = nextMonthDate;
         if (months >= 11) break; // 최대 11일
       }
+
+      const usedDaysRes = await this.prisma.leaveRecord.aggregate({
+        where: {
+          userId,
+          companyId: employment.companyId,
+          status: 'approved',
+          type: { in: ['annual', 'half'] },
+        },
+        _sum: { days: true },
+      });
+      const usedDays = usedDaysRes._sum.days || 0;
+      remainingLeaveBalance = Math.max(0, totalLeaveDays - usedDays);
+
     } else {
-      // 1년 이상 근속자:
-      // 출근율이 80% 이상이면 연차 15일 발생
-      // 출근율이 80% 미만이면 월 개근 기준으로 계산
+      // ─── 1년 이상 근속자: 연도별 15일 + 가산 (소멸 처리 포함) ──────────
+      // 근로기준법 제60조 제7항: 연차는 발생일로부터 1년 내 미사용 시 소멸
+      //
+      // 연도 y (0부터 시작):
+      //   근무 기간: hireDate+y년 ~ hireDate+(y+1)년
+      //   연차 발생일: hireDate + (y+1)년  (입사 y+1 주년)
+      //   연차 소멸일: hireDate + (y+2)년  (발생 후 1년)
+      //
+      // today >= 소멸일 → 해당 연도 연차 소멸 → 계산에서 제외
       const completedYears = Math.floor(years);
-      
+      let totalLeaveDays = 0;
+      let validLeaveEarnedDate: Date | null = null; // 유효한 연차 중 가장 오래된 발생일
+
       for (let y = 0; y < completedYears; y++) {
+        // 이 연도의 근무 기간
         const yearStartDate = new Date(hireDate);
         yearStartDate.setFullYear(yearStartDate.getFullYear() + y);
         const yearEndDate = new Date(hireDate);
         yearEndDate.setFullYear(yearEndDate.getFullYear() + y + 1);
 
-        // 해당 년도 소정근로일수 구하기 (기본적으로 근무요일에 해당하는 일수)
+        // 연차 소멸일 = 발생 후 1년 = hireDate + (y+2)년
+        const leaveExpiresDate = new Date(hireDate);
+        leaveExpiresDate.setFullYear(leaveExpiresDate.getFullYear() + y + 2);
+
+        // 소멸된 연차는 계산에서 제외
+        if (today >= leaveExpiresDate) continue;
+
+        // 해당 연도 소정근로일수 계산 (근무 요일 기준)
         let scheduledDays = 0;
         let tempDate = new Date(yearStartDate);
         const workDaysSet = new Set(employment.workDaysOfWeek);
-        
+
         while (tempDate < yearEndDate) {
           const jsDay = tempDate.getDay();
           const dbDay = jsDay === 0 ? 6 : jsDay - 1;
@@ -188,10 +218,11 @@ export class LeaveService {
         const attendanceRate = scheduledDays > 0 ? (attendedDays / scheduledDays) * 100 : 0;
 
         if (attendanceRate >= 80) {
+          // 출근율 80% 이상: 15일 + 가산 연차 (3년차부터 2년마다 +1일, 최대 +10일)
           const additionalDays = Math.min(10, Math.floor(y / 2));
-          totalLeaveDays += (15 + additionalDays);
+          totalLeaveDays += 15 + additionalDays;
         } else {
-          // 80% 미만: 1년 동안 월별 개근일수 체크
+          // 출근율 80% 미만: 월별 개근 체크
           let checkDate = new Date(yearStartDate);
           for (let m = 0; m < 12; m++) {
             const nextMonthDate = new Date(checkDate);
@@ -215,24 +246,35 @@ export class LeaveService {
             checkDate = nextMonthDate;
           }
         }
+
+        // 유효한 연차 중 가장 오래된 발생일 기록 (FIFO 차감 기준점)
+        if (validLeaveEarnedDate === null) {
+          validLeaveEarnedDate = yearEndDate;
+        }
+      }
+
+      if (validLeaveEarnedDate !== null) {
+        // 유효한 연차 발생일 이후에 사용한 연차만 차감
+        // (소멸 기간 이전 사용분은 이미 소멸된 연차에서 차감된 것으로 간주)
+        const usedDaysRes = await this.prisma.leaveRecord.aggregate({
+          where: {
+            userId,
+            companyId: employment.companyId,
+            status: 'approved',
+            type: { in: ['annual', 'half'] },
+            startDate: {
+              gte: (validLeaveEarnedDate as Date).toISOString().substring(0, 10),
+            },
+          },
+          _sum: { days: true },
+        });
+        const usedDays = usedDaysRes._sum.days || 0;
+        remainingLeaveBalance = Math.max(0, totalLeaveDays - usedDays);
+      } else {
+        // 모든 연차가 소멸됨
+        remainingLeaveBalance = 0;
       }
     }
-
-    // 이미 사용 및 승인 완료된 연차 개수 계산
-    const usedDaysRes = await this.prisma.leaveRecord.aggregate({
-      where: {
-        userId,
-        companyId: employment.companyId,
-        status: 'approved',
-        type: { in: ['annual', 'half'] },
-      },
-      _sum: {
-        days: true,
-      },
-    });
-
-    const usedDays = usedDaysRes._sum.days || 0;
-    const remainingLeaveBalance = Math.max(0, totalLeaveDays - usedDays);
 
     // DB 업데이트
     await this.prisma.employment.update({

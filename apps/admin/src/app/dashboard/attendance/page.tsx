@@ -51,7 +51,7 @@ function fmtMinutes(min: number | null) {
   if (!min) return '-';
   const h = Math.floor(min / 60);
   const m = min % 60;
-  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  return m > 0 ? `${h.toLocaleString()}h ${m}m` : `${h.toLocaleString()}h`;
 }
 
 export default function AttendancePage() {

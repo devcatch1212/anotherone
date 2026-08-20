@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,6 +34,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Timer? _timer;
   DateTime _now = DateTime.now();
   StreamSubscription<Position>? _positionSub;
+  // 뒤로가기 2번 종료용
+  DateTime? _lastBackPressed;
 
   @override
   void initState() {
@@ -309,8 +312,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
 
       if (d > emp.company.radiusMeters) {
+        final fmt = NumberFormat('#,###', 'ko');
         _showSnackBar(
-          '📍 근무지 인증 실패! 반경 ${emp.company.radiusMeters}m 밖입니다. (현재 거리: ${d.round()}m)',
+          '📍 근무지 인증 실패! 반경 ${fmt.format(emp.company.radiusMeters)}m 밖입니다. (현재 거리: ${fmt.format(d.round())}m)',
           AppColors.danger,
         );
         return;
@@ -404,8 +408,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
 
       if (d > emp.company.radiusMeters && !_hasTodayOutwork) {
+        final fmt = NumberFormat('#,###', 'ko');
         _showSnackBar(
-          '📍 근무지 인증 실패! 반경 ${emp.company.radiusMeters}m 밖입니다. (현재 거리: ${d.round()}m)',
+          '📍 근무지 인증 실패! 반경 ${fmt.format(emp.company.radiusMeters)}m 밖입니다. (현재 거리: ${fmt.format(d.round())}m)',
           AppColors.danger,
         );
         return;
@@ -764,14 +769,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       GpsStatus.loading: '📡',
       GpsStatus.denied: '⚠️',
     }[_gpsStatus]!;
+    final numFmt = NumberFormat('#,##0.#', 'ko');
+    final intFmt = NumberFormat('#,###', 'ko');
+
     final gpsText = {
-      GpsStatus.ok: '근무지 인증 완료 · ${_distance?.round()}m',
-      GpsStatus.far: '근무지에서 ${_distance?.round()}m 거리',
+      GpsStatus.ok: '근무지 인증 완료 · ${_distance != null ? intFmt.format(_distance!.round()) : 0}m',
+      GpsStatus.far: '근무지에서 ${_distance != null ? intFmt.format(_distance!.round()) : 0}m 거리',
       GpsStatus.loading: '위치 확인 중...',
       GpsStatus.denied: '위치 권한이 필요합니다',
     }[_gpsStatus]!;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        // Android 전용: 뒤로가기 2번 종료
+        if (Platform.isAndroid) {
+          final now = DateTime.now();
+          final isSecondPress = _lastBackPressed != null &&
+              now.difference(_lastBackPressed!) < const Duration(seconds: 2);
+          if (isSecondPress) {
+            exit(0); // 앱 종료
+          } else {
+            _lastBackPressed = now;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('한 번 더 누르면 앱이 종료됩니다'),
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      },
+      child: Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
         bottom: false,
@@ -896,7 +927,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: Column(
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -912,44 +942,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         CrossAxisAlignment.baseline,
                                     textBaseline: TextBaseline.alphabetic,
                                     children: [
-                                      Text('${monthlyWorked}h',
+                                      Text('${numFmt.format(monthlyWorked)}h',
                                           style: const TextStyle(
                                               fontSize: 26,
                                               fontWeight: FontWeight.w700,
                                               color: Color(0xFF3E6872))),
                                       const SizedBox(width: 4),
-                                      const Text('/ 160h', // target hours
-                                          style: TextStyle(
-                                              fontSize: 13,
-                                              color: AppColors.textMuted)),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  const Text('남은 연차',
-                                      style: TextStyle(
-                                          fontSize: 11,
-                                          color: AppColors.textSecondary,
-                                          fontWeight: FontWeight.w600)),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.baseline,
-                                    textBaseline: TextBaseline.alphabetic,
-                                    children: [
-                                      Text('${_leaveRemaining.toStringAsFixed(1)}',
-                                          style: const TextStyle(
-                                              fontSize: 26,
-                                              fontWeight: FontWeight.w700,
-                                              color: Color(0xFF3E6872))),
-                                      const SizedBox(width: 2),
-                                      const Text('일',
-                                          style: TextStyle(
-                                              fontSize: 13,
-                                              color: AppColors.textMuted)),
+                                      Text(
+                                        monthlyTarget > 0 ? '/ ${intFmt.format(monthlyTarget.round())}h' : '/ 0h',
+                                        style: const TextStyle(
+                                            fontSize: 13,
+                                            color: AppColors.textMuted),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -971,7 +975,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              '$workedPercent% 달성 · ${(monthlyTarget - monthlyWorked).clamp(0, double.infinity).toStringAsFixed(1)}h 남음',
+                              '$workedPercent% 달성 · ${numFmt.format((monthlyTarget - monthlyWorked).clamp(0, double.infinity))}h 남음',
                               style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w500,
@@ -1158,7 +1162,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
-    );
+      ), // Scaffold
+    ); // PopScope
   }
 
   Widget _buildNoEmployment() {
