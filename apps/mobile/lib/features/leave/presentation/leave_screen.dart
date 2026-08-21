@@ -221,16 +221,10 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('휴가/외근 관리',
+                  const Text('휴가 관리',
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
                   GestureDetector(
-                    onTap: () {
-                      if (_activeTabIndex == 0) {
-                        context.go('/leave/apply');
-                      } else {
-                        context.go('/outwork/apply');
-                      }
-                    },
+                    onTap: () => context.go('/leave/apply'),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
@@ -239,65 +233,6 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Text('신청하기', style: TextStyle(color: Color(0xFF3E6872), fontSize: 13, fontWeight: FontWeight.w700)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // 상단 서브 탭 바
-            Container(
-              color: Colors.white.withOpacity(0.65),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _activeTabIndex = 0),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: _activeTabIndex == 0 ? const Color(0xFF3E6872) : Colors.transparent,
-                              width: 2.0,
-                            ),
-                          ),
-                        ),
-                        child: Text(
-                          '휴가',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: _activeTabIndex == 0 ? FontWeight.w800 : FontWeight.w600,
-                            color: _activeTabIndex == 0 ? const Color(0xFF3E6872) : AppColors.textMuted,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _activeTabIndex = 1),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: _activeTabIndex == 1 ? const Color(0xFF3E6872) : Colors.transparent,
-                              width: 2.0,
-                            ),
-                          ),
-                        ),
-                        child: Text(
-                          '외근·출장',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: _activeTabIndex == 1 ? FontWeight.w800 : FontWeight.w600,
-                            color: _activeTabIndex == 1 ? const Color(0xFF3E6872) : AppColors.textMuted,
-                          ),
-                        ),
-                      ),
                     ),
                   ),
                 ],
@@ -328,9 +263,7 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
                           child: SingleChildScrollView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
-                            child: _activeTabIndex == 0
-                                ? _buildLeaveTab(statusStyle, typeLabel)
-                                : _buildOutworkTab(outworkStatusStyle, outworkTypeLabel),
+                            child: _buildLeaveTab(statusStyle, typeLabel),
                           ),
                         ),
             ),
