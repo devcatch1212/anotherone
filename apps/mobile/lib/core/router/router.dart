@@ -27,6 +27,9 @@ import '../../features/onboarding/presentation/welcome_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import '../widgets/main_shell.dart';
 
+final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+final shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
+
 final routerProvider = Provider<GoRouter>((ref) {
   FirebaseAnalytics? analytics;
   final List<NavigatorObserver> observers = [];
@@ -38,6 +41,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   }
 
   final router = GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/',
     observers: observers,
     redirect: (context, state) {
@@ -58,18 +62,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       debugPrint('▶ [Router Guard] loc: $loc, isAuthenticated: $isAuthenticated, onboardingCompleted: $onboardingCompleted');
 
       // 인증 실패(네트워크 오류 등) → 스플래시에서 재시도 대기
-      if (!isAuthenticated && loc != '/') return '/';
-
-      // 스플래시에서 인증 완료 시 최초 사용자는 /welcome, 기존 사용자는 /home으로 이동
-      if (isAuthenticated && loc == '/') {
-        return onboardingCompleted ? '/home' : '/welcome';
+      if (!isAuthenticated && loc != '/') {
+        return '/';
       }
 
-      // 온보딩 미완료 상태에서 /welcome과 /onboarding 외의 페이지 접근 차단
+      // 인증 성공했지만 온보딩 미완료인 경우 → /welcome 또는 /onboarding 허용
       if (isAuthenticated && !onboardingCompleted) {
         if (loc != '/welcome' && loc != '/onboarding') {
           return '/welcome';
         }
+      }
+
+      // 스플래시에서 인증 완료 시 최초 사용자는 /welcome, 기존 사용자는 /home으로 이동
+      if (isAuthenticated && loc == '/') {
+        return onboardingCompleted ? '/home' : '/welcome';
       }
 
       // 온보딩이 이미 완료되었는데 /welcome 이나 /onboarding에 들어오면 /home으로 보냄
@@ -93,6 +99,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const OnboardingScreen(),
       ),
       ShellRoute(
+        navigatorKey: shellNavigatorKey,
         builder: (context, state, child) => MainShell(child: child),
         routes: [
           GoRoute(

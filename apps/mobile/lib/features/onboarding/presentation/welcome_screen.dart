@@ -2,6 +2,7 @@
 // iOS 미니멀 스타일 웰컴 스크린 - 연회색 배경 + 흰 카드 + 다크 텍스트
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -15,6 +16,7 @@ class WelcomeScreen extends StatefulWidget {
 class _WelcomeScreenState extends State<WelcomeScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  DateTime? _lastPressedAt;
 
   final List<Map<String, dynamic>> _features = [
     {
@@ -48,7 +50,27 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+
+        final now = DateTime.now();
+        if (_lastPressedAt == null ||
+            now.difference(_lastPressedAt!) > const Duration(seconds: 2)) {
+          _lastPressedAt = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('뒤로 가기 버튼을 한 번 더 누르시면 종료됩니다.'),
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Column(
@@ -143,7 +165,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               color: item['color'],
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 8),
                           Text(
                             item['title'],
                             style: const TextStyle(
@@ -221,10 +243,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }

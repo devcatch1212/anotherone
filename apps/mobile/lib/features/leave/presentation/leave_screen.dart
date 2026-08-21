@@ -99,6 +99,7 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
       ),
     );
     if (confirm != true) return;
+    await Future.delayed(Duration.zero);
 
     try {
       await ref.read(apiClientProvider).delete<dynamic>('/api/leave/$leaveId');

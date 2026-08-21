@@ -322,6 +322,7 @@ class SettingsScreen extends ConsumerWidget {
                             ),
                           );
                           if (confirm == true) {
+                            await Future.delayed(Duration.zero);
                             await ref.read(authProvider.notifier).logout();
                           }
                         },
@@ -404,6 +405,7 @@ class SettingsScreen extends ConsumerWidget {
               try {
                 await ref.read(authProvider.notifier).updateName(newName);
                 if (ctx.mounted) Navigator.pop(ctx);
+                await Future.delayed(Duration.zero);
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -428,7 +430,7 @@ class SettingsScreen extends ConsumerWidget {
     const options = [5, 10, 15, 20, 30];
     showModalBottomSheet(
       context: context,
-      useRootNavigator: true,
+      useRootNavigator: false,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),

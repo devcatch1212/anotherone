@@ -195,28 +195,58 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
+  DateTime? _lastPressedAt;
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: Stack(
-        children: [
-          Positioned.fill(child: CustomPaint(painter: AuroraPainter())),
-          SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: _buildStep(),
-                  ),
-                ),
-                _buildFooter(),
-              ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+
+        // Step 1 이상인 경우 이전 온보딩 단계로 이동
+        if (_step > 0) {
+          setState(() => _step--);
+          return;
+        }
+
+        // Step 0(첫 단계)인 경우 2초 이내 2번 누르면 앱 종료
+        final now = DateTime.now();
+        if (_lastPressedAt == null ||
+            now.difference(_lastPressedAt!) > const Duration(seconds: 2)) {
+          _lastPressedAt = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('뒤로 가기 버튼을 한 번 더 누르시면 종료됩니다.'),
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
             ),
-          ),
-        ],
+          );
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.bg,
+        body: Stack(
+          children: [
+            Positioned.fill(child: CustomPaint(painter: AuroraPainter())),
+            SafeArea(
+              child: Column(
+                children: [
+                  _buildHeader(),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: _buildStep(),
+                    ),
+                  ),
+                  _buildFooter(),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

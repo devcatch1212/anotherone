@@ -258,6 +258,7 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
     );
 
     if (confirm != true) return;
+    await Future.delayed(Duration.zero);
 
     setState(() {
       _loading = true;

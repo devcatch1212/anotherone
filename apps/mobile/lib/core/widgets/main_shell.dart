@@ -6,10 +6,17 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 
-class MainShell extends StatelessWidget {
+class MainShell extends StatefulWidget {
   final Widget child;
 
   const MainShell({super.key, required this.child});
+
+  @override
+  State<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends State<MainShell> {
+  DateTime? _lastPressedAt;
 
   static const _tabs = [
     _TabItem(icon: Icons.home_rounded, label: '홈', path: '/home'),
@@ -31,27 +38,49 @@ class MainShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentIndex = _currentIndex(context);
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-      ),
-      child: Scaffold(
-        backgroundColor: AppColors.bg,
-        extendBody: true,
-        body: Stack(
-          children: [
-            // 오로라 배경
-            Positioned.fill(
-              child: CustomPaint(painter: AuroraPainter()),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+
+        // 어느 탭에 있던 상관없이: 2초 이내 2번 누를 때만 종료 안내 및 앱 종료
+        final now = DateTime.now();
+        if (_lastPressedAt == null ||
+            now.difference(_lastPressedAt!) > const Duration(seconds: 2)) {
+          _lastPressedAt = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('뒤로 가기 버튼을 한 번 더 누르시면 종료됩니다.'),
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
             ),
-            child,
-          ],
+          );
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
         ),
-        bottomNavigationBar: _BottomNav(
-          currentIndex: currentIndex,
-          onTap: (i) => context.go(_tabs[i].path),
-          tabs: _tabs,
+        child: Scaffold(
+          backgroundColor: AppColors.bg,
+          extendBody: true,
+          body: Stack(
+            children: [
+              // 오로라 배경
+              Positioned.fill(
+                child: CustomPaint(painter: AuroraPainter()),
+              ),
+              widget.child,
+            ],
+          ),
+          bottomNavigationBar: _BottomNav(
+            currentIndex: currentIndex,
+            onTap: (i) => context.go(_tabs[i].path),
+            tabs: _tabs,
+          ),
         ),
       ),
     );

@@ -466,7 +466,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _showOvertimeSheet() {
+  void _showOvertimeSheet() async {
     TimeOfDay startTime = const TimeOfDay(hour: 18, minute: 0);
     TimeOfDay endTime = const TimeOfDay(hour: 21, minute: 0);
     final reasonCtrl = TextEditingController();
@@ -476,252 +476,268 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     String fmtTime(TimeOfDay t) =>
         '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
-    showModalBottomSheet(
+    final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       useRootNavigator: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36, height: 4,
-                    decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+      builder: (modalContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final overtime = _todayOvertime;
+          final status = overtime?['status']?.toString() ?? '';
+          final startTimeStr = overtime?['startTime']?.toString() ?? '';
+          final endTimeStr = overtime?['endTime']?.toString() ?? '';
+          final reasonStr = overtime?['reason']?.toString() ?? '';
+
+          return Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36, height: 4,
+                      decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                const Text('연장근로 신청', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                if (_todayOvertime != null) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: (_todayOvertime!['status'] == 'approved'
-                              ? AppColors.success
-                              : _todayOvertime!['status'] == 'rejected'
-                                  ? AppColors.danger
-                                  : const Color(0xFFFFFBEB)),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: (_todayOvertime!['status'] == 'approved'
+                  const SizedBox(height: 16),
+                  const Text('연장근로 신청', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                  if (overtime != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: (status == 'approved'
                                 ? AppColors.success
-                                : _todayOvertime!['status'] == 'rejected'
+                                : status == 'rejected'
                                     ? AppColors.danger
-                                    : const Color(0xFFF59E0B))
-                            .withOpacity(0.4),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('오늘 신청 내역', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                            Text(
-                              _todayOvertime!['status'] == 'approved'
-                                  ? '승인됨 ✅'
-                                  : _todayOvertime!['status'] == 'rejected'
-                                      ? '반려됨 ❌'
-                                      : '승인 대기 중 ⏳',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
-                                color: _todayOvertime!['status'] == 'approved'
-                                    ? AppColors.success
-                                    : _todayOvertime!['status'] == 'rejected'
-                                        ? AppColors.danger
-                                        : const Color(0xFFD97706),
-                              ),
-                            ),
-                          ],
+                                    : const Color(0xFFFFFBEB)),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: (status == 'approved'
+                                  ? AppColors.success
+                                  : status == 'rejected'
+                                      ? AppColors.danger
+                                      : const Color(0xFFF59E0B))
+                              .withOpacity(0.4),
                         ),
-                        const SizedBox(height: 4),
-                        Text('신청 시간: ${_todayOvertime!['startTime']} ~ ${_todayOvertime!['endTime']}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-                        if ((_todayOvertime!['reason'] as String? ?? '').isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Text('사유: ${_todayOvertime!['reason']}', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('시작 시각', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
-                          const SizedBox(height: 6),
-                          GestureDetector(
-                            onTap: () async {
-                              final picked = await showTimePicker(
-                                context: ctx,
-                                initialTime: startTime,
-                                builder: (c, child) => MediaQuery(
-                                  data: MediaQuery.of(c).copyWith(alwaysUse24HourFormat: true),
-                                  child: child!,
-                                ),
-                              );
-                              if (picked != null) setSheetState(() => startTime = picked);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF5F5F7),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.border),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.access_time_rounded, size: 16, color: AppColors.textMuted),
-                                  const SizedBox(width: 8),
-                                  Text(fmtTime(startTime), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('종료 시각', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
-                          const SizedBox(height: 6),
-                          GestureDetector(
-                            onTap: () async {
-                              final picked = await showTimePicker(
-                                context: ctx,
-                                initialTime: endTime,
-                                builder: (c, child) => MediaQuery(
-                                  data: MediaQuery.of(c).copyWith(alwaysUse24HourFormat: true),
-                                  child: child!,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('오늘 신청 내역', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                              Text(
+                                status == 'approved'
+                                    ? '승인됨 ✅'
+                                    : status == 'rejected'
+                                        ? '반려됨 ❌'
+                                        : '승인 대기 중 ⏳',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: status == 'approved'
+                                      ? AppColors.success
+                                      : status == 'rejected'
+                                          ? AppColors.danger
+                                          : const Color(0xFFD97706),
                                 ),
-                              );
-                              if (picked != null) setSheetState(() => endTime = picked);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF5F5F7),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.border),
                               ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.access_time_rounded, size: 16, color: AppColors.textMuted),
-                                  const SizedBox(width: 8),
-                                  Text(fmtTime(endTime), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                                ],
-                              ),
-                            ),
+                            ],
                           ),
+                          const SizedBox(height: 4),
+                          Text('신청 시간: $startTimeStr ~ $endTimeStr', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                          if (reasonStr.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text('사유: $reasonStr', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                          ],
                         ],
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 12),
-                const Text('사유', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: reasonCtrl,
-                  maxLines: 3,
-                  onChanged: (_) {
-                    if (sheetError != null) setSheetState(() => sheetError = null);
-                  },
-                  decoration: const InputDecoration(hintText: '연장근로 사유를 입력해주세요'),
-                ),
-                if (sheetError != null) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    sheetError!,
-                    style: const TextStyle(color: AppColors.danger, fontSize: 13, fontWeight: FontWeight.w600),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('시작 시각', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                            const SizedBox(height: 6),
+                            GestureDetector(
+                              onTap: () async {
+                                final picked = await showTimePicker(
+                                  context: sheetContext,
+                                  initialTime: startTime,
+                                  builder: (c, child) => MediaQuery(
+                                    data: MediaQuery.of(c).copyWith(alwaysUse24HourFormat: true),
+                                    child: child!,
+                                  ),
+                                );
+                                if (picked != null) setSheetState(() => startTime = picked);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF5F5F7),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.border),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.access_time_rounded, size: 16, color: AppColors.textMuted),
+                                    const SizedBox(width: 8),
+                                    Text(fmtTime(startTime), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('종료 시각', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                            const SizedBox(height: 6),
+                            GestureDetector(
+                              onTap: () async {
+                                final picked = await showTimePicker(
+                                  context: sheetContext,
+                                  initialTime: endTime,
+                                  builder: (c, child) => MediaQuery(
+                                    data: MediaQuery.of(c).copyWith(alwaysUse24HourFormat: true),
+                                    child: child!,
+                                  ),
+                                );
+                                if (picked != null) setSheetState(() => endTime = picked);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF5F5F7),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.border),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.access_time_rounded, size: 16, color: AppColors.textMuted),
+                                    const SizedBox(width: 8),
+                                    Text(fmtTime(endTime), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('사유', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: reasonCtrl,
+                    maxLines: 3,
+                    onChanged: (_) {
+                      if (sheetError != null) setSheetState(() => sheetError = null);
+                    },
+                    decoration: const InputDecoration(hintText: '연장근로 사유를 입력해주세요'),
+                  ),
+                  if (sheetError != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      sheetError!,
+                      style: const TextStyle(color: AppColors.danger, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [AppColors.primary, AppColors.info]),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: ElevatedButton(
+                        onPressed: submitting ? null : () async {
+                          final emp = _employment;
+                          if (emp == null) {
+                            setSheetState(() => sheetError = '고용 정보를 불러올 수 없습니다. 앱을 재시작해주세요.');
+                            return;
+                          }
+                          if (reasonCtrl.text.trim().isEmpty) {
+                            setSheetState(() => sheetError = '연장근로 사유를 입력해주세요.');
+                            return;
+                          }
+                          setSheetState(() {
+                            submitting = true;
+                            sheetError = null;
+                          });
+                          try {
+                            await ref.read(apiClientProvider).post<dynamic>(
+                              '/api/attendance/overtime',
+                              data: {
+                                'employmentId': emp.id,
+                                'date': DateFormat('yyyy-MM-dd').format(DateTime.now()),
+                                'start': fmtTime(startTime),
+                                'end': fmtTime(endTime),
+                                'reason': reasonCtrl.text.trim(),
+                              },
+                            );
+                            if (sheetContext.mounted) Navigator.pop(sheetContext, true);
+                          } catch (e) {
+                            setSheetState(() {
+                              submitting = false;
+                              sheetError = parseApiError(e);
+                            });
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: submitting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              )
+                            : const Text('신청하기', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+                      ),
+                    ),
                   ),
                 ],
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [AppColors.primary, AppColors.info]),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: ElevatedButton(
-                      onPressed: submitting ? null : () async {
-                        final emp = _employment;
-                        if (emp == null) {
-                          setSheetState(() => sheetError = '고용 정보를 불러올 수 없습니다. 앱을 재시작해주세요.');
-                          return;
-                        }
-                        if (reasonCtrl.text.trim().isEmpty) {
-                          setSheetState(() => sheetError = '연장근로 사유를 입력해주세요.');
-                          return;
-                        }
-                        setSheetState(() {
-                          submitting = true;
-                          sheetError = null;
-                        });
-                        try {
-                          await ref.read(apiClientProvider).post<dynamic>(
-                            '/api/attendance/overtime',
-                            data: {
-                              'employmentId': emp.id,
-                              'date': DateFormat('yyyy-MM-dd').format(DateTime.now()),
-                              'start': fmtTime(startTime),
-                              'end': fmtTime(endTime),
-                              'reason': reasonCtrl.text.trim(),
-                            },
-                          );
-                          if (ctx.mounted) Navigator.pop(ctx);
-                          _showSnackBar('연장근로 신청이 완료되었습니다', AppColors.success);
-                        } catch (e) {
-                          setSheetState(() {
-                            submitting = false;
-                            sheetError = parseApiError(e);
-                          });
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      child: submitting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                            )
-                          : const Text('신청하기', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
-    ).then((_) => reasonCtrl.dispose());
+    );
+
+    Future.delayed(const Duration(milliseconds: 350), () {
+      reasonCtrl.dispose();
+    });
+
+    if (result == true) {
+      _showSnackBar('연장근로 신청이 완료되었습니다', AppColors.success);
+      await _loadData();
+    }
   }
 
 
