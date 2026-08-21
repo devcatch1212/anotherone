@@ -33,3 +33,10 @@ pnpm-debug.log*
 
 # Documentation
 docs/
+
+# Binary build artifacts
+*.apk
+*.ipa
+*.aab
+*.xcarchive
+
