@@ -282,7 +282,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                             ),
                           ],
                         ),
-                        // 급여명세서 바로가기 버튼
+                        // 급여 상세 바로가기 버튼
                         OutlinedButton(
                           onPressed: () => GoRouter.of(context).go('/payroll'),
                           style: OutlinedButton.styleFrom(
@@ -295,7 +295,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                             foregroundColor: const Color(0xFF3E6872),
                           ),
                           child: const Text(
-                            '급여명세서',
+                            '급여 상세',
                             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                           ),
                         ),

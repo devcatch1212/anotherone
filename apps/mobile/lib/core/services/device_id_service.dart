@@ -19,4 +19,12 @@ class DeviceIdService {
     await prefs.setString(_kDeviceIdKey, newId);
     return newId;
   }
+
+  /// 데이터 초기화 시 새로운 UUID 생성 및 재저장
+  static Future<String> reset() async {
+    final prefs = await SharedPreferences.getInstance();
+    final newId = _uuid.v4();
+    await prefs.setString(_kDeviceIdKey, newId);
+    return newId;
+  }
 }

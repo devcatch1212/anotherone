@@ -29,6 +29,86 @@ function getKSTDateString(date: Date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
+export function calculateAttendancePay(
+  employment: {
+    wageType: string;
+    hourlyWage?: number | null;
+    dailyWage?: number | null;
+    weeklyWage?: number | null;
+    monthlyWage?: number | null;
+    dailyWorkHours?: number | null;
+    weeklyWorkDays?: number | null;
+  },
+  checkIn: Date | null,
+  checkOut: Date | null,
+  workedMinutes: number | null,
+) {
+  if (!checkIn || !checkOut || workedMinutes === null || workedMinutes <= 0) {
+    return {
+      workedMinutes: workedMinutes ?? 0,
+      overtimeMinutes: 0,
+      nightMinutes: 0,
+      basePay: 0,
+      overtimePay: 0,
+      nightPay: 0,
+      earnedPay: 0,
+    };
+  }
+
+  // 야간 근로시간 (22:00 ~ 06:00)
+  let nightMinutes = 0;
+  let cur = new Date(checkIn);
+  while (cur < checkOut) {
+    const h = cur.getHours();
+    if (h >= 22 || h < 6) nightMinutes++;
+    cur.setMinutes(cur.getMinutes() + 1);
+  }
+  nightMinutes = Math.floor(nightMinutes / 30) * 30;
+  nightMinutes = Math.min(nightMinutes, workedMinutes);
+
+  // 연장 근로시간
+  const contractWorkMinutes = (employment.dailyWorkHours || 8) * 60;
+  const overtimeMinutes = Math.max(0, workedMinutes - contractWorkMinutes);
+
+  // 시급 산출
+  let hourlyWage = employment.hourlyWage ?? 0;
+  if (employment.wageType === 'daily') {
+    const dailyWorkHours = employment.dailyWorkHours || 8;
+    hourlyWage = (employment.dailyWage ?? 0) / dailyWorkHours;
+  } else if (employment.wageType === 'monthly') {
+    const monthlyWorkHours = (employment.weeklyWorkDays || 5) * (employment.dailyWorkHours || 8) * 4.345;
+    hourlyWage = Math.floor((employment.monthlyWage ?? 0) / monthlyWorkHours);
+  }
+
+  // 기본급
+  let basePay = 0;
+  if (employment.wageType === 'daily') {
+    const ratio = Math.min(1, workedMinutes / contractWorkMinutes);
+    basePay = Math.floor((employment.dailyWage ?? 0) * ratio);
+  } else if (employment.wageType === 'monthly') {
+    const monthlyWorkDays = (employment.weeklyWorkDays || 5) * 4.345;
+    const dailyPay = (employment.monthlyWage ?? 0) / monthlyWorkDays;
+    const ratio = Math.min(1, workedMinutes / contractWorkMinutes);
+    basePay = Math.floor(dailyPay * ratio);
+  } else {
+    basePay = Math.floor((workedMinutes / 60) * hourlyWage);
+  }
+
+  const overtimePay = Math.floor((overtimeMinutes / 60) * hourlyWage * 0.5);
+  const nightPay = Math.floor((nightMinutes / 60) * hourlyWage * 0.5);
+  const earnedPay = basePay + overtimePay + nightPay;
+
+  return {
+    workedMinutes,
+    overtimeMinutes,
+    nightMinutes,
+    basePay,
+    overtimePay,
+    nightPay,
+    earnedPay,
+  };
+}
+
 @Injectable()
 export class AttendanceService {
   private readonly logger = new Logger(AttendanceService.name);
@@ -281,7 +361,22 @@ export class AttendanceService {
 
     const outworkMap = new Map(outworkRequests.map(r => [r.date, r.type]));
 
-    const recordsWithOutwork = records.map(r => ({
+    // earnedPay가 null이거나 0인데 근무시간이 있는 경우 자동 보정 계산 및 DB 갱신
+    const updatedRecords = await Promise.all(
+      records.map(async (r) => {
+        if ((r.earnedPay === null || (r.earnedPay === 0 && (r.workedMinutes ?? 0) > 0)) && r.checkIn && r.checkOut) {
+          const payData = calculateAttendancePay(employment, r.checkIn, r.checkOut, r.workedMinutes);
+          await this.prisma.attendanceRecord.update({
+            where: { id: r.id },
+            data: payData,
+          });
+          return { ...r, ...payData };
+        }
+        return r;
+      })
+    );
+
+    const recordsWithOutwork = updatedRecords.map(r => ({
       ...r,
       hasOutwork: outworkMap.has(r.date),
       outworkType: outworkMap.get(r.date) || null,

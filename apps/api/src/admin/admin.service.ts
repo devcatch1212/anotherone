@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/co
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { calculateAttendancePay } from '../attendance/attendance.service';
 
 @Injectable()
 export class AdminService {
@@ -1182,6 +1183,8 @@ export class AdminService {
       workedMinutes = Math.max(0, Math.floor((diff - breakTime) / 30) * 30);
     }
 
+    const payData = calculateAttendancePay(employment, checkInDate, checkOutDate, workedMinutes);
+
     return this.prisma.attendanceRecord.upsert({
       where: {
         userId_companyId_date: {
@@ -1197,13 +1200,13 @@ export class AdminService {
         checkIn: checkInDate,
         checkOut: checkOutDate,
         status: data.status,
-        workedMinutes,
+        ...payData,
       },
       update: {
         checkIn: checkInDate,
         checkOut: checkOutDate,
         status: data.status,
-        workedMinutes,
+        ...payData,
       },
     });
   }
@@ -1240,13 +1243,15 @@ export class AdminService {
       workedMinutes = Math.max(0, Math.floor((diff - breakTime) / 30) * 30);
     }
 
+    const payData = employment ? calculateAttendancePay(employment, checkInDate, checkOutDate, workedMinutes) : {};
+
     return this.prisma.attendanceRecord.update({
       where: { id: recordId },
       data: {
         checkIn: checkInDate,
         checkOut: checkOutDate,
         status: data.status ?? record.status,
-        workedMinutes,
+        ...payData,
       },
     });
   }

@@ -219,16 +219,17 @@ export default function EmployeeDetailPage() {
   // ③ 출퇴근 모달 열기
   const openAttModal = (record?: AttendanceRecord) => {
     if (record) {
-      const toLocalDatetime = (iso: string | null) => {
+      const toLocalTime = (iso: string | null) => {
         if (!iso) return '';
         const d = new Date(iso);
         const pad = (n: number) => String(n).padStart(2, '0');
-        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
       };
-      setAttForm({ date: record.date, checkIn: toLocalDatetime(record.checkIn), checkOut: toLocalDatetime(record.checkOut), status: record.status });
+      setAttForm({ date: record.date, checkIn: toLocalTime(record.checkIn), checkOut: toLocalTime(record.checkOut), status: record.status });
       setAttModal({ open: true, recordId: record.id });
     } else {
-      setAttForm(EMPTY_ATT_FORM);
+      const todayStr = new Date().toISOString().substring(0, 10);
+      setAttForm({ date: todayStr, checkIn: '09:00', checkOut: '18:00', status: 'normal' });
       setAttModal({ open: true, recordId: null });
     }
   };
@@ -237,17 +238,41 @@ export default function EmployeeDetailPage() {
     e.preventDefault();
     try {
       setAttLoading(true);
-      const toISO = (localDT: string) => localDT ? new Date(localDT).toISOString() : null;
+
+      const combineDateAndTime = (dateStr: string, timeStr: string) => {
+        if (!dateStr || !timeStr) return null;
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const [hour, minute] = timeStr.split(':').map(Number);
+        return new Date(year, month - 1, day, hour, minute).toISOString();
+      };
+
+      const combineCheckOut = (dateStr: string, inTimeStr: string, outTimeStr: string) => {
+        if (!dateStr || !outTimeStr) return null;
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const [outH, outM] = outTimeStr.split(':').map(Number);
+        let outDate = new Date(year, month - 1, day, outH, outM);
+        if (inTimeStr) {
+          const [inH, inM] = inTimeStr.split(':').map(Number);
+          if (outH < inH || (outH === inH && outM < inM)) {
+            outDate.setDate(outDate.getDate() + 1);
+          }
+        }
+        return outDate.toISOString();
+      };
+
+      const checkInISO = combineDateAndTime(attForm.date, attForm.checkIn);
+      const checkOutISO = combineCheckOut(attForm.date, attForm.checkIn, attForm.checkOut);
+
       if (attModal.recordId) {
         const updated = await apiFetch<AttendanceRecord>(`/api/admin/attendance/${attModal.recordId}`, {
           method: 'PATCH',
-          body: JSON.stringify({ checkIn: toISO(attForm.checkIn), checkOut: toISO(attForm.checkOut), status: attForm.status }),
+          body: JSON.stringify({ checkIn: checkInISO, checkOut: checkOutISO, status: attForm.status }),
         });
         setAttendance((prev) => prev ? { ...prev, records: prev.records.map((r) => r.id === updated.id ? updated : r) } : prev);
       } else {
         await apiFetch(`/api/admin/attendance`, {
           method: 'POST',
-          body: JSON.stringify({ employmentId, date: attForm.date, checkIn: toISO(attForm.checkIn), checkOut: toISO(attForm.checkOut), status: attForm.status }),
+          body: JSON.stringify({ employmentId, date: attForm.date, checkIn: checkInISO, checkOut: checkOutISO, status: attForm.status }),
         });
         await loadAttendance();
       }
@@ -762,11 +787,11 @@ export default function EmployeeDetailPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>출근 시각</label>
-                  <input type="datetime-local" value={attForm.checkIn} onChange={(e) => setAttForm({ ...attForm, checkIn: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px' }} />
+                  <input type="time" value={attForm.checkIn} onChange={(e) => setAttForm({ ...attForm, checkIn: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B' }}>퇴근 시각</label>
-                  <input type="datetime-local" value={attForm.checkOut} onChange={(e) => setAttForm({ ...attForm, checkOut: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px' }} />
+                  <input type="time" value={attForm.checkOut} onChange={(e) => setAttForm({ ...attForm, checkOut: e.target.value })} style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '14px' }} />
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

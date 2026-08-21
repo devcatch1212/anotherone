@@ -182,8 +182,8 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     // 알림 취소
     await AlarmScheduler().cancelAll();
     await _storage.clearAll();
-    // 로그아웃 시에도 바로 기기 UUID로 재로그인
-    state = const AsyncValue.loading();
+    // 데이터 초기화 시 기기 UUID 재발급하여 신규 사용자 및 온보딩으로 진행
+    await DeviceIdService.reset();
     final newState = await _loginWithDeviceId();
     state = AsyncValue.data(newState);
   }
