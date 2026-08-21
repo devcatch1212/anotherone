@@ -201,11 +201,16 @@ export class AttendanceService {
     const contractWorkMinutes = (employment.dailyWorkHours || 8) * 60;
     const overtimeMinutes = Math.max(0, actualWorkMinutes - contractWorkMinutes);
 
-    // 시급 산출 (일급제인 경우에도 추가 수당 계산을 위해 역산)
+    // 시급 산출 (일급제/월급제도 추가 수당 계산을 위해 역산)
     let hourlyWage = employment.hourlyWage ?? 0;
     if (employment.wageType === 'daily') {
       const dailyWorkHours = employment.dailyWorkHours || 8;
       hourlyWage = (employment.dailyWage ?? 0) / dailyWorkHours;
+    } else if (employment.wageType === 'monthly') {
+      // 월 통상시급 역산: 월급 ÷ (주 소정근무시간 × 4.345 + 주휴시간)
+      // 간편 계산: 월급 ÷ (weeklyWorkDays × dailyWorkHours × 4.345)
+      const monthlyWorkHours = (employment.weeklyWorkDays || 5) * (employment.dailyWorkHours || 8) * 4.345;
+      hourlyWage = Math.floor((employment.monthlyWage ?? 0) / monthlyWorkHours);
     }
 
     // 기본급
@@ -214,7 +219,14 @@ export class AttendanceService {
       // 소정 근로 시간 대비 실제 근무 비율로 비례 계산 (미달 시 삭감, 초과 시 일급 전액)
       const ratio = Math.min(1, actualWorkMinutes / contractWorkMinutes);
       basePay = Math.floor((employment.dailyWage ?? 0) * ratio);
+    } else if (employment.wageType === 'monthly') {
+      // 월급 일할 계산: 월급 ÷ 월 소정근무일수(weeklyWorkDays × 4.345) × 실제 근무 비율
+      const monthlyWorkDays = (employment.weeklyWorkDays || 5) * 4.345;
+      const dailyPay = (employment.monthlyWage ?? 0) / monthlyWorkDays;
+      const ratio = Math.min(1, actualWorkMinutes / contractWorkMinutes);
+      basePay = Math.floor(dailyPay * ratio);
     } else {
+      // 시급제: 근무시간 × 시급
       basePay = Math.floor((actualWorkMinutes / 60) * hourlyWage);
     }
 
@@ -380,11 +392,14 @@ export class AttendanceService {
     const contractWorkMinutes = (employment.dailyWorkHours || 8) * 60;
     const overtimeMinutes = Math.max(0, actualWorkMinutes - contractWorkMinutes);
 
-    // 시급 산출
+    // 시급 산출 (일급제/월급제도 추가 수당 계산을 위해 역산)
     let hourlyWage = employment.hourlyWage ?? 0;
     if (employment.wageType === 'daily') {
       const dailyWorkHours = employment.dailyWorkHours || 8;
       hourlyWage = (employment.dailyWage ?? 0) / dailyWorkHours;
+    } else if (employment.wageType === 'monthly') {
+      const monthlyWorkHours = (employment.weeklyWorkDays || 5) * (employment.dailyWorkHours || 8) * 4.345;
+      hourlyWage = Math.floor((employment.monthlyWage ?? 0) / monthlyWorkHours);
     }
 
     // 기본급
@@ -393,7 +408,14 @@ export class AttendanceService {
       // 소정 근로 시간 대비 실제 근무 비율로 비례 계산 (미달 시 삭감, 초과 시 일급 전액)
       const ratio = Math.min(1, actualWorkMinutes / contractWorkMinutes);
       basePay = Math.floor((employment.dailyWage ?? 0) * ratio);
+    } else if (employment.wageType === 'monthly') {
+      // 월급 일할 계산: 월급 ÷ 월 소정근무일수(weeklyWorkDays × 4.345) × 실제 근무 비율
+      const monthlyWorkDays = (employment.weeklyWorkDays || 5) * 4.345;
+      const dailyPay = (employment.monthlyWage ?? 0) / monthlyWorkDays;
+      const ratio = Math.min(1, actualWorkMinutes / contractWorkMinutes);
+      basePay = Math.floor(dailyPay * ratio);
     } else {
+      // 시급제: 근무시간 × 시급
       basePay = Math.floor((actualWorkMinutes / 60) * hourlyWage);
     }
 

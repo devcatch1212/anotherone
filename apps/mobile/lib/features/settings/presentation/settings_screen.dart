@@ -157,42 +157,7 @@ class SettingsScreen extends ConsumerWidget {
                     // ),
                     // const SizedBox(height: 20),
 
-                    const Text('고객지원', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
-                    const SizedBox(height: 10),
-                    _settingTile(
-                      icon: Icons.chat_bubble_outline_rounded,
-                      label: '앱 이용문의',
-                      onTap: () => context.go('/settings/inquiry'),
-                    ),
-                    const SizedBox(height: 20),
-
-                    const Text('앱 정보', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
-                    const SizedBox(height: 10),
-                    FutureBuilder<PackageInfo>(
-                      future: PackageInfo.fromPlatform(),
-                      builder: (context, snapshot) {
-                        final version = snapshot.hasData ? snapshot.data!.version : '-';
-                        return _settingTile(
-                          icon: Icons.info_outline_rounded,
-                          label: '버전 정보',
-                          trailing: Text('v$version', style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    _settingTile(
-                      icon: Icons.description_outlined,
-                      label: '서비스 이용약관',
-                      onTap: () => context.go('/settings/legal?type=terms'),
-                    ),
-                    const SizedBox(height: 8),
-                    _settingTile(
-                      icon: Icons.privacy_tip_outlined,
-                      label: '개인정보처리방침',
-                      onTap: () => context.go('/settings/legal?type=privacy'),
-                    ),
-                    const SizedBox(height: 32),
-
+                    // ── 알림 설정 ──
                     const Text('알림 설정', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
                     const SizedBox(height: 10),
                     alarmAsync.when(
@@ -298,6 +263,44 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 20),
+
+                    // ── 고객지원 ──
+                    const Text('고객지원', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                    const SizedBox(height: 10),
+                    _settingTile(
+                      icon: Icons.chat_bubble_outline_rounded,
+                      label: '앱 이용문의',
+                      onTap: () => context.go('/settings/inquiry'),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ── 앱 정보 ──
+                    const Text('앱 정보', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                    const SizedBox(height: 10),
+                    FutureBuilder<PackageInfo>(
+                      future: PackageInfo.fromPlatform(),
+                      builder: (context, snapshot) {
+                        final version = snapshot.hasData ? snapshot.data!.version : '-';
+                        return _settingTile(
+                          icon: Icons.info_outline_rounded,
+                          label: '버전 정보',
+                          trailing: Text('v$version', style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    _settingTile(
+                      icon: Icons.description_outlined,
+                      label: '서비스 이용약관',
+                      onTap: () => context.go('/settings/legal?type=terms'),
+                    ),
+                    const SizedBox(height: 8),
+                    _settingTile(
+                      icon: Icons.privacy_tip_outlined,
+                      label: '개인정보처리방침',
+                      onTap: () => context.go('/settings/legal?type=privacy'),
+                    ),
+                    const SizedBox(height: 32),
 
                     // 데이터 초기화 버튼 (눈에 띄지 않게 텍스트 형태로 하단 배치)
                     Center(
