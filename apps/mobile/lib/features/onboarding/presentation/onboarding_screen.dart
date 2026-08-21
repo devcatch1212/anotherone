@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/kakao_map_utils.dart';
 import '../../../features/auth/auth_provider.dart';
@@ -35,7 +37,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   double _latitude = 37.5004;
   double _longitude = 127.0368;
   WebViewController? _mapController;
-  String _employeeCount = 'over5';
+  String? _employeeCount; // 미선택 상태 → 필수 선택
 
   @override
   void initState() {
@@ -141,10 +143,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           'position': _positionCtrl.text.trim().isNotEmpty ? _positionCtrl.text.trim() : '직원',
           'department': _departmentCtrl.text.trim().isNotEmpty ? _departmentCtrl.text.trim() : null,
           'wageType': _wageType.name, // 'hourly'|'daily'|'weekly'|'monthly'
-          'hourlyWage': _wageType == WageType.hourly ? double.tryParse(_wageCtrl.text) : null,
-          'dailyWage': _wageType == WageType.daily ? double.tryParse(_wageCtrl.text) : null,
-          'weeklyWage': _wageType == WageType.weekly ? double.tryParse(_wageCtrl.text) : null,
-          'monthlyWage': _wageType == WageType.monthly ? double.tryParse(_wageCtrl.text) : null,
+          'hourlyWage': _wageType == WageType.hourly ? double.tryParse(_wageCtrl.text.replaceAll(',', '')) : null,
+          'dailyWage': _wageType == WageType.daily ? double.tryParse(_wageCtrl.text.replaceAll(',', '')) : null,
+          'weeklyWage': _wageType == WageType.weekly ? double.tryParse(_wageCtrl.text.replaceAll(',', '')) : null,
+          'monthlyWage': _wageType == WageType.monthly ? double.tryParse(_wageCtrl.text.replaceAll(',', '')) : null,
           'dailyWorkHours': double.tryParse(_workHoursCtrl.text) ?? 8.0,
           'weeklyWorkDays': _selectedDays.length,
           'workDaysOfWeek': List<int>.from(_selectedDays),
@@ -154,7 +156,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           if (_hireDate != null)
             'hireDate': _hireDate!.toIso8601String().substring(0, 10),
           if (_memoCtrl.text.trim().isNotEmpty) 'memo': _memoCtrl.text.trim(),
-          'employeeCount': _employeeCount,
+          'employeeCount': _employeeCount ?? 'over5',
         },
       );
       // 온보딩 완료 직후 위치 권한 요청
@@ -637,6 +639,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           controller: _wageCtrl,
           keyboardType: TextInputType.number,
           textInputAction: TextInputAction.next,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            ThousandsSeparatorInputFormatter(),
+          ],
           decoration: InputDecoration(
             hintText: wageHint,
             prefixIcon: const Icon(Icons.payments_outlined, size: 20),
@@ -866,6 +872,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         setState(() => _error = '회사명을 입력해주세요');
         return;
       }
+      if (_employeeCount == null) {
+        setState(() => _error = '사업장 규모(5인 미만 / 5인 이상)를 선택해주세요.');
+        return;
+      }
       setState(() {
         _error = '';
         _step = 2;
@@ -879,7 +889,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         setState(() => _error = '급여액을 입력해주세요');
         return;
       }
-      final wage = double.tryParse(_wageCtrl.text.trim());
+      final wage = double.tryParse(_wageCtrl.text.replaceAll(',', '').trim());
       if (wage == null || wage <= 0) {
         setState(() => _error = '올바른 금액을 입력해주세요');
         return;
@@ -975,3 +985,31 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
 }
+
+class ThousandsSeparatorInputFormatter extends TextInputFormatter {
+  static final NumberFormat _formatter = NumberFormat('#,###', 'ko');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+
+    final cleanText = newValue.text.replaceAll(',', '');
+    final number = int.tryParse(cleanText);
+
+    if (number == null) {
+      return oldValue;
+    }
+
+    final newString = _formatter.format(number);
+    return TextEditingValue(
+      text: newString,
+      selection: TextSelection.collapsed(offset: newString.length),
+    );
+  }
+}
+

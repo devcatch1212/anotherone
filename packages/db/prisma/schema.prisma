@@ -85,7 +85,7 @@ model Employment {
   isPrimary       Boolean  @default(false)
   isActive        Boolean  @default(true)
   endedAt         DateTime?
-  annualLeaveBalance Float @default(15.0)
+  annualLeaveBalance Float @default(0.0) // 실시간 재계산으로 관리 (15.0 고정 제거)
 
   userId          String
   user            User     @relation(fields: [userId], references: [id])

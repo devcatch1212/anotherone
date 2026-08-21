@@ -42,14 +42,14 @@ export class LeaveService {
     }
 
     // 연차 정보 실시간 계산 및 DB 업데이트
-    await this.recalculateAnnualLeaveBalance(userId, employmentId);
+    const updatedBalance = await this.recalculateAnnualLeaveBalance(userId, employmentId);
 
     const records = await this.prisma.leaveRecord.findMany({
       where: { userId, companyId: employment.companyId },
       orderBy: { appliedAt: 'desc' },
     });
 
-    return { records };
+    return { records, annualLeaveBalance: updatedBalance };
   }
 
   async cancelLeave(userId: string, leaveId: string) {

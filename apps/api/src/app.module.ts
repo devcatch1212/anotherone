@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -14,6 +14,7 @@ import { AdminModule } from './admin/admin.module';
 import { OutworkModule } from './outwork/outwork.module';
 import { InquiryModule } from './inquiry/inquiry.module';
 import { KeepAliveService } from './common/keep-alive.service';
+import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
 @Module({
   imports: [
@@ -33,5 +34,10 @@ import { KeepAliveService } from './common/keep-alive.service';
   controllers: [AppController],
   providers: [AppService, KeepAliveService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}
+
 

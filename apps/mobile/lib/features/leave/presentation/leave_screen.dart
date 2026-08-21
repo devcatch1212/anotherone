@@ -34,14 +34,6 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
     final emp = ref.read(authProvider).value?.currentEmployment;
     if (emp == null) { setState(() => _loading = false); return; }
 
-    final weeklyWorkHours = emp.effectiveWeeklyWorkDays * emp.dailyWorkHours;
-    double totalDays = 0;
-    if (weeklyWorkHours >= 40) totalDays = 15;
-    else if (weeklyWorkHours >= 15) totalDays = (15 * weeklyWorkHours / 40 * 10).round() / 10;
-    if (totalDays <= 0) {
-      totalDays = emp.annualLeaveBalance > 15 ? emp.annualLeaveBalance : 15.0;
-    }
-
     try {
       final leaveFuture = ref.read(apiClientProvider).get<Map<String, dynamic>>(
         '/api/leave',
@@ -56,6 +48,9 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
 
       final leaveRes = results[0];
       final outworkRes = results[1];
+
+      // API에서 실시간 재계산된 연차 잔여일수 사용 (캐시 무시)
+      final freshBalance = (leaveRes['annualLeaveBalance'] as num?)?.toDouble() ?? emp.annualLeaveBalance;
 
       final leaveList = (leaveRes['records'] as List<dynamic>? ?? [])
           .map((e) => LeaveRecord.fromJson(e as Map<String, dynamic>))
@@ -74,8 +69,8 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
       setState(() {
         _records = leaveList;
         _outworkRecords = outworkList;
-        _remaining = emp.annualLeaveBalance;
-        _total = _remaining + used > totalDays ? _remaining + used : totalDays;
+        _remaining = freshBalance;
+        _total = freshBalance + used;
         _loading = false;
         _error = null;
       });

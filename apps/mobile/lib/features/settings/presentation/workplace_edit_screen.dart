@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/utils/kakao_map_utils.dart';
@@ -69,7 +71,7 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
       WageType.weekly => (emp.weeklyWage ?? 0).toInt(),
       WageType.monthly => (emp.monthlyWage ?? 0).toInt(),
     };
-    _wageCtrl = TextEditingController(text: wageValue > 0 ? wageValue.toString() : '');
+    _wageCtrl = TextEditingController(text: wageValue > 0 ? NumberFormat('#,###', 'ko').format(wageValue) : '');
     // 현재 사용자 이름을 가져와서 초기값으로 설정
     final currentUser = ref.read(authProvider).value?.user;
     _nameCtrl = TextEditingController(text: currentUser?.name ?? '');
@@ -169,7 +171,7 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
     }
 
     // 2025년 최저임금 검증
-    final wage = double.tryParse(_wageCtrl.text.trim()) ?? 0;
+    final wage = double.tryParse(_wageCtrl.text.replaceAll(',', '').trim()) ?? 0;
     const minHourly = 10030.0;
     const minDaily = 80240.0;
     const minWeekly = 401200.0;
@@ -204,10 +206,10 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
           'position': _positionCtrl.text.trim().isNotEmpty ? _positionCtrl.text.trim() : '직원',
           'department': _departmentCtrl.text.trim().isNotEmpty ? _departmentCtrl.text.trim() : null,
           'wageType': _wageType.name,
-          'hourlyWage': _wageType == WageType.hourly ? double.tryParse(_wageCtrl.text) : null,
-          'dailyWage': _wageType == WageType.daily ? double.tryParse(_wageCtrl.text) : null,
-          'weeklyWage': _wageType == WageType.weekly ? double.tryParse(_wageCtrl.text) : null,
-          'monthlyWage': _wageType == WageType.monthly ? double.tryParse(_wageCtrl.text) : null,
+          'hourlyWage': _wageType == WageType.hourly ? double.tryParse(_wageCtrl.text.replaceAll(',', '')) : null,
+          'dailyWage': _wageType == WageType.daily ? double.tryParse(_wageCtrl.text.replaceAll(',', '')) : null,
+          'weeklyWage': _wageType == WageType.weekly ? double.tryParse(_wageCtrl.text.replaceAll(',', '')) : null,
+          'monthlyWage': _wageType == WageType.monthly ? double.tryParse(_wageCtrl.text.replaceAll(',', '')) : null,
           'workStartTime': _startTimeCtrl.text,
           'workEndTime': _endTimeCtrl.text,
           'breakMinutes': int.tryParse(_breakMinutesCtrl.text) ?? 60,
@@ -543,13 +545,18 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
                         controller: _wageCtrl,
                         enabled: isEditable,
                         keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          ThousandsSeparatorInputFormatter(),
+                        ],
                         decoration: InputDecoration(
                           hintText: _wageType == WageType.hourly ? '예: 10,030' : '예: 2,096,270',
                           prefixIcon: const Icon(Icons.payments_outlined, size: 20),
                         ),
                         validator: (v) {
                           if (v == null || v.isEmpty) return '금액을 입력해주세요';
-                          if (double.tryParse(v) == null) return '숫자 형식만 입력 가능합니다';
+                          final clean = v.replaceAll(',', '');
+                          if (double.tryParse(clean) == null) return '숫자 형식만 입력 가능합니다';
                           return null;
                         },
                       ),
@@ -925,3 +932,31 @@ class _WorkplaceEditScreenState extends ConsumerState<WorkplaceEditScreen> {
   }
 
 }
+
+class ThousandsSeparatorInputFormatter extends TextInputFormatter {
+  static final NumberFormat _formatter = NumberFormat('#,###', 'ko');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+
+    final cleanText = newValue.text.replaceAll(',', '');
+    final number = int.tryParse(cleanText);
+
+    if (number == null) {
+      return oldValue;
+    }
+
+    final newString = _formatter.format(number);
+    return TextEditingValue(
+      text: newString,
+      selection: TextSelection.collapsed(offset: newString.length),
+    );
+  }
+}
+
