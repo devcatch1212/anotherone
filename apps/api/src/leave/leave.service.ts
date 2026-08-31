@@ -16,11 +16,17 @@ export class LeaveService {
       throw new NotFoundException('유효하지 않은 근로계약입니다.');
     }
 
+    // 반차 신청 시 오전/오후 구분 필수
+    if (data.type === 'half' && !data.halfType) {
+      throw new BadRequestException('반차 신청 시 오전/오후를 선택해주세요.');
+    }
+
     const leave = await this.prisma.leaveRecord.create({
       data: {
         userId,
         companyId: employment.companyId,
         type: data.type,
+        halfType: data.type === 'half' ? (data.halfType ?? null) : null,
         startDate: data.startDate,
         endDate: data.endDate,
         days: data.days,

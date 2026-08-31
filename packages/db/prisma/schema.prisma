@@ -157,6 +157,7 @@ model PayrollRecord {
 model LeaveRecord {
   id        String   @id @default(uuid())
   type      String   // annual, half, sick, official
+  halfType  String?  // morning, afternoon (반차일 때만 사용)
   startDate String   // YYYY-MM-DD
   endDate   String   // YYYY-MM-DD
   days      Float

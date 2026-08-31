@@ -318,6 +318,7 @@ class LeaveRecord {
   final String id;
   final String companyId;
   final LeaveType type;
+  final String? halfType; // 'morning' | 'afternoon'
   final String startDate;
   final String endDate;
   final double days;
@@ -329,6 +330,7 @@ class LeaveRecord {
     required this.id,
     required this.companyId,
     required this.type,
+    this.halfType,
     required this.startDate,
     required this.endDate,
     required this.days,
@@ -354,6 +356,7 @@ class LeaveRecord {
       id: json['id'] as String,
       companyId: json['companyId'] as String? ?? '',
       type: typeMap[json['type']] ?? LeaveType.annual,
+      halfType: json['halfType'] as String?,
       startDate: json['startDate'] as String,
       endDate: json['endDate'] as String,
       days: (json['days'] as num).toDouble(),

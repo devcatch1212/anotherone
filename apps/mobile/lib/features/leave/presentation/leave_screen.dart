@@ -379,8 +379,12 @@ class _LeaveScreenState extends ConsumerState<LeaveScreen> {
                           children: [
                             Row(
                               children: [
-                                Text(typeLabel[r.type] ?? '연차',
-                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                                Text(
+                                  r.type == LeaveType.half
+                                    ? (r.halfType == 'morning' ? '오전 반차' : r.halfType == 'afternoon' ? '오후 반차' : '반차')
+                                    : (typeLabel[r.type] ?? '연차'),
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                ),
                                 const SizedBox(width: 6),
                                 Text('${numFmt.format(r.days)}일',
                                     style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),

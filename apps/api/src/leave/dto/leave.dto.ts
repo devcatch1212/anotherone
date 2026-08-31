@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, IsOptional } from 'class-validator';
 
 export class ApplyLeaveDto {
   @IsString({ message: '근로계약 식별자가 필요합니다.' })
@@ -8,6 +8,10 @@ export class ApplyLeaveDto {
   @IsString({ message: '휴가 종류를 선택해주세요.' })
   @IsNotEmpty({ message: '휴가 종류를 선택해주세요.' })
   type!: string;
+
+  @IsString()
+  @IsOptional()
+  halfType?: string; // 'morning' | 'afternoon' (반차일 때만 필수)
 
   @IsString({ message: '시작일을 입력해주세요.' })
   @IsNotEmpty({ message: '시작일을 입력해주세요.' })
@@ -25,6 +29,7 @@ export class ApplyLeaveDto {
   @IsNotEmpty({ message: '사유를 입력해주세요.' })
   reason!: string;
 }
+
 
 export class GetLeaveDto {
   @IsString({ message: '근로계약 식별자가 필요합니다.' })

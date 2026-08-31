@@ -15,6 +15,7 @@ class LeaveApplyScreen extends ConsumerStatefulWidget {
 
 class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
   LeaveType _type = LeaveType.annual;
+  String? _halfType; // 'morning' | 'afternoon'
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now();
   final _reasonCtrl = TextEditingController();
@@ -54,6 +55,11 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
   }
 
   Future<void> _submit() async {
+    // 반차 선택 시 오전/오후 미선택 검증
+    if (_type == LeaveType.half && _halfType == null) {
+      setState(() => _error = '반차 신청 시 오전/오후를 선택해주세요.');
+      return;
+    }
     setState(() { _loading = true; _error = ''; });
     final emp = ref.read(authProvider).value?.currentEmployment;
     if (emp == null) { setState(() => _loading = false); return; }
@@ -75,6 +81,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
         data: {
           'employmentId': emp.id,
           'type': typeStr,
+          if (_type == LeaveType.half) 'halfType': _halfType,
           'startDate': DateFormat('yyyy-MM-dd').format(_startDate),
           'endDate': DateFormat('yyyy-MM-dd').format(_endDate),
           'days': days,
@@ -157,6 +164,8 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
                                   _type = t;
                                   if (_type == LeaveType.half) {
                                     _endDate = _startDate;
+                                  } else {
+                                    _halfType = null; // 반차 아닐 때 초기화
                                   }
                                 });
                               },
@@ -180,6 +189,103 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
                             );
                           }).toList(),
                         ),
+                        // 반차 선택 시 오전/오후 구분 UI
+                        if (_type == LeaveType.half) ...[
+                          const SizedBox(height: 12),
+                          const Text('반차 구분', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _halfType = 'morning'),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 150),
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    decoration: BoxDecoration(
+                                      color: _halfType == 'morning' ? AppColors.primary : Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: _halfType == 'morning' ? AppColors.primary : AppColors.border,
+                                        width: _halfType == 'morning' ? 2 : 1,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Icon(
+                                          Icons.wb_sunny_outlined,
+                                          size: 22,
+                                          color: _halfType == 'morning' ? Colors.white : AppColors.textSecondary,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '오전 반차',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700,
+                                            color: _halfType == 'morning' ? Colors.white : AppColors.textSecondary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '오전 근무 후 퇴근',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: _halfType == 'morning' ? Colors.white.withOpacity(0.8) : AppColors.textMuted,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _halfType = 'afternoon'),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 150),
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    decoration: BoxDecoration(
+                                      color: _halfType == 'afternoon' ? AppColors.primary : Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: _halfType == 'afternoon' ? AppColors.primary : AppColors.border,
+                                        width: _halfType == 'afternoon' ? 2 : 1,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Icon(
+                                          Icons.nights_stay_outlined,
+                                          size: 22,
+                                          color: _halfType == 'afternoon' ? Colors.white : AppColors.textSecondary,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '오후 반차',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700,
+                                            color: _halfType == 'afternoon' ? Colors.white : AppColors.textSecondary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '오후부터 조기 퇴근',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: _halfType == 'afternoon' ? Colors.white.withOpacity(0.8) : AppColors.textMuted,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                         const SizedBox(height: 20),
                         const Text('기간', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
                         const SizedBox(height: 10),

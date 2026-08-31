@@ -1321,39 +1321,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: OutlinedButton(
                 onPressed: _showOvertimeSheet,
                 style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
                   backgroundColor: const Color(0xFFF4F4F5),
                   foregroundColor: const Color(0xFF3E6872),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                   side: const BorderSide(color: Color(0xFF3E6872), width: 1.0),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      '⏱️ 연장',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF3E6872),
-                      ),
-                    ),
-                    if (_todayOvertime != null) ...[
-                      const SizedBox(width: 5),
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                          color: _todayOvertime!['status'] == 'approved'
-                              ? const Color(0xFF10B981)
-                              : _todayOvertime!['status'] == 'rejected'
-                                  ? const Color(0xFFEF4444)
-                                  : const Color(0xFFF59E0B),
-                          shape: BoxShape.circle,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        '⏱️ 연장',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF3E6872),
                         ),
                       ),
+                      if (_todayOvertime != null) ...[
+                        const SizedBox(width: 4),
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: _todayOvertime!['status'] == 'approved'
+                                ? const Color(0xFF10B981)
+                                : _todayOvertime!['status'] == 'rejected'
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFFF59E0B),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),

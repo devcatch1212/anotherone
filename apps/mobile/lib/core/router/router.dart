@@ -67,6 +67,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // 인증 성공했지만 온보딩 미완료인 경우 → /welcome 또는 /onboarding 허용
+      // 인증 성공했지만 온보딩 미완료인 경우 → /welcome 또는 /onboarding 허용
       if (isAuthenticated && !onboardingCompleted) {
         if (loc != '/welcome' && loc != '/onboarding') {
           return '/welcome';
