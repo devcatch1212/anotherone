@@ -55,6 +55,7 @@ class _LeaveApplyScreenState extends ConsumerState<LeaveApplyScreen> {
   }
 
   Future<void> _submit() async {
+    if (_loading) return;
     // 반차 선택 시 오전/오후 미선택 검증
     if (_type == LeaveType.half && _halfType == null) {
       setState(() => _error = '반차 신청 시 오전/오후를 선택해주세요.');

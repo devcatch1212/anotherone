@@ -279,7 +279,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _handleCheckIn() async {
-    if (_workState != AttendanceState.before) return;
+    if (_checkingIn || _workState != AttendanceState.before) return;
     final emp = _employment;
     if (emp == null) return;
     
@@ -351,7 +351,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _handleCheckOut() async {
-    if (_workState != AttendanceState.working) return;
+    if (_checkingIn || _workState != AttendanceState.working) return;
     final emp = _employment;
     if (emp == null) return;
 

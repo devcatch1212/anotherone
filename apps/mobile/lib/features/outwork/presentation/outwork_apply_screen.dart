@@ -46,6 +46,7 @@ class _OutworkApplyScreenState extends ConsumerState<OutworkApplyScreen> {
   }
 
   Future<void> _submit() async {
+    if (_loading) return;
     setState(() {
       _loading = true;
       _error = '';
