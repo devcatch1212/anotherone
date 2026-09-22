@@ -21,6 +21,37 @@ export class LeaveService {
       throw new BadRequestException('반차 신청 시 오전/오후를 선택해주세요.');
     }
 
+    // ─── 중복 휴가 신청 방어 (기간 겹침 및 반차 중복 검증) ───
+    const overlappingLeaves = await this.prisma.leaveRecord.findMany({
+      where: {
+        userId,
+        companyId: employment.companyId,
+        status: { in: ['pending', 'approved'] },
+        startDate: { lte: data.endDate },
+        endDate: { gte: data.startDate },
+      },
+    });
+
+    if (overlappingLeaves.length > 0) {
+      if (data.type === 'half') {
+        // 반차 신청의 경우: 종일 휴가가 겹치거나, 동일한 오전/오후 반차가 겹치면 차단
+        for (const existing of overlappingLeaves) {
+          if (existing.type !== 'half') {
+            throw new BadRequestException('해당 날짜에 이미 종일 휴가 신청/승인 내역이 존재합니다.');
+          }
+          if (existing.halfType === data.halfType) {
+            throw new BadRequestException(
+              `해당 날짜에 이미 ${data.halfType === 'morning' ? '오전' : '오후'} 반차 신청/승인 내역이 존재합니다.`
+            );
+          }
+        }
+      } else {
+        // 종일 휴가(연차/병가/공가) 신청의 경우: 어떤 휴가라도 겹치면 차단
+        throw new BadRequestException('해당 기간에 이미 신청되거나 승인된 휴가가 존재합니다.');
+      }
+    }
+    // ────────────────────────────────────────────────────────
+
     const leave = await this.prisma.leaveRecord.create({
       data: {
         userId,
