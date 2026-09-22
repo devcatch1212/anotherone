@@ -103,10 +103,10 @@ class GuestAlert extends ConsumerWidget {
                     child: ElevatedButton(
                       onPressed: () async {
                         Navigator.of(context).pop();
-                        // 게스트 세션 클리어 후 로그인 화면으로 전환
-                        await ref.read(authProvider.notifier).logout();
+                        // 기기 UUID/데이터 초기화 없이 스플래시(자동 로그인)로 이동
+                        // logout()을 호출하면 UUID가 초기화되어 계정이 삭제됨 → 사용 금지
                         if (context.mounted) {
-                          context.go('/login');
+                          context.go('/');
                         }
                       },
                       style: ElevatedButton.styleFrom(

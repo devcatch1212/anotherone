@@ -61,12 +61,18 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       debugPrint('▶ [Router Guard] loc: $loc, isAuthenticated: $isAuthenticated, onboardingCompleted: $onboardingCompleted');
 
-      // 인증 실패(네트워크 오류 등) → 스플래시에서 재시도 대기
-      if (!isAuthenticated && loc != '/') {
-        return '/';
+      // 네트워크 오류 등 일시 실패 상태 → 현재 화면 유지 (강제 스플래시 이동 금지)
+      // 인증 에러 상태에서 현재 화면이 홈 등 정상 화면이면 그대로 유지
+      if (authAsync.hasError) {
+        return null;
       }
 
-      // 인증 성공했지만 온보딩 미완료인 경우 → /welcome 또는 /onboarding 허용
+      // 인증 실패(네트워크 오류 등) → 스플래시에서 재시도 대기
+      // 단, 이미 정상 화면에 있는 경우는 이동하지 않음 (loc == '/'인 경우만)
+      if (!isAuthenticated && loc == '/') {
+        return null; // 스플래시에서 자체적으로 재시도
+      }
+
       // 인증 성공했지만 온보딩 미완료인 경우 → /welcome 또는 /onboarding 허용
       if (isAuthenticated && !onboardingCompleted) {
         if (loc != '/welcome' && loc != '/onboarding') {
