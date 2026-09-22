@@ -2,6 +2,7 @@
 // Dio 기반 API 클라이언트
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../storage/auth_storage.dart';
 
@@ -44,9 +45,30 @@ class ApiClient {
           handler.next(options);
         },
         onError: (error, handler) async {
-          // 401 Unauthorized: 토큰 만료 → 자동 로그아웃
+          // 401 Unauthorized: 토큰 재발급 시도 후 원래 요청 1회 재시도
           if (error.response?.statusCode == 401) {
-            await _onUnauthorized?.call();
+            // 재시도 루프 방지: 이미 재시도한 요청은 그대로 에러 전파
+            final isRetry = error.requestOptions.extra['_retry'] == true;
+            if (!isRetry) {
+              try {
+                // 토큰 재발급 (기기 UUID 유지)
+                await _onUnauthorized?.call();
+                // 새 토큰으로 원래 요청 재시도
+                final newToken = await _storage.getToken();
+                if (newToken != null) {
+                  final opts = error.requestOptions;
+                  opts.headers['Authorization'] = 'Bearer $newToken';
+                  opts.extra['_retry'] = true;
+                  final response = await _dio.fetch(opts);
+                  return handler.resolve(response);
+                }
+              } catch (e) {
+                debugPrint('[ApiClient] 재시도 실패: $e');
+              }
+            } else {
+              // 재시도도 401이면 onUnauthorized 호출 (최후 처리)
+              await _onUnauthorized?.call();
+            }
           }
           handler.next(error);
         },

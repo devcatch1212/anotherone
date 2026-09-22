@@ -10,7 +10,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     PrismaModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'secretKey',
-      signOptions: { expiresIn: '7d' },
+      signOptions: { expiresIn: '365d' },
     }),
   ],
   providers: [AdminService, AdminAuthGuard],

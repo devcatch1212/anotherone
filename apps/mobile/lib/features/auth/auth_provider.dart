@@ -75,7 +75,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     _storage = ref.read(authStorageProvider);
     _api = ApiClient(
       _storage,
-      onUnauthorized: () async => logout(),
+      onUnauthorized: () async => _handleUnauthorized(),
     );
     return _initAuth();
   }
@@ -175,6 +175,23 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     } catch (e) {
       debugPrint('기기 자동 로그인 실패: $e');
       rethrow; // 에러를 상위로 전파하여 실제 원인 파악 가능하도록
+    }
+  }
+
+  /// 401 자동 처리 — 기기 UUID 유지하며 토큰만 재발급
+  /// ⚠️ 절대로 logout()을 호출하지 않음 — 데이터 초기화는 사용자 명시적 로그아웃/재설치 시에만 발생해야 함
+  Future<void> _handleUnauthorized() async {
+    debugPrint('[Auth] 401 감지 → 기기 UUID 유지 후 토큰 재발급 시도');
+    try {
+      // 기존 기기 UUID로 서버에서 새 토큰 발급 (기존 유저 계정 유지)
+      // DeviceIdService.getOrCreate()는 기존 UUID를 반환하므로 계정 유지됨
+      final newState = await _loginWithDeviceId();
+      state = AsyncValue.data(newState);
+      debugPrint('[Auth] 토큰 재발급 성공 → 기존 계정 로그인 유지');
+    } catch (e) {
+      // 네트워크 오류 등으로 재발급 실패 → 기존 상태 그대로 유지 (데이터 초기화 안 함)
+      // 사용자가 앱을 다시 열거나 네트워크 연결 시 자동 복구됨
+      debugPrint('[Auth] 토큰 재발급 실패 (네트워크 오류 등), 기존 상태 유지: $e');
     }
   }
 
