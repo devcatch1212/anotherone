@@ -30,14 +30,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   WageType _wageType = WageType.hourly;
 
   // Step 2
-  final _companyNameCtrl = TextEditingController();
-  final _addressCtrl = TextEditingController();
+  final _companyNameCtrl = TextEditingController(text: '캐치일리');
+  final _addressCtrl = TextEditingController(text: '서울특별시 강남구 테헤란로 123');
   final _departmentCtrl = TextEditingController();
-  final _positionCtrl = TextEditingController();
+  final _positionCtrl = TextEditingController(text: '사원');
   double _latitude = 37.5004;
   double _longitude = 127.0368;
   WebViewController? _mapController;
-  String? _employeeCount; // 미선택 상태 → 필수 선택
+  String? _employeeCount = 'over5'; // 기본값 5인 이상
 
   @override
   void initState() {
@@ -95,14 +95,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   // Step 3
-  final _wageCtrl = TextEditingController();
+  final _wageCtrl = TextEditingController(text: '15,000');
   final _workHoursCtrl = TextEditingController(text: '8');
   final _workDaysCtrl = TextEditingController(text: '5');
   final _startTimeCtrl = TextEditingController(text: '09:00');
   final _endTimeCtrl = TextEditingController(text: '18:00');
-  final _nameCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController(text: '홍길동');
   final _memoCtrl = TextEditingController();
-  DateTime? _hireDate;
+  DateTime? _hireDate = DateTime.now();
   // 근무 요일 선택 (0=월 ~ 6=일), 기본 평일
   final List<int> _selectedDays = [0, 1, 2, 3, 4];
   final List<String> _weekDayNames = ['월', '화', '수', '목', '금', '토', '일'];
