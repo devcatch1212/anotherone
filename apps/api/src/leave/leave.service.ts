@@ -2,6 +2,12 @@ import { Injectable, NotFoundException, ForbiddenException, BadRequestException 
 import { PrismaService } from '../prisma/prisma.service';
 import { ApplyLeaveDto } from './dto/leave.dto';
 
+/** KST(UTC+9) 기준 날짜 문자열 반환 (YYYY-MM-DD) — toISOString()은 UTC 기준이라 date 컬럼과 불일치 가능 */
+function toKSTDateString(date: Date): string {
+  const kst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  return kst.toISOString().substring(0, 10);
+}
+
 @Injectable()
 export class LeaveService {
   constructor(private readonly prisma: PrismaService) {}
@@ -170,8 +176,8 @@ export class LeaveService {
             companyId: employment.companyId,
             status: 'absent',
             date: {
-              gte: checkDate.toISOString().substring(0, 10),
-              lt: nextMonthDate.toISOString().substring(0, 10),
+              gte: toKSTDateString(checkDate),
+              lt: toKSTDateString(nextMonthDate),
             },
           },
         });
@@ -246,8 +252,8 @@ export class LeaveService {
             companyId: employment.companyId,
             status: { in: ['normal', 'late'] },
             date: {
-              gte: yearStartDate.toISOString().substring(0, 10),
-              lt: yearEndDate.toISOString().substring(0, 10),
+              gte: toKSTDateString(yearStartDate),
+              lt: toKSTDateString(yearEndDate),
             },
           },
         });
@@ -271,8 +277,8 @@ export class LeaveService {
                 companyId: employment.companyId,
                 status: 'absent',
                 date: {
-                  gte: checkDate.toISOString().substring(0, 10),
-                  lt: nextMonthDate.toISOString().substring(0, 10),
+                  gte: toKSTDateString(checkDate),
+                  lt: toKSTDateString(nextMonthDate),
                 },
               },
             });
@@ -300,7 +306,7 @@ export class LeaveService {
             status: 'approved',
             type: { in: ['annual', 'half'] },
             startDate: {
-              gte: (validLeaveEarnedDate as Date).toISOString().substring(0, 10),
+              gte: toKSTDateString(validLeaveEarnedDate as Date),
             },
           },
           _sum: { days: true },

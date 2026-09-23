@@ -12,6 +12,12 @@ import {
 import { AdminService } from './admin.service';
 import { AdminAuthGuard } from './admin-auth.guard';
 
+/** KST(UTC+9) 기준 현재 { year, month } 반환 — UTC getFullYear/getMonth는 자정 교차 시 1달 오차 발생 */
+function getKSTYearMonth(): { year: number; month: number } {
+  const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  return { year: kstNow.getUTCFullYear(), month: kstNow.getUTCMonth() + 1 };
+}
+
 @Controller('api/admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
@@ -58,10 +64,10 @@ export class AdminController {
     @Query('month') month: string,
     @Query('companyId') companyId?: string,
   ) {
-    const now = new Date();
+    const { year: kstYear, month: kstMonth } = getKSTYearMonth();
     return this.adminService.getMonthlyAttendanceGrid(
-      parseInt(year) || now.getFullYear(),
-      parseInt(month) || now.getMonth() + 1,
+      parseInt(year) || kstYear,
+      parseInt(month) || kstMonth,
       companyId,
     );
   }
@@ -74,11 +80,11 @@ export class AdminController {
     @Query('year') year: string,
     @Query('month') month: string,
   ) {
-    const now = new Date();
+    const { year: kstYear, month: kstMonth } = getKSTYearMonth();
     return this.adminService.getAttendanceByEmployment(
       employmentId,
-      parseInt(year) || now.getFullYear(),
-      parseInt(month) || now.getMonth() + 1,
+      parseInt(year) || kstYear,
+      parseInt(month) || kstMonth,
     );
   }
 
@@ -174,10 +180,10 @@ export class AdminController {
     @Query('month') month: string,
     @Query('companyId') companyId?: string,
   ) {
-    const now = new Date();
+    const { year: kstYear, month: kstMonth } = getKSTYearMonth();
     return this.adminService.getPayrolls(
-      parseInt(year) || now.getFullYear(),
-      parseInt(month) || now.getMonth() + 1,
+      parseInt(year) || kstYear,
+      parseInt(month) || kstMonth,
       companyId,
     );
   }
@@ -191,10 +197,10 @@ export class AdminController {
     @Query('companyId') companyId: string | undefined,
     @Body() body: { items: any[] },
   ) {
-    const now = new Date();
+    const { year: kstYear, month: kstMonth } = getKSTYearMonth();
     return this.adminService.issuePayrolls(
-      parseInt(year) || now.getFullYear(),
-      parseInt(month) || now.getMonth() + 1,
+      parseInt(year) || kstYear,
+      parseInt(month) || kstMonth,
       companyId,
       body.items,
     );
@@ -393,10 +399,10 @@ export class AdminController {
     @Query('month') month: string,
     @Query('companyId') companyId?: string,
   ) {
-    const now = new Date();
+    const { year: kstYear, month: kstMonth } = getKSTYearMonth();
     return this.adminService.getMonthlyReport(
-      parseInt(year) || now.getFullYear(),
-      parseInt(month) || now.getMonth() + 1,
+      parseInt(year) || kstYear,
+      parseInt(month) || kstMonth,
       companyId,
     );
   }

@@ -29,6 +29,15 @@ function getKSTDateString(date: Date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
+/** KST(한국 표준시) 기준 시(hour)를 반환 — getHours()는 UTC 기준이라 야간 판정 오류 발생 */
+function getKSTHour(date: Date): number {
+  return parseInt(
+    new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', hour: 'numeric', hour12: false })
+      .format(date),
+    10,
+  );
+}
+
 export function calculateAttendancePay(
   employment: {
     wageType: string;
@@ -59,7 +68,7 @@ export function calculateAttendancePay(
   let nightMinutes = 0;
   let cur = new Date(checkIn);
   while (cur < checkOut) {
-    const h = cur.getHours();
+    const h = getKSTHour(cur);
     if (h >= 22 || h < 6) nightMinutes++;
     cur.setMinutes(cur.getMinutes() + 1);
   }
@@ -175,12 +184,15 @@ export class AttendanceService {
     }
     // ─────────────────────────────────────────────────────────────────────────
 
-    // 지각 여부 판별: workStartTime(HH:mm)과 실제 출근 시간 비교
+    // 지각 여부 판별: workStartTime(HH:mm KST 기준)과 실제 출근 시간 비교
     let status = 'normal';
     if (employment.workStartTime) {
       const [startH, startM] = employment.workStartTime.split(':').map(Number);
-      const scheduledStart = new Date(now);
-      scheduledStart.setHours(startH, startM, 0, 0);
+      const hh = String(startH).padStart(2, '0');
+      const mm = String(startM).padStart(2, '0');
+      // KST 날짜 + workStartTime을 "+09:00" 오프셋으로 명시하여 UTC 타임스탬프 정확히 생성
+      // setHours()는 서버 로컬(UTC) 기준이라 KST workStartTime을 잘못 해석하는 버그 방지
+      const scheduledStart = new Date(`${dateStr}T${hh}:${mm}:00+09:00`);
       // 1분 초과 시 지각 처리
       if (now.getTime() > scheduledStart.getTime() + 60 * 1000) {
         status = 'late';
@@ -270,7 +282,7 @@ export class AttendanceService {
     let nightMinutes = 0;
     let cur = new Date(checkInTime);
     while (cur < checkOutTime) {
-      const h = cur.getHours();
+      const h = getKSTHour(cur);
       if (h >= 22 || h < 6) nightMinutes++;
       cur.setMinutes(cur.getMinutes() + 1);
     }
@@ -476,7 +488,7 @@ export class AttendanceService {
     let nightMinutes = 0;
     let cur = new Date(checkInTime);
     while (cur < checkOutTime) {
-      const h = cur.getHours();
+      const h = getKSTHour(cur);
       if (h >= 22 || h < 6) nightMinutes++;
       cur.setMinutes(cur.getMinutes() + 1);
     }
@@ -546,17 +558,14 @@ export class AttendanceService {
   ): Date {
     if (employment.workEndTime) {
       const [endH, endM] = employment.workEndTime.split(':').map(Number);
-      // 해당 날짜(KST) 기준으로 퇴근 시각 생성
-      const [year, month, day] = dateStr.split('-').map(Number);
-      // KST 시각을 UTC로 변환 (KST = UTC+9)
-      const checkoutUTC = new Date(
-        Date.UTC(year, month - 1, day, endH - 9 < 0 ? endH - 9 + 24 : endH - 9, endM, 0),
-      );
-      // endH < 9인 경우 날짜 보정 (예: 02:00 KST → 전날 17:00 UTC)
-      if (endH < 9) {
-        checkoutUTC.setUTCDate(checkoutUTC.getUTCDate() + 1);
+      const hh = String(endH).padStart(2, '0');
+      const mm = String(endM).padStart(2, '0');
+      let checkout = new Date(`${dateStr}T${hh}:${mm}:00+09:00`);
+      // 야간 교대(자정 넘김) 등으로 퇴근 시각이 출근 시각보다 이전이면 다음날로 보정
+      if (checkout <= checkIn) {
+        checkout = new Date(checkout.getTime() + 24 * 60 * 60 * 1000);
       }
-      return checkoutUTC;
+      return checkout;
     }
 
     // workEndTime이 없으면 checkIn + dailyWorkHours

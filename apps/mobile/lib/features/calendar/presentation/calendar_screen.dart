@@ -93,18 +93,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
   }
 
-  // 월별 예상 급여 합산 계산 (월급제/일급제 대응 패치)
+  // 월별 예상 급여 합산 계산 (월급/일급/시급 야간·연장 수당 반영)
   double _calculateEstimatedPay() {
     final emp = ref.read(authProvider).value?.currentEmployment;
     if (emp == null) return 0;
     
     double total = 0;
     for (final r in _recordMap.values) {
-      if (emp.wageType == WageType.monthly || emp.wageType == WageType.daily) {
-        // 월급제나 일급제는 이미 계산된 하루치 정산 금액(earnedPay)을 누적
-        total += (r.earnedPay ?? 0).toDouble();
+      if (r.earnedPay != null) {
+        // 백엔드에서 정산된 총 급여(기본급+연장수당+야간수당) 사용
+        total += r.earnedPay!.toDouble();
+      } else if (emp.wageType == WageType.monthly || emp.wageType == WageType.daily) {
+        total += (r.basePay ?? 0).toDouble();
       } else {
-        // 시급제 등은 근무시간 * 시급으로 누적
+        // 정산 전 시급제 기록 fallback
         final workedHours = (r.workedMinutes ?? 0) / 60.0;
         total += workedHours * (emp.hourlyWage ?? 0.0);
       }

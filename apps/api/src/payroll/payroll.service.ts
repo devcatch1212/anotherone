@@ -157,8 +157,9 @@ export class PayrollService {
       throw new NotFoundException('유효하지 않은 근로계약입니다.');
     }
 
-    const today = new Date();
-    await this.generateOrUpdatePayroll(userId, employmentId, today.getFullYear(), today.getMonth() + 1);
+    // KST(UTC+9) 기준 현재 년/월 — UTC getFullYear/getMonth는 자정 교차 시 1달 오차 발생
+    const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    await this.generateOrUpdatePayroll(userId, employmentId, kstNow.getUTCFullYear(), kstNow.getUTCMonth() + 1);
 
     const records = await this.prisma.payrollRecord.findMany({
       where: { userId, companyId: employment.companyId },
