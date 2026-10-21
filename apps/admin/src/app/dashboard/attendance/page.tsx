@@ -227,7 +227,8 @@ export default function AttendancePage() {
                   {days.map(d => {
                     const dateStr = `${gridData.year}-${String(gridData.month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const rec = emp.recordMap[dateStr];
-                    const cfg = rec ? STATUS_CONFIG[rec.status] : null;
+                    // 알 수 없는 status라도 기록이 있으면 빈 칸 대신 정상으로 표시
+                    const cfg = rec ? (STATUS_CONFIG[rec.status] ?? STATUS_CONFIG.normal) : null;
                     const cellKey = `${emp.employmentId}-${dateStr}`;
                     const isHov = hoveredCell === cellKey;
                     return (

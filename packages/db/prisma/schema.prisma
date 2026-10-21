@@ -104,6 +104,7 @@ model AttendanceRecord {
   checkIn         DateTime?
   checkOut        DateTime?
   status          String   // normal, late, absent, vacation, holiday
+  autoCheckoutType String? // null(직접 퇴근), auto_checkout(계약 퇴근시각 자동퇴근), overtime_auto_checkout(연장근무 종료시각 자동퇴근)
   workedMinutes   Int?
   overtimeMinutes Int?
   nightMinutes    Int?

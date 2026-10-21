@@ -458,7 +458,7 @@ export class AttendanceService {
    * @param record    대상 AttendanceRecord
    * @param employment 근로 계약 정보
    * @param checkOutTime 퇴근으로 기록할 시각
-   * @param autoStatus  기록될 status ('auto_checkout' | 'overtime_auto_checkout')
+   * @param autoStatus  autoCheckoutType에 기록될 값 ('auto_checkout' | 'overtime_auto_checkout') - status는 변경하지 않음
    */
   async processAutoCheckout(
     record: AttendanceRecord,
@@ -534,7 +534,8 @@ export class AttendanceService {
       where: { id: record.id },
       data: {
         checkOut: checkOutTime,
-        status: autoStatus,
+        // status(normal/late)는 출근 판정 결과이므로 유지하고, 자동 퇴근 여부는 별도 필드에 기록
+        autoCheckoutType: autoStatus,
         workedMinutes: actualWorkMinutes,
         overtimeMinutes,
         nightMinutes,

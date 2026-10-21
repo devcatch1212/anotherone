@@ -270,8 +270,21 @@ export class AdminService {
         workedMinutes: number | null;
       }> = {};
       empRecords.forEach((r) => {
+        // 구버전 자동퇴근 로직이 status를 'auto_checkout' 등으로 덮어쓴 레코드는
+        // 그리드 STATUS_CONFIG에 없어 빈 칸으로 표시되므로, 출근 시각 기준으로 normal/late 재판정
+        let status = r.status ?? 'normal';
+        if (status === 'auto_checkout' || status === 'overtime_auto_checkout') {
+          status = 'normal';
+          if (emp.workStartTime && r.checkIn) {
+            const [h, m] = emp.workStartTime.split(':').map(Number);
+            const start = new Date(
+              `${r.date}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00+09:00`,
+            );
+            if (r.checkIn.getTime() > start.getTime() + 60 * 1000) status = 'late';
+          }
+        }
         recordMap[r.date] = {
-          status: r.status ?? 'normal',
+          status,
           checkIn: r.checkIn ? r.checkIn.toISOString() : null,
           checkOut: r.checkOut ? r.checkOut.toISOString() : null,
           workedMinutes: r.workedMinutes ?? null,
